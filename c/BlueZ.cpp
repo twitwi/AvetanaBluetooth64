@@ -807,7 +807,7 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_writeBytes
   * service record is given as an arry of bytes.
   */
  JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_updateService
-   (JNIEnv *env, jclass obj, jbyteArray array, jint length, jlong ser_handle) {
+   (JNIEnv *env, jclass obj, jobject srecord, jlong ser_handle) {
 
    bdaddr_t interface;
    sdp_session_t *session;
@@ -818,11 +818,20 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_writeBytes
    sdp_pdu_hdr_t *reqhdr, *rsphdr;
    uint32_t handle;
 
+   jclass lsrclass=env->GetObjectClass(srecord);
+   jmethodID mid=env->GetMethodID(lsrclass, "toByteArray", "()[B");
+
+   if(mid == 0) throwException(env, "de_avetana_bluetooth_stack_BlueZ_createService: Bad method description. Unable to create Service!");
+   jbyteArray array = (jbyteArray)env->CallObjectMethod(srecord, mid);
+
+   int length = env->GetArrayLength(array);
+
    char *data = (char *)env->GetByteArrayElements (array, NULL);
 
-   handle = (uint32_t)handle;
+   handle = (uint32_t)ser_handle;
 
    if (handle == SDP_SERVER_RECORD_HANDLE) {
+     printf ("Service handle is %d\n", (int)handle);
      return -2;
    }
 
