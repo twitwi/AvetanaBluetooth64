@@ -123,7 +123,6 @@ public class JSR82URL {
       toWork=toWork.substring("localhost:".length());
     } else {
       try {
-        System.out.println("remote addr="+toWork.substring(0,12));
         m_address=BTAddress.parseString(toWork.substring(0,12));
       }catch(Exception ex) {throw new BadURLFormat("The address of the remote device is not a valid Bluetooth address!");}
       toWork=toWork.substring(12);

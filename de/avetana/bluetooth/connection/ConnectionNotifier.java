@@ -153,6 +153,6 @@ public abstract class ConnectionNotifier {
       }
       BlueZ.disposeLocalRecord(m_serviceHandle);
       isClosed=true;
-    }catch(Exception ex) {ex.printStackTrace();}
+    }catch(Exception ex) {}
   }
 }

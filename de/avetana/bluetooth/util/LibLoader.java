@@ -40,6 +40,8 @@ public class LibLoader {
 
     InputStream is = new LibLoader().getClass().getClassLoader().getResourceAsStream(libName);
 
+    if (is == null) throw new Exception ("Native Library " + libName + " not in CLASSPATH !");
+
     File fd = File.createTempFile("lib", "");
     String path = fd.getAbsolutePath();
     fd.delete();

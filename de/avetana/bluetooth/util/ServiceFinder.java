@@ -105,13 +105,5 @@ public class ServiceFinder extends JDialog  implements ActionListener{
       if(myPane.selected != null) setVisible(false);
   }
 
-
-  public static void main(String[] args) throws HeadlessException, Exception {
-    BluezStack stack=new BluezStack();
-    BluetoothStack.init(stack);
-
-    ServiceFinder ServiceFinder1 = new ServiceFinder(new JFrame(), null);
-    ServiceFinder1.setVisible(true);
-  }
 }
 

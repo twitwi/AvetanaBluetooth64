@@ -422,7 +422,12 @@ public class DataElement {
                     byte[] uuidBytes = uuid.toByteArray();
                     byte[] bytes = null;
                     if (uuidBytes.length == 2) bytes=new byte[]{0x19, uuidBytes[0], uuidBytes[1]};
-                    else bytes=new byte[]{0x1a, uuidBytes[0], uuidBytes[1], uuidBytes[2], uuidBytes[3] };
+                    else if (uuidBytes.length == 4) bytes=new byte[]{0x1a, uuidBytes[0], uuidBytes[1], uuidBytes[2], uuidBytes[3] };
+                    else if (uuidBytes.length == 16) {
+                      bytes=new byte[17];
+                      bytes[0] = 0x1c;
+                      for (int i = 0;i < 16;i++) bytes[1 + i] =  uuidBytes[i];
+                    }
                     dataBytes = bytes;
                     break;
                 }
@@ -729,8 +734,4 @@ public class DataElement {
         }
     }
 
-    public static void main (String args[]) {
-      DataElement te = new DataElement (DataElement.STRING, "Test");
-      System.out.println (te.getValue() + ": " + te.getValue().toString());
-    }
 }

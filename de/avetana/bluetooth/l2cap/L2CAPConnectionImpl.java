@@ -44,8 +44,8 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
 
   private int m_transmitMTU=672;
   private int m_receiveMTU=672;
-  private byte[] m_buffer;
-  private boolean readyCalled=false;
+  //This buffer is used to store data when ready was called and data is available
+  private byte[] m_buffer = null;
   private JSR82URL m_connectionURL;
 
   /**
@@ -54,7 +54,7 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
    */
   public L2CAPConnectionImpl(int fid) {
     super(fid);
-    m_buffer=new byte[1000];
+    m_buffer=null;
   }
 
   /**
@@ -65,7 +65,7 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
    */
   public L2CAPConnectionImpl(int fid, String addr) {
     super(fid,addr);
-    m_buffer=new byte[1000];
+    m_buffer=null;
   }
 
   /**
@@ -88,7 +88,7 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
     super(fid, addr);
     this.m_transmitMTU=transmit;
     this.m_receiveMTU=receive;
-    m_buffer=new byte[receive];
+    m_buffer=null;
   }
 
   /**
@@ -101,10 +101,10 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
   public static L2CAPConnection createL2CAPConnection (JSR82URL url) throws Exception{
     String addrB=null;
     L2CAPConnParam param = null;
-    try {
-      param=BlueZ.openL2CAP(url);
-      if(param==null || param.m_fid==-1) throw new Exception("Connection could not be established!");
-    }catch(Exception ex) {ex.printStackTrace(); throw ex;}
+
+    param=BlueZ.openL2CAP(url);
+    if(param==null || param.m_fid==-1) throw new Exception("Connection could not be established!");
+
     int fid=param.m_fid;
     int psm=url.getAttrNumber()==null?1:url.getAttrNumber().intValue();
     L2CAPConnectionImpl conn =  null;
@@ -174,31 +174,19 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
    * @exception InterruptedIOException if the request timed out
    * @exception NullPointerException if <code>inBuf</code> is <code>null</code>
    */
-  public int receive(byte[] inBuf) throws IOException, NullPointerException {
+  public synchronized int receive(byte[] inBuf) throws IOException, NullPointerException {
     if(inBuf==null) throw new NullPointerException("The buffer is null!");
-    if(closed) throw new IOException("Connection does not exists or was previously closed");
-    int copied=inBuf.length > m_receiveMTU?m_receiveMTU:inBuf.length;
-    if(readyCalled) {
-      if(m_buffer.length==0) {
-        readyCalled=false;
-        return 0;
-      }
-      System.arraycopy(m_buffer, 0, inBuf, 0, copied);
-      m_buffer=new byte[m_receiveMTU];
-      readyCalled=false;
-      return copied;
+
+    while (!ready()) {
+      if(closed) throw new IOException("Connection does not exists or was previously closed");
+      synchronized (this) { try { wait (50); } catch (Exception e) {} }
     }
-    int toBeRead = 0;
-    m_buffer=new byte[m_receiveMTU];
-    try {
-      toBeRead=BlueZ.readBytes(fid, m_buffer, m_receiveMTU);
-    } catch (Exception e) { e.printStackTrace(); throw new IOException (e.getMessage()); }
-    if(toBeRead > inBuf.length && toBeRead > 0) {
-      System.arraycopy(m_buffer, 0, inBuf, 0, inBuf.length);
-      return inBuf.length;
-    }
-    System.arraycopy(m_buffer, 0, inBuf, 0, toBeRead);
-    return toBeRead;
+
+    int rlen = m_buffer.length;
+    if (rlen > inBuf.length) rlen = inBuf.length;
+    System.arraycopy(m_buffer, 0, inBuf, 0, rlen);
+    m_buffer = null;
+    return rlen;
   }
 
   /**
@@ -208,11 +196,17 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
    * @return <code>true</code> if there is data to read; <code>false</code> if there is no data to read
    * @exception IOException if the connection is closed
    */
-  public boolean ready() throws IOException {
+  public synchronized boolean ready() throws IOException {
     if(closed) throw new IOException("Connection does not exists or was previously closed");
-    int r=receive(new byte[m_receiveMTU]);
-    readyCalled=true;
-    return (r > 0);
+    if (m_buffer != null) return true;
+    byte[] b2 = new byte[m_receiveMTU];
+    int r = -1;
+    try { r = BlueZ.readBytes(fid, b2, b2.length); } catch (Exception e) { throw new IOException (e.getMessage()); }
+    if (r >= 0) {
+      m_buffer = new byte[r];
+      System.arraycopy(b2, 0, m_buffer, 0, r);
+    } else if (r == -1) throw new IOException  ("Connection closed");
+    return (r >= 0);
   }
 
   /**

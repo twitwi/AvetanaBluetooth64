@@ -84,18 +84,16 @@ public class LocalConnectionNotifier extends ConnectionNotifier implements Strea
         BlueZ.registerNotifier(this);
 
       }catch(Exception ex) {
-        ex.printStackTrace();
         throw new IOException("ERROR - Unable to register the local Service Record!");
       }
 
       synchronized (this) {
         while(m_fid==-1) {
-          try {wait(200);}catch(Exception ex) {ex.printStackTrace();}
+          try {wait(200);}catch(Exception ex) {}
         }
       }
 
       if (m_fid > 0) {
-        System.out.println("JAVA: new Connection accepted with fid="+m_fid);
         LocalConnection con=new LocalConnection(m_fid);
         con.setRemoteDevice(m_remote);
         con.setConnectionURL(parsedURL);

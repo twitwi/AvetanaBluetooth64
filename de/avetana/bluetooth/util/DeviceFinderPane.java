@@ -60,13 +60,11 @@ public class DeviceFinderPane extends JPanel implements ActionListener, Discover
     myListModel = new DefaultListModel() {
       public int getSize() { return m_remote.size(); }
       public Object getElementAt(int index) {
-        System.out.println("getinng");
         if(index == -1 || m_remote.size() <= index) return null;
         RemoteDevice dev=(RemoteDevice)m_remote.elementAt(index);
         return dev.toStringWithName();
       }
       public Object elementAt(int index) {
-        System.out.println("elAt");
         return getElementAt(index);
       }
     };
@@ -102,7 +100,6 @@ public class DeviceFinderPane extends JPanel implements ActionListener, Discover
 
   public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
     String addr=null, name=null;
-    System.out.println("new deviceDiscovered!!!!"+btDevice.bdAddrString);
     try {
       addr=btDevice.bdAddrString;
     }
@@ -121,7 +118,6 @@ public class DeviceFinderPane extends JPanel implements ActionListener, Discover
 
   public void inform(String message) {
     if(m_dialog!=null) m_dialog.setString(message);
-    else System.out.println("m_dialog est null!!!");
   }
 
   public void showDialog() {
@@ -160,7 +156,6 @@ public class DeviceFinderPane extends JPanel implements ActionListener, Discover
       }
       myListModel.removeAllElements();
       for(int i=0;i<m_remote.size();i++) {
-        System.out.println("i="+i);
         myListModel.addElement(m_remote.elementAt(i));
       }
       this.setCursor(cur);

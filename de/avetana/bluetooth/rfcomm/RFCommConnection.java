@@ -57,13 +57,12 @@ public class RFCommConnection extends BluetoothStream implements Connection{
    */
   public static RFCommConnection createRFCommConnection (JSR82URL url) throws Exception{
     int fid = -1;
-    try {
-      fid=BlueZ.openRFComm (url);
-      if(fid < 0) throw new Exception("Connection could not be created with remote device!");
-    }catch(Exception ex) {ex.printStackTrace(); throw ex;}
-    System.out.println ("Connection open " + fid + " " + url.getAttrNumber());
+
+    fid=BlueZ.openRFComm (url);
+    if(fid < 0) throw new Exception("Connection could not be created with remote device!");
+
     RFCommConnection conn =  null;
-    try {conn=new RFCommConnection (fid, url.getBTAddress().toString());} catch(Exception ex) { System.out.println("NEW CONNECTION EXCEPTION"); throw ex; }
+    conn=new RFCommConnection (fid, url.getBTAddress().toString());
     conn.startReading();
     return conn;
   }

@@ -508,7 +508,6 @@ public class BlueZ
          */
         public static void searchServices(String bdaddr_jstr, byte[][] uuid, int[] attrIds, DiscoveryListener listener) throws BlueZException{
           myFactory.addListener(bdaddr_jstr.toUpperCase(), listener);
-          System.out.println("Added listener with address="+bdaddr_jstr.toUpperCase());
           listService(bdaddr_jstr, uuid, attrIds);
         }
 
@@ -588,12 +587,12 @@ public class BlueZ
             addr=BTAddress.parseString(rec.getHostDevice().bdAddrString).toString();
           }catch(Exception ex) {ex.printStackTrace();}
           if(addr==null) {
-            System.out.println("ERROR - Not a valid bluetooth Adress! " + addr);
+            //System.out.println("ERROR - Not a valid bluetooth Adress! " + addr);
             return;
           }
           DiscoveryListener myListener=myFactory.getListener(addr);
           if(myListener==null) {
-            System.out.println("ERROR - Listener not defined. Unable to add service " + addr);
+            //System.out.println("ERROR - Listener not defined. Unable to add service " + addr);
             return;
           }
           myListener.servicesDiscovered(transID, new ServiceRecord[]{rec});
@@ -608,7 +607,7 @@ public class BlueZ
         public static void serviceSearchComplete(int transID, int respCode, String jBTAddr) {
           DiscoveryListener myListener=myFactory.getListener(jBTAddr);
           if(myListener==null) {
-            System.out.println("ERROR - Listener not defined. Unable to interpret service search completed code");
+            //System.out.println("ERROR - Listener not defined. Unable to interpret service search completed code");
             return;
           }
           myListener.serviceSearchCompleted(transID,respCode);
@@ -616,8 +615,8 @@ public class BlueZ
           try {
            addr=BTAddress.parseString(jBTAddr).toString();
           }catch(Exception ex) {ex.printStackTrace();}
-          boolean b=myFactory.removeListener(addr);
-          if(b) System.out.println("Listener "+jBTAddr+" removed");
+          myFactory.removeListener(addr);
+
         }
 
         public Class createClass (String name) {

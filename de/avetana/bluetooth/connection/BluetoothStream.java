@@ -93,7 +93,7 @@ public class BluetoothStream extends BTConnection{
             if (data > 0) inStream.addData(b, data);
             else if (data == -1) inStream.close();
             else this.wait(50);
-          } catch (Exception e) { closed = true; e.printStackTrace(); }
+          } catch (Exception e) { closed = true; }
         }
       }
     };
@@ -160,7 +160,6 @@ public class BluetoothStream extends BTConnection{
           this.wait(50);
         }
         catch (Exception e) {
-          e.printStackTrace();
         }
       }
     }

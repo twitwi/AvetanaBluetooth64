@@ -96,15 +96,12 @@ public abstract class SDPServiceRecord implements ServiceRecord{
 
   public int[] getAttributeIDs() {
     int[] returnArray;
-    try {
-      if(m_attributes==null || m_attributes.keySet()==null) throw new Exception("No attributes found");
-      Object keys[] = m_attributes.keySet().toArray();
-      returnArray = new int[keys.length];
-      for (int i = 0; i < returnArray.length; i++) { returnArray[i] = ((Integer)keys[i]).intValue(); }
-    }catch(Exception ex) {
-      ex.printStackTrace();
-      returnArray=new int[]{};
-    }
+
+    if(m_attributes==null || m_attributes.keySet()==null) return new int[]{};
+    Object keys[] = m_attributes.keySet().toArray();
+    returnArray = new int[keys.length];
+    for (int i = 0; i < returnArray.length; i++) { returnArray[i] = ((Integer)keys[i]).intValue(); }
+
     return returnArray;
   }
 

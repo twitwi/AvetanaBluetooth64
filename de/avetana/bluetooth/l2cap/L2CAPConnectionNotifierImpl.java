@@ -53,7 +53,6 @@ public class L2CAPConnectionNotifierImpl extends ConnectionNotifier implements L
    */
   public L2CAPConnectionNotifierImpl(JSR82URL url) throws BadURLFormat, Exception {
     parsedURL=url;
-    System.out.println(url.toString());
     if(parsedURL.getBTAddress()!=null) throw new BadURLFormat("This is not an sdp server URL!");
     String m_serviceName=(String)parsedURL.getParameter("name");
     m_serviceName=(m_serviceName==null?"Avetana Service":m_serviceName);
@@ -97,25 +96,21 @@ public class L2CAPConnectionNotifierImpl extends ConnectionNotifier implements L
       int psm = (int)((LocalServiceRecord)myRecord).getChannelNumberElement().getLong();
       this.parsedURL.setAttrNumber(psm);
     }catch(Exception ex) {
-      ex.printStackTrace();
       throw new ServiceRegistrationException("ERROR - The service record could not be added in the local Bluetooth BCC!");
     }
     try {
       BlueZ.registerNotifier(this);
-      System.out.println("Service registered");
     }catch(Exception ex) {
-      ex.printStackTrace();
       throw new IOException("ERROR - Unable to register the local Service Record!");
     }
 
     synchronized (this) {
       while(m_fid==-1) {
-        try {wait(200);}catch(Exception ex) {ex.printStackTrace();}
+        try {wait(200);}catch(Exception ex) {}
       }
     }
 
     if (m_fid > 0) {
-      System.out.println("JAVA::L2CAPConnectionNotifier : new Connection accepted with fid="+m_fid);
       L2CAPConnectionImpl con=new L2CAPConnectionImpl(m_fid);
       con.setRemoteDevice(m_remote);
       con.setConnectionURL(parsedURL);

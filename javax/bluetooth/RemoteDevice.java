@@ -68,6 +68,11 @@ public class RemoteDevice {
       this.clockOffset=clockOffset;
     }
 
+    public RemoteDevice(String bdAddrString, byte repMode, byte periodMode, byte scanMode, short clockOffset, int deviceClass) throws NullPointerException, IllegalArgumentException {
+      this (bdAddrString, repMode, periodMode, scanMode, clockOffset);
+      this.deviceClass = new DeviceClass (deviceClass);
+    }
+
 
     /**
      * Creates a Bluetooth device based upon its address.  The Bluetooth
@@ -94,7 +99,7 @@ public class RemoteDevice {
         this.bdAddrString=tmp;
         this.bdAddrLong=Long.decode("0x"+tmp).longValue();
       }
-      catch(Exception ex) {ex.printStackTrace();throw new IllegalArgumentException("Not a valid bluetooth address");}
+      catch(Exception ex) {throw new IllegalArgumentException("Not a valid bluetooth address");}
     }
 
     /**

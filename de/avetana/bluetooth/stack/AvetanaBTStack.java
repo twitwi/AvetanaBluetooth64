@@ -39,19 +39,19 @@ import java.util.Vector;
 * @see de.avetana.bluetooth.stack.BluetoothStack
 * @author Julien Campana
 */
-public class BluezStack extends BluetoothStack {
+public class AvetanaBTStack extends BluetoothStack {
 
   private int m_bd; // bluetooth descriptor
   private int devID=-1; // bluetooth adapter
   private static RemoteServiceRecord myRecord;
   private static boolean fini=false;
 
-  public BluezStack() throws Exception{
+  public AvetanaBTStack() throws Exception{
       m_bd = BlueZ.hciOpenDevice(0, new BlueZ());
       devID = 0;
   }
 
-  public BluezStack(int devID) throws Exception{
+  public AvetanaBTStack(int devID) throws Exception{
       m_bd = BlueZ.hciOpenDevice(devID, new BlueZ());
       this.devID = devID;
   }
@@ -74,15 +74,13 @@ public class BluezStack extends BluetoothStack {
       if(bd_addr.length()==12) {
         addr=BTAddress.transform(bd_addr);
       } else addr=bd_addr;
-      System.out.println("calling remotename with:"+addr+"  "+m_bd);
       return BlueZ.hciRemoteName(m_bd,addr);
-    }catch(Exception ex) {ex.printStackTrace();return "null";}
+    }catch(Exception ex) {return "null";}
   }
 
   public int authenticate(RemoteDevice dev) throws Exception {
     BTConnection bs=isConnected(dev);
     if(bs==null || bs.getConnectionID() == -1) throw new Exception("This remote device is not connected!");
-    System.out.println("dev address="+dev.getBTAddress().toString());
     return BlueZ.authenticate(bs.getConnectionID(), dev.getBTAddress().toString());
   }
 
@@ -102,7 +100,6 @@ public class BluezStack extends BluetoothStack {
 
   public int encrypt(Connection conn,RemoteDevice dev, boolean encrypt) throws Exception {
     if(conn==null || ((BTConnection)conn).getConnectionID() == -1) throw new Exception("This remote device is not connected!");
-    System.out.println("dev address="+dev.getBTAddress().toString());
     return BlueZ.encrypt(((BTConnection)conn).getConnectionID(), dev.getBTAddress().toString(), encrypt);
   }
 
@@ -130,7 +127,7 @@ public class BluezStack extends BluetoothStack {
       public void run() {
         try {
           BlueZ.searchServices(addr2,uuidSet,attrSet,myListener);
-        }catch(Exception ex) {ex.printStackTrace();}
+        }catch(Exception ex) {}
       }
     };
     new Thread(r).start();
@@ -180,57 +177,4 @@ public class BluezStack extends BluetoothStack {
     return BlueZ.updateService(b, b.length, recordHandle);
   }
 
-  public static final void main(String[] args) throws Exception {
-       BluezStack stack=new BluezStack();
-       BluetoothStack.init(stack);
-       LocalDevice local=LocalDevice.getLocalDevice();
-       DiscoveryAgent agent=local.getDiscoveryAgent();
-       RemoteDevice dev=new RemoteDevice("00A096057490");
-       System.out.println("BlueZStack was called for device chessBelt!!!");
-       DiscoveryListener myListener=new DiscoveryListener() {
-         public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
-           try {
-             System.out.println("Device "+btDevice.getFriendlyName(false)+"  "+btDevice.getBluetoothAddress()+"  discovered");
-           }catch(Exception ex) {ex.printStackTrace();}
-         }
-
-         public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
-           for(int i=0;i<servRecord.length;i++) {
-             try {
-               System.out.println("TransID="+transID+" new Service discovered for device: "+servRecord[i].getHostDevice().bdAddrString);
-               System.out.println(servRecord[i]+"\n\n\n");
-               System.out.println("Connection URL="+servRecord[i].getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT,false));
-             }catch(Exception ex) {ex.printStackTrace();}
-           }
-         }
-         public void inquiryCompleted(int discType) {}
-         public void serviceSearchCompleted(int transID, int respCode) {
-           fini=true;
-           System.out.println("ServiceSearchcompleted="+(respCode==DiscoveryListener.SERVICE_SEARCH_COMPLETED));
-         }
-
-       };
-//       agent.searchServices(new int[]{0,3,4,6,9,0x100}, new UUID[]{new UUID("0003",true)},dev, myListener);
-//       while(!fini) {Thread.sleep(1000);}
-       RFCommConnection connection=(RFCommConnection)Connector.open("btspp://00A096057490:1;authentificate=false;encrypt=false;master=false");
-       System.out.println("Waiting 4 seconds before sending bytes!");
-       Thread.sleep(4000);
-       System.out.println("Sending first bytes");
-       connection.getOutputStream().write(new byte[] { (byte)0xfc, 0x13, 0x09, 0x04, 0x30, 0x30, 0x30, 0x30, (byte)0xff, (byte)0xff, (byte)0xfd });
-       System.out.println("First bytes ok.\nSending second byte array");
-       connection.getOutputStream().write(new byte[] { (byte)0xfc, 0x17, 0x09, 0x02, 0x01, (byte)0xff, (byte)0xff, (byte)0xfd });
-       System.out.println("Second bytes ok.\nSending third byte array");
-       connection.getOutputStream().write(new byte[] { (byte)0xfc, 0x19, 0x09, 0x05, 0x01, (byte)0xff, (byte)0xff, (byte)0xfd });
-       System.out.println("Third bytes ok.\nWaiting for bytes to be received...");
-       //System.exit(0);
-       //   agent.startInquiry(DiscoveryAgent.GIAC, myListener);
-    /*
-       if(myRecord!=null) {
-         boolean b=myRecord.populateRecord(new int[]{4});
-         System.out.println("b="+b);
-         System.out.println(myRecord);
-       } else {
-         System.out.println("myRecord est null");
-       }*/
-  }
 }

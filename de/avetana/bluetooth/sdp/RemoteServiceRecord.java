@@ -128,7 +128,6 @@ public class RemoteServiceRecord extends SDPServiceRecord {
         try {
           BlueZ.searchServices(addr,m_uuid,attrs,m_internListener);
         }catch(Exception ex) {
-           ex.printStackTrace();
            m_internListener.setResponse(0);
         }
       }
@@ -137,7 +136,7 @@ public class RemoteServiceRecord extends SDPServiceRecord {
     while(m_internListener.resp==-1) {
       try {
         Thread.sleep(100);
-      }catch(Exception ex) {ex.printStackTrace(); return false;}
+      }catch(Exception ex) {return false;}
     }
     return (m_internListener.resp==1);
   }
@@ -200,7 +199,7 @@ public class RemoteServiceRecord extends SDPServiceRecord {
                 }
               }
             }
-            else if(lg == 0x0008) System.out.println("OBEX FOUND!!!");
+            else if(lg == 0x0008) System.err.println("OBEX FOUND!!!");
             else continue;
           }
         }
@@ -209,7 +208,6 @@ public class RemoteServiceRecord extends SDPServiceRecord {
     if (rfcommChannel!=-1) url+="btspp://"+m_remote.getBluetoothAddress()+":"+rfcommChannel;
     else if (l2capPSM!=-1) url+="btl2cap://"+m_remote.getBluetoothAddress()+":"+l2capPSM;
     if(url.equals("")) return null;
-    System.out.println("URL="+url);
     url+=";";
 
     if (requiredSecurity == ServiceRecord.AUTHENTICATE_ENCRYPT) url += "authenticate=true;encrypt=true;";
@@ -263,20 +261,4 @@ public class RemoteServiceRecord extends SDPServiceRecord {
 
   }
 
-  public static void createRFCommSR (ServiceRecord sr, String name, int channel, long recHandle) {
-    System.out.println ("Creating serviceRecord for \"" + name + "\" :" + channel + " " + recHandle);
-    DataElement protocolDescriptorList = new DataElement(DataElement.DATSEQ);
-    DataElement l2capDescriptor = new DataElement(DataElement.DATSEQ);
-    l2capDescriptor.addElement(new DataElement(DataElement.UUID, new UUID(SDPConstants.UUID_L2CAP)));
-    protocolDescriptorList.addElement(l2capDescriptor);
-    DataElement rfcommDescriptor = new DataElement(DataElement.DATSEQ);
-    rfcommDescriptor.addElement(new DataElement(DataElement.UUID, new UUID(SDPConstants.UUID_RFCOMM)));
-    rfcommDescriptor.addElement(new DataElement(DataElement.U_INT_1, channel));
-    // If the user want to create an RFComm or an Obex service, the rfcomm protocol descriptor has to be added
-
-    protocolDescriptorList.addElement(rfcommDescriptor);
-    sr.setAttributeValue(SDPConstants.ATTR_PROTO_DESC_LIST, protocolDescriptorList);
-    sr.setAttributeValue(SDPConstants.ATTR_SVCNAME, new DataElement(DataElement.STRING, name));
-    sr.setAttributeValue(SDPConstants.ATTR_RECORD_HANDLE, new DataElement(DataElement.U_INT_4, recHandle));
-  }
 }

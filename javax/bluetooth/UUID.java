@@ -93,7 +93,6 @@ public class UUID {
         if(uuidValue<0) throw new IllegalArgumentException("UUID must be in the range [0, 2puis32]!");
         uuidLong = uuidValue;
         if(uuidValue > 0xFFFF) {
-          System.out.println("uuidVale "+uuidValue+" > 0xFFFF");
           uuidBytes = new byte[4];
           uuidBytes[0] = (byte)((uuidValue >> 24) & 0xff);
           uuidBytes[1] = (byte)((uuidValue >> 16) & 0xff);
@@ -118,7 +117,7 @@ public class UUID {
             tmp[1]=toCharr[(i+1)*2-1];
             bUUIDBytes[i]=Short.decode("0x"+new String(tmp)).byteValue();
           }
-          catch(Exception ex) {ex.printStackTrace();throw new IllegalArgumentException();}
+          catch(Exception ex) {throw new IllegalArgumentException();}
         }
       }
       return bUUIDBytes;
@@ -176,7 +175,7 @@ public class UUID {
               tmp[0]=toCharr[i*2];
               tmp[1]=toCharr[(i+1)*2-1];
               uuidBytes[i]=Short.decode("0x"+new String(tmp)).byteValue();
-            }catch(Exception ex) {ex.printStackTrace();throw new IllegalArgumentException();}
+            }catch(Exception ex) {throw new IllegalArgumentException();}
           }
         }
     }
@@ -250,13 +249,18 @@ public class UUID {
     /*  End of the method toString  */
 
     /** Christian Lorenz: Added this for use with DataElement implementation. */
-    public byte[] toByteArray() { //TODO handle uuids constructed from strings
-        return uuidBytes;
+    public byte[] toByteArray128() { //TODO handle uuids constructed from strings
+      if (uuidBytes.length != 16) return convert32to128 (this).toByteArray();
+      else return uuidBytes;
+    }
+
+    public byte[] toByteArray() {
+      return uuidBytes;
     }
 
     /** Christian Lorenz: Added this for use with equals(). */
     public long toLong() { //TODO handle uuids constructed from strings
-        return uuidLong;
+      return uuidLong;
     }
 
     /**

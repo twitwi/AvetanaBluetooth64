@@ -118,7 +118,7 @@ public class ServiceFinderPane extends JPanel implements ActionListener, Discove
       byte[] b = prefs.getByteArray(m_localPrefName, null);
       ObjectInputStream ois = new ObjectInputStream (new ByteArrayInputStream (b));
       sensors = (Vector)ois.readObject();
-    } catch (Exception e) { System.out.println("WARNING - No local preferences defined for this protocol!"); }
+    } catch (Exception e) { System.err.println("WARNING - No local preferences defined for this protocol!"); }
     initTree();
     for(int i=0;i<sensors.size();i++) {
       try {
@@ -200,7 +200,6 @@ public class ServiceFinderPane extends JPanel implements ActionListener, Discove
    */
   public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
     String addr=null, name=null;
-    System.out.println("new deviceDiscovered!!!!"+btDevice.bdAddrString);
     try {
       addr=btDevice.bdAddrString;
       name=btDevice.getFriendlyName(true);
@@ -240,7 +239,6 @@ public class ServiceFinderPane extends JPanel implements ActionListener, Discove
    */
   public void inform(String message) {
     if(m_dialog!=null) m_dialog.setString(message);
-    else System.out.println("m_dialog est null!!!");
   }
 
   /**
@@ -279,7 +277,6 @@ public class ServiceFinderPane extends JPanel implements ActionListener, Discove
   private void serviceSearch() {
     try {
       int[] attrids=new int[]{0,1,2,3,4,256};
-      System.out.println("Remote size="+m_remote.size());
       for(int i=0;i<m_remote.size();i++) {
         RemoteDevice dev=(RemoteDevice)m_remote.elementAt(i);
         try {
@@ -336,10 +333,10 @@ public class ServiceFinderPane extends JPanel implements ActionListener, Discove
       for(int i=0;i<m_top.getChildCount();i++) {
         try {
           DefaultMutableTreeNode device=(DefaultMutableTreeNode)m_top.getChildAt(i);
-          if(device==null) {System.out.println("device null");continue;}
+          if(device==null) continue;
           for(int u=0;u<device.getChildCount();u++) {
             DefaultMutableTreeNode service=(DefaultMutableTreeNode)device.getChildAt(u);
-            if(service==null) {System.out.println("device null");continue;}
+            if(service==null) continue;
             ServiceDescriptor desc=(ServiceDescriptor)service.getUserObject();
             if(desc!=null) v.add(desc);
           }

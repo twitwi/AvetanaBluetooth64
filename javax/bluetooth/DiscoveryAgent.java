@@ -377,7 +377,7 @@ public class DiscoveryAgent {
         try {
           Thread.sleep(100);
           timeout+=100;
-        }catch(Exception ex) {ex.printStackTrace(); return null;}
+        }catch(Exception ex) { return null;}
       }
       if(timeout>m_timeout) throw new TimeOutException();
       if(m_remoteServ.size()!=1) throw new ServiceFoundException(m_remoteServ.size());
