@@ -317,7 +317,7 @@ public class BlueZ
          * @param attrIds The list of Attributes which will populate the Service record.
          * @throws BlueZException
          */
-        public static native void listService (String bdaddr_jstr, short[] uuid, int[] attrIds) throws BlueZException;
+        public static native void listService (String bdaddr_jstr, byte[][] uuid, int[] attrIds) throws BlueZException;
 
         /**
          * Stores a new Service record in the BCC.
@@ -506,7 +506,7 @@ public class BlueZ
          * @param listener The discovery listener, which handles the callback methods.
          * @throws BlueZException
          */
-        public static void searchServices(String bdaddr_jstr, short[] uuid, int[] attrIds, DiscoveryListener listener) throws BlueZException{
+        public static void searchServices(String bdaddr_jstr, byte[][] uuid, int[] attrIds, DiscoveryListener listener) throws BlueZException{
           myFactory.addListener(bdaddr_jstr.toUpperCase(), listener);
           System.out.println("Added listener with address="+bdaddr_jstr.toUpperCase());
           listService(bdaddr_jstr, uuid, attrIds);

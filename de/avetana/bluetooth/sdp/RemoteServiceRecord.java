@@ -53,7 +53,7 @@ public class RemoteServiceRecord extends SDPServiceRecord {
   the uuid 0x1002 (PublicBrowseGroup, see therefore the sdp assigned numbers
   at http://www.bluetooth.org)
   */
-  private final short[] m_uuid16=new short[]{0x1002};
+  private final byte[][] m_uuid= new byte[][] { {0x10, 0x02} };
 
   /**
    * The internal DiscoveryListener used to re-populate the service record
@@ -126,7 +126,7 @@ public class RemoteServiceRecord extends SDPServiceRecord {
         String addr=m_remote.bdAddrString;
         try {addr=BTAddress.transform(addr);}catch(Exception ex) {}
         try {
-          BlueZ.searchServices(addr,m_uuid16,attrs,m_internListener);
+          BlueZ.searchServices(addr,m_uuid,attrs,m_internListener);
         }catch(Exception ex) {
            ex.printStackTrace();
            m_internListener.setResponse(0);

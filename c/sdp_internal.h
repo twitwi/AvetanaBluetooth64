@@ -31,7 +31,7 @@
 */
 
 /*
- * $Id: sdp_internal.h,v 1.2 2004/07/27 08:18:20 moritzg Exp $
+ * $Id: sdp_internal.h,v 1.3 2004/08/11 15:58:40 moritzg Exp $
  */
 
 #ifndef SDP_INTERNAL_H

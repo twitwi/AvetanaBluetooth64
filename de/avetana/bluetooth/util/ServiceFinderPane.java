@@ -314,7 +314,9 @@ public class ServiceFinderPane extends JPanel implements ActionListener, Discove
         oos.writeObject(v);
         oos.flush();
         oos.close();
-        prefs.putByteArray(m_localPrefName, bos.toByteArray());
+        try {
+          prefs.putByteArray(m_localPrefName, bos.toByteArray());
+        } catch (IllegalArgumentException iae) {}
         bos.close();
       } catch (Exception e) { e.printStackTrace( ); }
       expandAll();

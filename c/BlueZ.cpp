@@ -1425,7 +1425,7 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_disposeLocalRecord
  *
  */
  JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_listService
-   (JNIEnv *env, jclass obj, jstring bdaddr_jstr, jshortArray j_uuids, jintArray j_attrIds) {
+   (JNIEnv *env, jclass obj, jstring bdaddr_jstr, jobjectArray j_uuids, jintArray j_attrIds) {
    sdp_list_t *attrid, *search, *seq, *next, *all_attrid;
    uint32_t range = 0x0000ffff;
    sdp_session_t *sess;
@@ -1459,11 +1459,20 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_disposeLocalRecord
 
    // Decoding list of UUIDs and saving them in a sdp_list_t structure
    jsize len = env->GetArrayLength(j_uuids);
-   jshort *body = env->GetShortArrayElements(j_uuids, 0);
    for (i=0 ; i < len ; i++) {
+     jbyteArray barr = (jbyteArray)env->GetObjectArrayElement(j_uuids, i);
+	 	 int elSize = env->GetArrayLength(barr);
+		 char *body = (char *)env->GetByteArrayElements (barr, 0);
      uuid_t m_uuid;
-     uint16_t m_int=(uint16_t)body[i];
-     sdp_uuid16_create(&m_uuid,m_int);
+		 if (elSize == 2) {
+      uint16_t m_int=(uint16_t)(body[1] | body[0] << 8);
+      sdp_uuid16_create(&m_uuid,m_int);
+		 } else if (elSize == 4) {
+      uint32_t m_int=(uint32_t)(body[3] | body[2] << 8 | body[1] << 16 | body[0] << 24);
+      sdp_uuid32_create(&m_uuid,m_int);
+		 } else if (elSize == 16) {
+      sdp_uuid128_create(&m_uuid, (uint128_t *)body);
+		 } else printf ("UUID of size %d.....ignoring\n", elSize);
      if(i==0) search=sdp_list_append(0,&m_uuid);
      else sdp_list_append(search, &m_uuid);
    }
@@ -1475,10 +1484,16 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_disposeLocalRecord
      else sdp_list_append(attrid, &(*attr_ptr++));
    }
    all_attrid=sdp_list_append(0, &range);
+//	 printf ("my_sdp_service_search_attr_req...start\n");
    if (my_sdp_service_search_attr_req(env, obj,sess, search, SDP_ATTR_REQ_RANGE, all_attrid, &seq, attrid, bdaddr_jstr)) {
+//	   printf ("my_sdp_service_search_attr_req...done error\n");
+     send_searchCompleteEvent(env,SERVICE_SEARCH_ERROR, sess->tid, bdaddr_jstr);
      sdp_close(sess);
      throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_listServices: Search failed!!");
+		 return;
    }
+
+//	 printf ("my_sdp_service_search_attr_req...done ok\n");
    sdp_list_free(search,0);
    send_searchCompleteEvent(env,SERVICE_SEARCH_COMPLETED, sess->tid, bdaddr_jstr);
    sdp_close(sess);

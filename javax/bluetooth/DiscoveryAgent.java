@@ -343,7 +343,7 @@ public class DiscoveryAgent {
      *         <code>null</code> if the selected service does not have a valid connection URL.
      * @author Julien Campana
      */
-    public String selectService(UUID uuid, int security, boolean master) throws BluetoothStateException,
+    public String selectService(final UUID uuid, int security, boolean master) throws BluetoothStateException,
                                                                                 NullPointerException,
                                                                                 IllegalArgumentException,
                                                                                 TimeOutException, ServiceFoundException{
@@ -353,11 +353,6 @@ public class DiscoveryAgent {
       m_listener=new SelectListener();
       m_remoteServ=new Vector();
       //16 bits uuid????
-      short tmp;
-      try {
-        tmp=Short.decode(uuid.to32bitsString()).shortValue();
-      }catch(Exception ex) {throw new IllegalArgumentException("Must be a short UUID (16 bits)!");}
-      final short _uuid=tmp;
       Runnable r=new Runnable() {
         public void run() {
           if (cachedRemoteDevices.size()==0)
@@ -367,7 +362,7 @@ public class DiscoveryAgent {
             String addr=d.getBluetoothAddress();
             try {addr=BTAddress.transform(addr);}catch(Exception ex) {}
             try {
-              BlueZ.searchServices(addr,new short[]{_uuid},null,m_listener);
+              BlueZ.searchServices(addr,new byte[][] { uuid.toByteArray() },null,m_listener);
             }catch(Exception ex) {
               ex.printStackTrace();
               m_listener.setResponse(0);

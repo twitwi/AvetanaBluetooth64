@@ -122,7 +122,7 @@ public class BluezStack extends BluetoothStack {
     return BlueZ.hciLocalName(m_bd);
   }
 
-  private void searchServices(final int[] attrSet, final short[] uuidSet, RemoteDevice btDev, final DiscoveryListener myListener) {
+  private void searchServices(final int[] attrSet, final byte[][] uuidSet, RemoteDevice btDev, final DiscoveryListener myListener) {
     String addr=btDev.bdAddrString;
     try {addr=BTAddress.transform(addr);}catch(Exception ex) {}
     final String addr2=addr;
@@ -137,15 +137,15 @@ public class BluezStack extends BluetoothStack {
   }
 
   public void searchServices(final int[] attrSet, UUID[] uuidSet, RemoteDevice btDev, final DiscoveryListener myListener) {
-    short[] uuid16Set;
-    if(uuidSet==null || uuidSet.length==0) uuid16Set=new short[]{0x1002};
+    byte[][] uuidSetB;
+    if(uuidSet==null || uuidSet.length==0) { uuidSetB=new byte[1][2]; uuidSetB[0][0] = 0x10; uuidSetB[0][1] = 0x02; }
     else {
-      uuid16Set=new short[uuidSet.length];
-      for(int i=0;i<uuid16Set.length;i++) {
-        try {uuid16Set[i]=Short.decode("0x"+uuidSet[i].to32bitsString()).shortValue();}catch (Exception ex) {throw new IllegalArgumentException("UUID must be 16 bits length!!!!!");}
+      uuidSetB=new byte[uuidSet.length][];
+      for(int i=0;i<uuidSetB.length;i++) {
+        try {uuidSetB[i]= uuidSet[i].toByteArray(); } catch (Exception ex) {throw new IllegalArgumentException("UUID must be 16 bits length!!!!!");}
       }
     }
-    searchServices(attrSet,uuid16Set,btDev,myListener);
+    searchServices(attrSet,uuidSetB,btDev,myListener);
   }
 
   public int getClassOfDevice() throws java.lang.Exception {

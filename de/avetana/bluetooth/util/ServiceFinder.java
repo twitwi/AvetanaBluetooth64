@@ -46,7 +46,7 @@ import javax.bluetooth.*;
 public class ServiceFinder extends JDialog  implements ActionListener{
 
   ServiceFinderPane myPane;
-  JButton macScan, cancel;
+  JButton cancel;
 
   /**
    * Constructs an new Service Finder object
@@ -58,7 +58,7 @@ public class ServiceFinder extends JDialog  implements ActionListener{
   public ServiceFinder(Frame owner, UUID[] a_search) throws HeadlessException, Exception {
     super(owner, "Service Finder",true);
     try {
-      jbInit();
+      jbInit(a_search);
       setSize(640, 480);
       setLocationRelativeTo(null);
     }catch(Exception ex) {
@@ -80,18 +80,15 @@ public class ServiceFinder extends JDialog  implements ActionListener{
    * Draws the dialog
    * @throws Exception
    */
-  public void jbInit() throws Exception {
-    macScan = new JButton ("Mac-Inquiry");
+  public void jbInit(UUID[] uuidList) throws Exception {
     cancel = new JButton("Close");
-    myPane=new ServiceFinderPane(this, "lastSrSearch", null);
+    myPane=new ServiceFinderPane(this, "lastSrSearch", uuidList);
     JPanel command=myPane.getCommandPanel();
-    if (System.getProperty("os.name").equalsIgnoreCase("mac os x")) command.add(macScan);
     command.add(cancel);
     Container c=this.getContentPane();
     c.setLayout(new BorderLayout());
     c.add(myPane, BorderLayout.CENTER);
     cancel.addActionListener(this);
-    macScan.addActionListener(this);
     myPane.m_select.addActionListener(this);
   }
 
@@ -103,9 +100,6 @@ public class ServiceFinder extends JDialog  implements ActionListener{
     if (e.getSource() == cancel) {
       myPane.selected=null;
       setVisible(false);
-    }
-    else if (e.getSource() == macScan) {
-      BlueZ.macScan();
     }
     else if (e.getSource() == myPane.m_select)
       if(myPane.selected != null) setVisible(false);
