@@ -11,8 +11,10 @@
    Modified by Julien Campana <julien.campana@avetana.de>
    http://www.avetana.de
    
-   Link quality code from Christiano di Flora diflora@unina.it
-
+   Received Signal Strength (RSSI) and Link Quality code from 
+   Cristiano di Flora (diflora@unina.it) and the Mobilab Research Group
+   at the University of Naples (ITALY): www.mobilab.unina.it
+  
    This program is free software; you can redistribute it and/or modify it under
    the terms of the GNU General Public License version 2 as published by the
    Free Software Foundation.
@@ -349,15 +351,68 @@ JNIEXPORT jobject JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciInquiry
 	return info;
 }
 
-   /**
-  * Send to the JSR82 implementation the linkQuality parameter. 
-  * This has not been implemented so far
-  */
+/**
+* Provides an estimation of the Link Quality of the connection to
+* another specified bluetooth-device.
+*
+* See HCI_Read_Link_Quality in the Bluetooth Specification for further
+* details of the returned values.
+*
+* @return An estimation of the Link Quality parameter.
+*/
 JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciLinkQuality
  (JNIEnv *env, jclass obj, jstring bdaddr_jstr)
 
 {
-       return 10;
+       char *bdaddr_str;
+    struct hci_conn_info_req *cr;
+	struct hci_request rq;
+	read_link_quality_rp rp;
+	bdaddr_t bdaddr;
+	int dev_id;
+	int dd;
+    	jboolean fbol = 1;
+   	bdaddr_str = (char*) env->GetStringUTFChars(bdaddr_jstr, &fbol);
+    	baswap(&bdaddr, strtoba(bdaddr_str));
+    	env->ReleaseStringUTFChars(bdaddr_jstr, bdaddr_str);
+	dev_id = hci_for_each_dev(HCI_UP, find_conn, (long) &bdaddr);
+	if (dev_id < 0) {
+	//No previous connection
+		return 0x100;
+	}
+	dd = hci_open_dev(dev_id);
+	if (dd < 0) {
+		return 0x100;
+	};
+    	cr = (hci_conn_info_req *)malloc(sizeof(*cr) + sizeof(struct hci_conn_info));
+	if (!cr)
+		return 0x100;
+
+	bacpy(&cr->bdaddr, &bdaddr);
+	cr->type = ACL_LINK;
+	if (ioctl(dd, HCIGETCONNINFO, (unsigned long) cr) < 0) {
+	     return 0x100;
+	}
+
+	memset(&rq, 0, sizeof(rq));
+	rq.ogf    = OGF_STATUS_PARAM;
+	rq.ocf    = OCF_READ_LINK_QUALITY;
+	rq.cparam = &cr->conn_info->handle;
+	rq.clen   = 2;
+	rq.rparam = &rp;
+	rq.rlen   = READ_LINK_QUALITY_RP_SIZE;
+
+	if (hci_send_req(dd, &rq, 100) < 0) {
+	       return 0x100;
+	}
+
+	if (rp.status) {
+		return 0x100;
+	}
+        
+	close(dd);
+	free(cr);
+	return rp.link_quality;
 
 }
 
@@ -429,10 +484,9 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_getRssi
 	if (rp.status) {
 		return 0x100;
 	}
-           return rp.rssi;
-
 	close(dd);
 	free(cr);
+        return rp.rssi;
 }
 
 

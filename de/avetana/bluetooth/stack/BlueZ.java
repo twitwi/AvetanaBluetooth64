@@ -83,7 +83,6 @@ public class BlueZ
 	// with the "avetanaBT" string, since this is how JNI implements platform
 	// independence.
 	static {
-		//changed the name from avetanaBT to avetanaBT_RSSI
 		try {LibLoader.loadCommLib("avetanaBT"); } catch (Exception e ) { e.printStackTrace(); System.exit(0);}
 		String version = "0";
 		String revision = "0";
