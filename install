@@ -1,0 +1,8 @@
+#!/bin/bash
+#This is the main installation file for the pjbluez library
+source envvariables
+mkdir $BIN_DIR
+autoheader
+autoconf
+sh configure --with-jdk=$JDK_HOME --with-javaplatform=$JDK_PLATFORM --with-bindir=$BIN_DIR
+make all
