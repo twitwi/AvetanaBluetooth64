@@ -6,9 +6,8 @@
  */
 package de.avetana.bluetooth.obex;
 
-import de.avetana.bluetooth.rfcomm.*;
-
 import javax.bluetooth.RemoteDevice;
+import javax.microedition.io.StreamConnection;
 import javax.obex.*;
 import java.io.*;
 
@@ -30,12 +29,12 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 	protected static final int ABORT = 0xFF;
 	protected int mtu = 0x2000;
 	
-	private RFCommConnection con;
+	private StreamConnection con;
 	private long conID = -1;
 	private InputStream is;
 	private OutputStream os;
 	
-	public OBEXConnection (RFCommConnection con)  throws IOException {
+	public OBEXConnection (StreamConnection con)  throws IOException {
 		this.con = con;
 		os = con.openOutputStream();
 		is = con.openInputStream();
@@ -48,8 +47,8 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 		con.close();
 	}
 	
-	public RemoteDevice getRemoteDevice() {
-		return con.getRemoteDevice();
+	public RemoteDevice getRemoteDevice() throws IOException {
+		return RemoteDevice.getRemoteDevice(con);
 	}
 	
 	public javax.obex.HeaderSet createHeaderSet() {

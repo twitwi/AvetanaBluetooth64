@@ -42,16 +42,16 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 	public Connection acceptAndOpen(ServerRequestHandler handler)
 			throws IOException {
 		this.myHandler = handler;
+		if (streamCon != null) throw new IOException ("Connection already connected");
 		streamCon = locConNot.acceptAndOpen();
-		is = streamCon.openInputStream();
-		os = streamCon.openOutputStream();
 		startWaiting();
 		return this;
 	}
 	
-	public de.avetana.bluetooth.connection.ConnectionNotifier getConnectionNotifier() {
+	public ConnectionNotifier getConnectionNotifier() {
 		return (ConnectionNotifier)locConNot;
 	}
+	
 	public HeaderSet createHeaderSet() {
 		if (myHandler != null) return myHandler.createHeaderSet();
 		else return new HeaderSetImpl();
@@ -60,9 +60,17 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 	private void startWaiting () {
 		Runnable r = new Runnable() {
 			public void run() {
-				try {
-					while (true) {
-						byte[] data = receiveCommand ();
+					try {
+					is = streamCon.openInputStream();
+					os = streamCon.openOutputStream();
+					while (streamCon != null) {
+						byte[] data = null;
+						try {
+							data = receiveCommand ();
+						} catch (Exception e) {
+							close();
+							continue;
+						}
 						//System.out.println ("Received command ! " + Integer.toHexString((int)(data[0] & 0xff)));
 
 						switch ((int)(data[0] & 0xff)) {
@@ -95,6 +103,9 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 								retdata[2] = (byte)((retdata.length >> 0) & 0xff);
 								System.arraycopy(rhead, 0, retdata, 3, rhead.length);
 								os.write(retdata);
+//								is.close(); is = null;
+//								os.close(); os = null;
+//								streamCon.close(); streamCon = null;
 								//System.out.println ("OBEX Disconnected");
 								break;
 							}
@@ -149,9 +160,9 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
-					streamCon.close();
-					locConNot.close();
+					close();
 				}
+				
 			}
 		};
 		new Thread (r).start();
@@ -170,7 +181,10 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 	 * @see javax.microedition.io.Connection#close()
 	 */
 	public void close() {
-		locConNot.close();
+		if (streamCon != null) streamCon.close();
+		streamCon = null;
+		if (locConNot != null) locConNot.close();
+		locConNot = null;
 	}
 
 	public byte[] receiveCommand () throws IOException {
