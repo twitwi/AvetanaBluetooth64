@@ -31,7 +31,7 @@
 */
 
 /*
- * $Id: sdp_internal.h,v 1.1 2004/07/15 07:36:00 moritzg Exp $
+ * $Id: sdp_internal.h,v 1.2 2004/07/27 08:18:20 moritzg Exp $
  */
 
 #ifndef SDP_INTERNAL_H
@@ -55,14 +55,6 @@
 #define SDP_SEQ_PDUFORM_SIZE 128
 #define SDP_UUID_SEQ_SIZE 256
 #define SDP_MAX_ATTR_LEN 65535
-
-/*
- * Generate unique transaction identifiers
- */
-static inline uint16_t sdp_gen_tid(sdp_session_t *session)
-{
-	return session->tid++;
-}
 
 sdp_record_t *sdp_extract_pdu(const char *pdata, int *scanned);
 sdp_data_t *sdp_extract_string(char *, int *);
@@ -88,11 +80,6 @@ void sdp_pattern_add_uuid(sdp_record_t *rec, uuid_t *uuid);
 void sdp_pattern_add_uuidseq(sdp_record_t *rec, sdp_list_t *seq);
 
 int sdp_send_req_w4_rsp(sdp_session_t *session, char *req, char *rsp, int reqsize, int *rspsize);
-
-typedef struct {
-	uint8_t length;
-	unsigned char data[16];
-} __attribute__ ((packed)) sdp_cstate_t;
 
 /* 
  * SDP unaligned access. 

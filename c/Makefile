@@ -23,7 +23,7 @@
 # COPYRIGHTS, TRADEMARKS OR OTHER RIGHTS, RELATING TO USE OF THIS SOFTWARE IS
 # DISCLAIMED.
 #
-# $Id: Makefile,v 1.1 2004/07/15 07:35:59 moritzg Exp $
+# $Id: Makefile,v 1.2 2004/07/27 08:18:20 moritzg Exp $
 
 # C Compiler to use
 CC             = g++
@@ -38,7 +38,7 @@ JDK_PLATFORM   = linux
 CFLAGS         = -I $(JDK_HOME)/include -I $(JDK_HOME)/include/$(JDK_PLATFORM)
 
 # Linker flags. Ensure you have installed the BlueZ libraries (bluez-libs).
-LDFLAGS        = -lsdp -lbluetooth
+LDFLAGS        = -lbluetooth
 # Directory of the jbluez binaries; namely where jbluez.jar is and where
 # libjbluez.so should be installed to.
 BIN_DIR        = ..
