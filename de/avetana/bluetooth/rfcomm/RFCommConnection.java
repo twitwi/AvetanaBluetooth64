@@ -6,7 +6,7 @@ import de.avetana.bluetooth.util.BTAddress;
 import de.avetana.bluetooth.util.BTAddressFormatException;
 import de.avetana.bluetooth.stack.BlueZ;
 import de.avetana.bluetooth.connection.*;
-import javax.microedition.io.Connection;
+import javax.microedition.io.*;
 
 /**
  * The class used to open new RFCOMM client-connections.
@@ -38,7 +38,7 @@ import javax.microedition.io.Connection;
  * @see de.avetana.bluetooth.connection.BluetoothStream
  */
 
-public class RFCommConnection extends BluetoothStream implements Connection{
+public class RFCommConnection extends BluetoothStream {
 
   /**
    * Creates a new instance of RFCommConnection.

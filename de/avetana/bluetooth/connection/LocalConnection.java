@@ -42,7 +42,7 @@ import java.io.DataOutputStream;
  * @author Julien Campana
  */
 
-public class LocalConnection extends BluetoothStream implements StreamConnection {
+public class LocalConnection extends BluetoothStream {
 
   private JSR82URL m_connectionURL;
 
@@ -55,17 +55,6 @@ public class LocalConnection extends BluetoothStream implements StreamConnection
   }
 
   /**
-   * If the nested input stream was not opened before, opens it and starts reading. Returns the opened
-   * input stream.
-   * @return The opened input stream.
-   * @throws java.io.IOException
-   */
-  public InputStream openInputStream() throws java.io.IOException {
-    if(!isReading) this.startReading();
-    return inStream;
-  }
-
-  /**
    * Change or set the connection URL
    * @param a_url The new connection URL
    */
@@ -73,32 +62,4 @@ public class LocalConnection extends BluetoothStream implements StreamConnection
     m_connectionURL=a_url;
   }
 
-  /**
-   * If the nested input stream was not opened before, opens it and starts reading. Returns the DataInputStream based
-   * on this opened nested input stream.
-   * @return The DataInputStream based on this opened nested input stream.
-   * @throws java.io.IOException
-   */
-  public DataInputStream openDataInputStream() throws java.io.IOException {
-    if(!isReading) this.startReading();
-    return new DataInputStream(inStream);
-  }
-
-  /**
-   * Opens and returns the nested output stream.
-   * @return The nested ouput stream
-   * @throws java.io.IOException
-   */
-  public OutputStream openOutputStream() throws java.io.IOException {
-    return outStream;
-  }
-
-  /**
-   * Opens the nested output stream and returns the DataOutputStream based on it.
-   * @return The nested OuputStream.
-   * @throws java.io.IOException
-   */
-  public DataOutputStream openDataOutputStream() throws java.io.IOException {
-    return new DataOutputStream(outStream);
-  }
 }

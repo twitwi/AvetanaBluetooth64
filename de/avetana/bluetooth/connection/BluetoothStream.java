@@ -3,6 +3,7 @@ package de.avetana.bluetooth.connection;
 import java.io.*;
 import de.avetana.bluetooth.stack.BlueZ;
 import javax.bluetooth.RemoteDevice;
+import javax.microedition.io.*;
 
 /**
  * The top-class for the management of stream-oriented connections.
@@ -36,7 +37,7 @@ import javax.bluetooth.RemoteDevice;
  *
  * @author Julien Campana
  */
-public class BluetoothStream extends BTConnection{
+public class BluetoothStream extends BTConnection implements StreamConnection {
 
   /**
    * The buffer used to store received data
@@ -64,7 +65,6 @@ public class BluetoothStream extends BTConnection{
    */
   protected BluetoothStream(int fid) {
     super(fid);
-    inStream = new MInputStream();
     outStream = new MOutputStream();
   }
 
@@ -75,7 +75,6 @@ public class BluetoothStream extends BTConnection{
    */
   protected BluetoothStream(int fid, String addr) {
     super(fid, addr);
-    inStream = new MInputStream();
     outStream = new MOutputStream();
   }
 
@@ -83,6 +82,7 @@ public class BluetoothStream extends BTConnection{
    * Starts to read the data received from the remote device
    */
   protected void startReading() {
+    inStream = new MInputStream();
     Runnable r = new Runnable() {
       public synchronized void run() {
         byte[] b = new byte[1000];
@@ -93,7 +93,7 @@ public class BluetoothStream extends BTConnection{
             if (data > 0) inStream.addData(b, data);
             else if (data == -1) inStream.close();
             else this.wait(50);
-          } catch (Exception e) { closed = true; }
+          } catch (Exception e) { closed = true; isReading = false; }
         }
       }
     };
@@ -112,19 +112,41 @@ public class BluetoothStream extends BTConnection{
   }
 
   /**
-   * Returns the inputstream used by this connection
-   * @return The inputstream used by this connection
+   * If the nested input stream was not opened before, opens it and starts reading. Returns the DataInputStream based
+   * on this opened nested input stream.
+   * @return The DataInputStream based on this opened nested input stream.
+   * @throws java.io.IOException
    */
-  public InputStream getInputStream() {
-    return inStream;
+  public DataInputStream openDataInputStream() throws java.io.IOException {
+    if(!isReading) this.startReading();
+    return new DataInputStream(inStream);
   }
 
   /**
-   * Returns the outputstream used by this connection
-   * @return The outputstream used by this connection
+   * Opens and returns the nested output stream.
+   * @return The nested ouput stream
+   * @throws java.io.IOException
    */
-  public OutputStream getOutputStream() {
+  public OutputStream openOutputStream() throws java.io.IOException {
     return outStream;
+  }
+
+  /**
+   * Opens the nested output stream and returns the DataOutputStream based on it.
+   * @return The nested OuputStream.
+   * @throws java.io.IOException
+   */
+  public DataOutputStream openDataOutputStream() throws java.io.IOException {
+    return new DataOutputStream(outStream);
+  }
+
+  /**
+   * Returns the inputstream used by this connection
+   * @return The inputstream used by this connection
+   */
+  public InputStream openInputStream() throws IOException  {
+    if(!isReading) this.startReading();
+    return inStream;
   }
 
   /**

@@ -3,6 +3,7 @@ package de.avetana.bluetooth.connection;
 import javax.bluetooth.*;
 import de.avetana.bluetooth.sdp.*;
 import de.avetana.bluetooth.stack.*;
+import javax.microedition.io.Connection;
 
 
 /**
@@ -40,7 +41,7 @@ import de.avetana.bluetooth.stack.*;
  * @author Julien Campana
  */
 
-public abstract class ConnectionNotifier {
+public abstract class ConnectionNotifier implements Connection {
 
   /**
    * The connection ID
