@@ -56,7 +56,7 @@ public class LocalConnectionNotifier extends ConnectionNotifier implements Strea
     if(parsedURL.getBTAddress()!=null) throw new BadURLFormat("This is not an sdp server URL!");
     String m_serviceName=(String)parsedURL.getParameter("name");
     m_serviceName=(m_serviceName==null?"Avetana Service":m_serviceName);
-    myRecord=LocalServiceRecord.createSerialSvcRecord(new UUID(0x5000), m_serviceName,
+    myRecord=LocalServiceRecord.createSerialSvcRecord(new UUID(url.getLocalServiceUUID(), false), m_serviceName,
         parsedURL.getAttrNumber().intValue(), parsedURL.getProtocol());
     if(myRecord==null) throw new Exception("Not a valid Service Record!!!!!");
   }
@@ -82,6 +82,7 @@ public class LocalConnectionNotifier extends ConnectionNotifier implements Strea
       }
       try {
         BlueZ.registerNotifier(this);
+
       }catch(Exception ex) {
         ex.printStackTrace();
         throw new IOException("ERROR - Unable to register the local Service Record!");
@@ -99,7 +100,7 @@ public class LocalConnectionNotifier extends ConnectionNotifier implements Strea
         con.setRemoteDevice(m_remote);
         con.setConnectionURL(parsedURL);
         return con;
-      } else throw new IOException ("Service Revoked");
-
+      } else
+        throw new IOException ("Service Revoked");
   }
 }

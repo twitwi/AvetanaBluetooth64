@@ -47,7 +47,6 @@ public class LocalServiceRecord extends SDPServiceRecord {
 
 
   private short m_type;
-  private UUID localUUID;
 
   /**
    * Default constructor: creates a new LocalServiceRecord object
@@ -85,10 +84,10 @@ public class LocalServiceRecord extends SDPServiceRecord {
                                                          int channel,
                                                          short protocol) {
     LocalServiceRecord rec=new LocalServiceRecord();
-    rec.localUUID = svcID;
     rec.m_type=protocol;
     DataElement serviceClassIDList = new DataElement(DataElement.DATSEQ);
-    if(protocol==JSR82URL.PROTOCOL_RFCOMM) serviceClassIDList.addElement(new DataElement(DataElement.UUID, new UUID(SDPConstants.UUID_SERIAL_PORT)));
+    if (svcID != null) serviceClassIDList.addElement(new DataElement (DataElement.UUID, svcID));
+    else if(protocol==JSR82URL.PROTOCOL_RFCOMM) serviceClassIDList.addElement(new DataElement(DataElement.UUID, new UUID(SDPConstants.UUID_SERIAL_PORT)));
     rec.m_attributes.put(new Integer(SDPConstants.ATTR_SERVICE_CLASS_ID_LIST), serviceClassIDList);
     DataElement protocolDescriptorList = new DataElement(DataElement.DATSEQ);
     DataElement l2capDescriptor = new DataElement(DataElement.DATSEQ);
@@ -146,7 +145,11 @@ public class LocalServiceRecord extends SDPServiceRecord {
       dict.addChild(new PElement ("key", "0000 - ServiceRecordHandle*"));
       dict.addChild(new PElement ("integer", "65540"));
       dict.addChild(new PElement ("key", "0001 - ServiceClassIDList"));
-      dict.addChild(new PElement ("array")).addChild(new PElement ("data", new String(Base64.encode(localUUID.toByteArray()))));
+      Vector scIDs = this.getAttributeValue(SDPConstants.ATTR_SERVICE_CLASS_ID_LIST).getVector();
+      UUID srvUUID = (UUID)((DataElement)scIDs.elementAt(0)).getValue();
+      PElement serviceClassIDs = dict.addChild(new PElement ("array"));
+      for (int i = 0;i < scIDs.size();i++)
+        serviceClassIDs.addChild(new PElement ("data", new String(Base64.encode(((UUID)((DataElement)scIDs.elementAt(i)).getValue()).toByteArray()))));
 
     if(getProtocol()==JSR82URL.PROTOCOL_RFCOMM || getProtocol()==JSR82URL.PROTOCOL_OBEX || getProtocol()==JSR82URL.PROTOCOL_L2CAP) {
       dict.addChild(new PElement ("key", "0004 - ProtocolDescriptorList"));
@@ -157,14 +160,14 @@ public class LocalServiceRecord extends SDPServiceRecord {
 
       DataElement de = getChannelNumberElement();
 
-      int channelNumber = de != null ? (int)de.getLong() : 1;
+      int channelNumber = de != null ? (int)de.getLong() : -1;
       if (getProtocol() == JSR82URL.PROTOCOL_RFCOMM ||getProtocol() == JSR82URL.PROTOCOL_OBEX) {
         PElement pdla1 = pdla.addChild (new PElement ("array"));
         pdla1.addChild(new PElement ("data", "AAM="));
-        pdla1.addChild(newDataElement (1, 1, channelNumber));
+        pdla1.addChild(newDataElement (1, 1, channelNumber == -1 ? 1 : channelNumber));
       }
       else {
-        pd1aa.addChild(newDataElement (2, 1, channelNumber));
+        pd1aa.addChild(newDataElement (2, 1, channelNumber == -1 ? 11 : channelNumber));
       }
 
     }
@@ -176,7 +179,7 @@ public class LocalServiceRecord extends SDPServiceRecord {
 
       dict.addChild(new PElement ("key", "0009 - BluetoothProfileDescriptorList"));
       PElement bpda = dict.addChild(new PElement ("array")).addChild(new PElement ("array"));
-      bpda.addChild(new PElement ("data", new String (Base64.encode(localUUID.toByteArray()))));
+      bpda.addChild(new PElement ("data", new String (Base64.encode(srvUUID.toByteArray()))));
       bpda.addChild(newDataElement (2, 1, 256));
 
       dict.addChild(new PElement ("key", "0100 - ServiceName*"));
@@ -339,6 +342,15 @@ public class LocalServiceRecord extends SDPServiceRecord {
     throw new java.lang.UnsupportedOperationException("Method setDeviceServiceClasses() not yet implemented.");
   }
 
+  /**
+   * Returns the ServiceClassID of this service
+   * @return serviceClassID UUID
+   */
+
+  public UUID getServiceClassID() {
+    DataElement de = getAttributeValue (SDPConstants.ATTR_SERVICE_CLASS_ID_LIST);
+    return (UUID)((DataElement)this.getAttributeValue(SDPConstants.ATTR_SERVICE_CLASS_ID_LIST).getVector().elementAt(0)).getValue();
+  }
 
   public static void main (String[] args) throws Exception {
     LocalServiceRecord lsr = LocalServiceRecord.createSerialSvcRecord(new UUID (new byte[] { 0x0D, (byte)0xAD, 0x43, 0x65, 0x5D, (byte)0xF1, 0x11, (byte)0xD6, (byte)0x9F, 0x6E, 0x00, 0x03, (byte)0x93, 0x53, (byte)0xE8, 0x58 }), "AvetanaTest", 5, SDPConstants.UUID_SERIAL_PORT);

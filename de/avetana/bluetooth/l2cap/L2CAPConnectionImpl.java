@@ -117,7 +117,6 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
     catch(Exception ex) {
        throw ex;
     }
-    System.out.println("Connected with receiveMTU="+conn.getReceiveMTU()+"  transmitMTU="+conn.getTransmitMTU());
     return conn;
   }
 
@@ -213,7 +212,6 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
     if(closed) throw new IOException("Connection does not exists or was previously closed");
     int r=receive(new byte[m_receiveMTU]);
     readyCalled=true;
-    System.out.println("r="+r);
     return (r > 0);
   }
 

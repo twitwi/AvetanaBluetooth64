@@ -141,7 +141,7 @@ public class JSR82URL {
         }catch(Exception ex) {}
       }
       if(m_protocol!=PROTOCOL_L2CAP) this.m_attrNumber=new Integer(1);
-      else m_attrNumber=new Integer(10);
+      else m_attrNumber=new Integer(11);
       if(m_address==null && (m_localUUID.length()!=32 && m_localUUID.length()!=8))
         throw new BadURLFormat("The Service Class ID must be a 32 or 128-bits UUID! " +m_localUUID + " " + m_localUUID.length());
     }

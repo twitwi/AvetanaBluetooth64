@@ -56,7 +56,6 @@ public class HCIInquiryResult {
          * @param _num_responses The number of responses.
          */
         public HCIInquiryResult(byte num_responses) {
-          System.out.println("Creating an HCIInquiryResult object!!!");
           this.num_responses = num_responses;
         }
 

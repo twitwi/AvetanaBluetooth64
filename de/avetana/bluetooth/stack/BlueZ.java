@@ -540,6 +540,14 @@ public class BlueZ
         }
 
         /**
+         * Remove the Notifier when creating a service hass failed
+         */
+
+        public static void removeNotifier(ConnectionNotifier a_notifier) {
+          myFactory.removeNotifier(a_notifier);
+        }
+
+        /**
          * Method called by the C-Code in order to notify the establishment of a new connection.
          * This method is always called after the call of registerNotifier.
          * @param fid The number which uniquely identifies the connection
