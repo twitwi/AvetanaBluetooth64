@@ -331,7 +331,7 @@ public class BlueZ
          * @return a positive integer is the process succeeds.
          * @throws BlueZException
          */
-        public synchronized static native int updateService(byte[] newService, int length, long recordHandle) throws BlueZException;
+        public synchronized static native int updateService(ServiceRecord service, long recordHandle) throws BlueZException;
 
         /**
          * Registers the service record identified by the variable "serviceHandle" and listens for an incoming RFCOMM Connection

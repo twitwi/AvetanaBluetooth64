@@ -173,8 +173,8 @@ public class AvetanaBTStack extends BluetoothStack {
 
   }
 
-  public int updateService(byte[] b, long recordHandle) throws Exception{
-    return BlueZ.updateService(b, b.length, recordHandle);
+  public int updateService(ServiceRecord rec, long recordHandle) throws Exception{
+    return BlueZ.updateService(rec, recordHandle);
   }
 
 }

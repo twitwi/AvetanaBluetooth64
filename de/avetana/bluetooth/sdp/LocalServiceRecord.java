@@ -85,9 +85,12 @@ public class LocalServiceRecord extends SDPServiceRecord {
     LocalServiceRecord rec=new LocalServiceRecord();
     rec.m_type=protocol;
     DataElement serviceClassIDList = new DataElement(DataElement.DATSEQ);
-    if (svcID != null) serviceClassIDList.addElement(new DataElement (DataElement.UUID, svcID));
-    if(protocol==JSR82URL.PROTOCOL_RFCOMM) serviceClassIDList.addElement(new DataElement(DataElement.UUID, new UUID(SDPConstants.UUID_SERIAL_PORT)));
-    else if(protocol==JSR82URL.PROTOCOL_OBEX) serviceClassIDList.addElement(new DataElement(DataElement.UUID, new UUID(SDPConstants.UUID_OBEX_OBJECT_PUSH)));
+    DataElement scidProt = null;
+    if(protocol==JSR82URL.PROTOCOL_RFCOMM) scidProt = new DataElement(DataElement.UUID, new UUID(SDPConstants.UUID_SERIAL_PORT));
+    else if(protocol==JSR82URL.PROTOCOL_OBEX) scidProt = new DataElement(DataElement.UUID, new UUID(SDPConstants.UUID_OBEX_OBJECT_PUSH));
+    if (scidProt != null) serviceClassIDList.addElement(scidProt);
+    if (svcID != null && !svcID.equals (UUID.NULL_UUID) && (scidProt == null || !svcID.equals(scidProt.getValue())))  
+    		serviceClassIDList.addElement(new DataElement (DataElement.UUID, svcID));
     rec.m_attributes.put(new Integer(SDPConstants.ATTR_SERVICE_CLASS_ID_LIST), serviceClassIDList);
     DataElement protocolDescriptorList = new DataElement(DataElement.DATSEQ);
     DataElement l2capDescriptor = new DataElement(DataElement.DATSEQ);
@@ -176,6 +179,17 @@ public class LocalServiceRecord extends SDPServiceRecord {
       }
 
     }
+    
+    if (getProtocol() == JSR82URL.PROTOCOL_OBEX) {
+    		dict.addChild(new PElement ("key", "0303 - Supported Formats List"));	
+        PElement arr = dict.addChild(new PElement ("array"));
+        arr.addChild(newDataElement (4,1, 1));
+        arr.addChild(newDataElement (4,1, 2));
+        arr.addChild(newDataElement (4,1, 4));
+        arr.addChild(newDataElement (4,1, 5));
+        arr.addChild(newDataElement (4,1, 6));
+    }
+
 
       dict.addChild(new PElement ("key", "0005 - BrowseGroupList*"));
       dict.addChild(new PElement ("array")).addChild(new PElement ("data", "EAI="));
@@ -190,6 +204,8 @@ public class LocalServiceRecord extends SDPServiceRecord {
       dict.addChild(new PElement ("key", "0100 - ServiceName*"));
       dict.addChild(new PElement ("string", ((String)this.getAttributeValue(256).getValue())));
 
+      
+      
 //      dict.addChild(new PElement ("key", "0303 - Supported Formats List"));
 
       FileOutputStream fos = new FileOutputStream (f);
@@ -366,8 +382,4 @@ public class LocalServiceRecord extends SDPServiceRecord {
     return (UUID)((DataElement)this.getAttributeValue(SDPConstants.ATTR_SERVICE_CLASS_ID_LIST).getVector().elementAt(0)).getValue();
   }
 
-  public static void main (String[] args) throws Exception {
-    LocalServiceRecord lsr = LocalServiceRecord.createSerialSvcRecord(new UUID (new byte[] { 0x0D, (byte)0xAD, 0x43, 0x65, 0x5D, (byte)0xF1, 0x11, (byte)0xD6, (byte)0x9F, 0x6E, 0x00, 0x03, (byte)0x93, 0x53, (byte)0xE8, 0x58 }), "AvetanaTest", 5, SDPConstants.UUID_SERIAL_PORT);
-    lsr.getSDPRecordXML();
-  }
 }

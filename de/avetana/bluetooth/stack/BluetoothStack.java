@@ -174,7 +174,7 @@ public abstract class BluetoothStack {
    * @throws Exception
    * @see javax.bluetooth.LocalDevice
    */
-  public abstract int updateService(byte[] b, long recordHandle) throws Exception;
+  public abstract int updateService(ServiceRecord rec, long recordHandle) throws Exception;
 
   /**
    * Returns the discoverable mode of the local device.
