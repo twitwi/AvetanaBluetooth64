@@ -73,6 +73,11 @@ public class RemoteDevice {
       this.deviceClass = new DeviceClass (deviceClass);
     }
 
+    public RemoteDevice(String bdAddrString, byte repMode, byte periodMode, byte scanMode, short clockOffset, int deviceClass, String name) throws NullPointerException, IllegalArgumentException {
+      this (bdAddrString, repMode, periodMode, scanMode, clockOffset, deviceClass);
+      this.friendlyName = name;
+    }
+
 
     /**
      * Creates a Bluetooth device based upon its address.  The Bluetooth

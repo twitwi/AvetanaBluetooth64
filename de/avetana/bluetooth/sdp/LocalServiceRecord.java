@@ -242,7 +242,7 @@ public class LocalServiceRecord extends SDPServiceRecord {
                   }
               }
             }
-            else if(lg == 0x0008) System.err.println("OBEX FOUND!!!");
+            //else if(lg == 0x0008) System.err.println("OBEX FOUND!!!");
             else continue;
           }
         }
@@ -279,7 +279,7 @@ public class LocalServiceRecord extends SDPServiceRecord {
                   }
               }
             }
-            else if(lg == 0x0008) System.err.println("OBEX FOUND!!!");
+            //else if(lg == 0x0008) System.err.println("OBEX FOUND!!!");
             else continue;
           }
         }

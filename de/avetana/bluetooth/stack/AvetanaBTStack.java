@@ -104,8 +104,8 @@ public class AvetanaBTStack extends BluetoothStack {
     return BlueZ.encrypt(((BTConnection)conn).getConnectionID(), dev.getBTAddress().toString(), encrypt);
   }
 
-  public Vector Inquire() throws Exception{
-    HCIInquiryResult di = BlueZ.hciInquiry(devID);
+  public Vector Inquire(DiscoveryAgent agent) throws Exception{
+    HCIInquiryResult di = BlueZ.hciInquiry(devID, agent);
     return di.getDevices();
   }
 

@@ -102,7 +102,7 @@ public class BlueZ
 	 * @return An InquiryInfo object containing the results of the inquiry.
 	 * @see #hciInquiry(int hciDevID)
 	 */
-	public static native HCIInquiryResult hciInquiry(int hciDevID, int len, int max_num_rsp, long flags) throws BlueZException;
+	public static native HCIInquiryResult hciInquiry(int hciDevID, int len, int max_num_rsp, long flags, DiscoveryAgent agent) throws BlueZException;
 	/**
 	 * Performs an HCI inquiry to discover remote Bluetooth devices. This is the
 	 * same as <code>hciInquiry(int hciDevID, int len, int max_num_rsp, long
@@ -115,9 +115,9 @@ public class BlueZ
 	 *     by BlueZ for further information)
 	 * @return An InquiryInfo object containing the results of the inquiry.
 	 */
-	public static HCIInquiryResult hciInquiry(int hciDevID) throws BlueZException
+	public static HCIInquiryResult hciInquiry(int hciDevID, DiscoveryAgent agent) throws BlueZException
 	{
-            return hciInquiry(hciDevID, 8, 10, 0);
+            return hciInquiry(hciDevID, 8, 10, 0, agent);
         }
 
 	/* HCI Device Bluetooth Address */

@@ -199,7 +199,7 @@ public class RemoteServiceRecord extends SDPServiceRecord {
                 }
               }
             }
-            else if(lg == 0x0008) System.err.println("OBEX FOUND!!!");
+            //else if(lg == 0x0008) System.err.println("OBEX FOUND!!!");
             else continue;
           }
         }

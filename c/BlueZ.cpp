@@ -282,7 +282,7 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciCloseDevice
  * becomes a notification message.
  */
 JNIEXPORT jobject JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciInquiry
-  (JNIEnv *env, jclass obj, jint dd, jint length, jint max_num_rsp, jlong flags)
+  (JNIEnv *env, jclass obj, jint dd, jint length, jint max_num_rsp, jlong flags, jobject agent)
 {
 	/* Perform an HCI inquiry - result is returned as a */
 	/* Java InquiryInfo object.                         */
@@ -307,6 +307,8 @@ JNIEXPORT jobject JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciInquiry
 		return 0;
 	}
 
+	inquiry_info *inq_info_bak = inq_info;
+
 	/* Create a new instance of InquiryInfo */
 	ii_cls = env->FindClass("de/avetana/bluetooth/hci/HCIInquiryResult");
 	ii_con_id = env->GetMethodID(ii_cls, "<init>", "(B)V");
@@ -316,12 +318,12 @@ JNIEXPORT jobject JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciInquiry
 	/* For each of the responses, create a new InquiryInfoDevice object */
 	/* and add it to the InquiryInfo class.                             */
 	iid_cls = env->FindClass("javax/bluetooth/RemoteDevice");
-	iid_con_id = env->GetMethodID(iid_cls, "<init>", "(Ljava/lang/String;BBBS)V");
+	iid_con_id = env->GetMethodID(iid_cls, "<init>", "(Ljava/lang/String;BBBSI)V");
 //	ba_cls = env->FindClass("com/appliancestudio/jbluez/BTAddress");
 
 	for (i=0; i<num_rsp; i++)
 	{
-		baswap(&bdaddr_cpy, &(inq_info+i)->bdaddr);
+		baswap(&bdaddr_cpy, &inq_info->bdaddr);
 		ba_str = batostr(&bdaddr_cpy); // Convert from bdaddr_t to char*
 		jba_str = env->NewStringUTF(ba_str);
 		iid_args[0].l = jba_str;
@@ -332,11 +334,13 @@ JNIEXPORT jobject JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciInquiry
 		iid_args[5].s = (jshort)  inq_info->dev_class[1];
 		iid_args[6].s = (jshort)  inq_info->dev_class[2];*/
 		iid_args[4].s = (jshort)    inq_info->clock_offset;
-
+//		iid_args[5].i = (jint)((inq_info->dev_class[0] & 0xfc) | ((inq_info->dev_class[1] & 0x1f) << 8) | ((inq_info->dev_class[2] & 0x3ff) << 13));
+		iid_args[5].i = (jint)((inq_info->dev_class[0] & 0xff) | ((inq_info->dev_class[1] & 0xff) << 8) | ((inq_info->dev_class[2] & 0xff) << 16));
 		info_dev = env->NewObjectA(iid_cls, iid_con_id, iid_args);
 		env->CallVoidMethod(info, ii_add_id, info_dev);
+		inq_info++;
 	}
-	free(inq_info);
+	free(inq_info_bak);
 	return info;
 }
 

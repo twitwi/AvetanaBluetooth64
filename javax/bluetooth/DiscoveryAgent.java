@@ -191,7 +191,6 @@ public class DiscoveryAgent {
                 if ((remoteDevice != null) && (listener != null))
                     listener.deviceDiscovered(remoteDevice, remoteDevice.deviceClass);
             }
-            listener.inquiryCompleted(DiscoveryListener.INQUIRY_COMPLETED);
             return true;
         }
         else {
@@ -202,7 +201,9 @@ public class DiscoveryAgent {
               foundRemoteDevices = new Vector();
               //bluetoothStack.registerDiscoveryAgent(DiscoveryAgent.this);
               try {
-                  foundRemoteDevices = bluetoothStack.Inquire();
+                DiscoveryListener[] discList = new DiscoveryListener[listeners.size()];
+                listeners.toArray(discList);
+                  foundRemoteDevices = bluetoothStack.Inquire(DiscoveryAgent.this);
                   cachedRemoteDevices=new Vector(foundRemoteDevices);
                   for(int i=0;i<foundRemoteDevices.size();i++) {
                     RemoteDevice remote=(RemoteDevice)foundRemoteDevices.elementAt(i);
@@ -248,6 +249,18 @@ public class DiscoveryAgent {
         listeners.removeElement(listener);
         listener.inquiryCompleted(DiscoveryListener.INQUIRY_TERMINATED);
         return true;
+    }
+
+    /**
+     * The following method is called by some Stacks to notify of RemoteDevices that have been found.
+     *
+     */
+
+    public void deviceDiscovered (RemoteDevice d) {
+      this.foundRemoteDevices.add(d);
+      for (int i = 0;i < listeners.size();i++) {
+        ((DiscoveryListener)listeners.elementAt(i)).deviceDiscovered(d, d.deviceClass);
+      }
     }
 
     /*  End of the method cancelInquiry */

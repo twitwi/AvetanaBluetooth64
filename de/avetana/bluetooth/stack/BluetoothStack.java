@@ -90,7 +90,7 @@ public abstract class BluetoothStack {
    * @return A vector of RemoteDEvice objects, containing all remote devices available in the device environment.
    * @throws Exception If an error occured
    */
-  public abstract Vector Inquire() throws Exception;
+  public abstract Vector Inquire(DiscoveryAgent agent) throws Exception;
 
   /**
    * Returns the instance of BluetoothStack currently used. The BluetoothStack object must
