@@ -7,6 +7,8 @@
 package de.avetana.bluetooth.obex;
 
 import java.io.IOException;
+
+import javax.obex.Authenticator;
 import javax.obex.HeaderSet;
 /**
  * @author gmelin
@@ -20,4 +22,5 @@ public interface CommandHandler {
 	 public void sendCommand(int type, byte b[]) throws IOException;
 	 public int getMTU();
 	 public HeaderSet createHeaderSet();
+	 public Authenticator getAuthenticator();
 }

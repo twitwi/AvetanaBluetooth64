@@ -72,7 +72,7 @@ public class InqTest implements DiscoveryListener {
 		System.out.println ("Getting discoveryAgent");
 		DiscoveryAgent da = LocalDevice.getLocalDevice().getDiscoveryAgent();
 		System.out.println ("Starting search");
-		int transID = da.searchServices(new int[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x100, 0x303 }, uuids, new RemoteDevice (addr), this);
+		int transID = da.searchServices(new int[] { 0x05, 0x06, 0x07, 0x08, 0x09, 0x100, 0x303 }, uuids, new RemoteDevice (addr), this);
 		System.out.println ("Started");
 		BufferedReader br = new BufferedReader (new InputStreamReader (System.in));
 		//br.readLine();

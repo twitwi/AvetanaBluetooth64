@@ -406,9 +406,11 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciDeviceID
 
 	/* Find the device ID */
 	devID = hci_devid(bdaddr_str);
-	if (devID < 0)
+	if (devID < 0) {
 		throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_hciDeviceID: Unable to get device ID");
-
+		return -1;
+	}
+	
 	/* Inform the Java VM the native code no longer needs access to bdaddr_str */
 	env->ReleaseStringUTFChars(bdaddr_jstr, bdaddr_str);
 
@@ -452,7 +454,8 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_getDeviceClass
 
   if (0 > hci_read_class_of_dev(dd, cls, 1000)) {
     throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_hciLocalName: Unable to read local device class. Have you the requested permissions?");
-  }
+    return -1;
+	}
   retour=(cls[0] & 0xfc ) + ((cls[1] & 0x1f )<< 8) + ((cls[2] & 0xffe000) << 13);
   return (jint)retour;
 }
@@ -599,7 +602,8 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_openRFCommNative
    if ((s = socket(PF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP)) < 0) {
      printf("Can't create socket. %s(%d)", strerror(errno), errno);
      throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_openL2CAPNative: Unable to connect to local Bluetooth device!");
-   }
+   	 return 0;
+	 }
 
    memset(&loc_addr, 0, sizeof(loc_addr));
    loc_addr.l2_family = AF_BLUETOOTH;
@@ -609,14 +613,16 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_openRFCommNative
    if (bind(s, (struct sockaddr *) &loc_addr, sizeof(loc_addr)) < 0) {
      printf("Can't bind socket. %s(%d)", strerror(errno), errno);
      throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_openL2CAPNative: Unable to establish connection!");
-   }
+   	 return 0;
+	 }
 
    /* Get default options */
    opt = sizeof(opts);
    if (getsockopt(s, SOL_L2CAP, L2CAP_OPTIONS, &opts, &opt) < 0) {
      printf("Can't get default L2CAP options. %s(%d) \n", strerror(errno), errno);
      throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_openL2CAPNative: Unable to set connection options!");
-   }
+     return 0;
+	 }
 
    /* Set new options */
    if(transmitMTU!=-1 || receiveMTU!=-1) {
@@ -626,7 +632,8 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_openRFCommNative
      if (setsockopt(s, SOL_L2CAP, L2CAP_OPTIONS, &opts, opt) < 0) {
        printf("Can't set L2CAP options. %s(%d)", strerror(errno), errno);
        throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_openL2CAPNative: Unable to set MTU options!");
-     }
+       return 0;
+		 }
    }
 
    /* Set link mode */
@@ -660,13 +667,15 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_openRFCommNative
      printf("Can't get L2CAP options. %s(%d)!!!", strerror(errno), errno);
      close(s);
      throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_openL2CAPNative: Unable to establish connection!");
-   }
+     return 0;
+	 }
    jclass service_cls = env->FindClass("de/avetana/bluetooth/l2cap/L2CAPConnParam");
    jmethodID service_constructor = env->GetMethodID(service_cls, "<init>", "(III)V");
    if(service_constructor==0) {
      printf("Bad service constructor!\n");
      throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_openL2CAPNative: Unable to construct connection object");
-   }
+     return 0;
+	 }
    // R
    jobject rec = env->NewObject(service_cls, service_constructor, s, opts.imtu, opts.omtu);
    return rec;
@@ -801,6 +810,7 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_writeBytes
 	  env->ReleaseByteArrayElements(b, bytes, 0);
 
 	  env->ThrowNew(env->FindClass("java/io/IOException"), "Failed to write");
+		return;
 	}
 
 	done += count;
@@ -828,8 +838,12 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_writeBytes
    jclass lsrclass=env->GetObjectClass(srecord);
    jmethodID mid=env->GetMethodID(lsrclass, "toByteArray", "()[B");
 
-   if(mid == 0) throwException(env, "de_avetana_bluetooth_stack_BlueZ_createService: Bad method description. Unable to create Service!");
-   jbyteArray array = (jbyteArray)env->CallObjectMethod(srecord, mid);
+   if(mid == 0) {
+	 		throwException(env, "de_avetana_bluetooth_stack_BlueZ_createService: Bad method description. Unable to create Service!");
+   		return 0;
+	 }
+	 
+	 jbyteArray array = (jbyteArray)env->CallObjectMethod(srecord, mid);
 
    int length = env->GetArrayLength(array);
 
@@ -908,8 +922,11 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_writeBytes
                                "toByteArray",
                                "()[B");
 
-   if(mid == 0) throwException(env, "de_avetana_bluetooth_stack_BlueZ_createService: Bad method description. Unable to create Service!");
-   jbyteArray array = (jbyteArray)env->CallObjectMethod(srecord, mid);
+   if(mid == 0) {
+	   throwException(env, "de_avetana_bluetooth_stack_BlueZ_createService: Bad method description. Unable to create Service!");
+     return -1;
+	 }
+	 jbyteArray array = (jbyteArray)env->CallObjectMethod(srecord, mid);
 
    int length = env->GetArrayLength(array);
    jboolean fb = true;
@@ -1018,8 +1035,10 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_encrypt
   str2ba(straddr, &bdaddr);
 
   dev_id = hci_for_each_dev(HCI_UP, find_conn, (long) &bdaddr);
-  if (dev_id < 0) throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_encrypt: Device is not connected!!");
-
+  if (dev_id < 0) {
+	  throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_encrypt: Device is not connected!!");
+    return -1;
+	}
 
   dd = hci_open_dev(dev_id);
   if (dd < 0) throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_encrypt: Unable to open remote device!!");
@@ -1029,9 +1048,10 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_encrypt
 
   bacpy(&cr->bdaddr, &bdaddr);
   cr->type = ACL_LINK;
-  if (ioctl(dd, HCIGETCONNINFO, (unsigned long) cr) < 0)
+  if (ioctl(dd, HCIGETCONNINFO, (unsigned long) cr) < 0) {
     throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_encrypt: Unable to get connection information. The connection may have been closed!!");
-
+	  return -1;
+	}
   cp.handle = cr->conn_info->handle;
   cp.encrypt = (int)enable;
 
@@ -1044,9 +1064,11 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_encrypt
   rq.rlen   = EVT_ENCRYPT_CHANGE_SIZE;
   rq.event  = EVT_ENCRYPT_CHANGE;
 
-  if (hci_send_req(dd, &rq, 25000) < 0)
+  if (hci_send_req(dd, &rq, 25000) < 0) {
     throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_encrypt: Unable to set encryption option (you MUST be root under Linux)!!");
-
+		return 0;
+	}
+	
   close(dd);
   free(cr);
   return 1;
@@ -1077,14 +1099,21 @@ JNIEXPORT jbooleanArray JNICALL Java_de_avetana_bluetooth_stack_BlueZ_connection
   str2ba(straddr, &bdaddr);
 
   dev_id = hci_for_each_dev(HCI_UP, find_conn, (long)&bdaddr);
-  if (dev_id < 0) throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_connectionOptions: Remote Device is not connected!!");
-
-  if (!(cl = (hci_conn_list_req*)malloc(10 * sizeof(*ci) + sizeof(*cl))))
+  if (dev_id < 0) {
+	  throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_connectionOptions: Remote Device is not connected!!");
+    return 0;
+	}
+	
+  if (!(cl = (hci_conn_list_req*)malloc(10 * sizeof(*ci) + sizeof(*cl)))) {
     throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_connectionOptions: Unable to allocate enough memory!!!");
-
+		return 0;
+	}
+	
   int s = socket(AF_BLUETOOTH, SOCK_RAW, BTPROTO_HCI);
-  if (s < 0) throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_connectionOptions: Unable to open the socket!!");
-
+  if (s < 0) {
+	  throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_connectionOptions: Unable to open the socket!!");
+		return 0;
+	}
 
   cl->dev_id = dev_id;
   cl->conn_num = 10;
@@ -1092,7 +1121,8 @@ JNIEXPORT jbooleanArray JNICALL Java_de_avetana_bluetooth_stack_BlueZ_connection
 
   if (ioctl(s, HCIGETCONNLIST, (void*)cl)) {
     throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_connectionOptions: Unable to load connection list!!!");
-  }
+    return 0;
+	}
 
   for (i=0; i < cl->conn_num; i++, ci++) {
     char addr[18];
@@ -1137,19 +1167,27 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_authenticate
   str2ba(straddr, &bdaddr);
 
   int dev_id = hci_for_each_dev(HCI_UP, find_conn, (long) &bdaddr);
-  if (dev_id < 0) throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_authenticate: Device is not connected!!");
-
+  if (dev_id < 0) {
+	  throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_authenticate: Device is not connected!!");
+    return -2;
+	}
+	
   dd = hci_open_dev(dev_id);
-  if (dd < 0) throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_authenticate: Unable to open remote device!!");
-
+  if (dd < 0) {
+	  throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_authenticate: Unable to open remote device!!");
+    return -2;
+	}
+	
   cr = (hci_conn_info_req *)malloc(sizeof(*cr) + sizeof(struct hci_conn_info));
   if (!cr)  return -2;
 
   bacpy(&cr->bdaddr, &bdaddr);
   cr->type = ACL_LINK;
-  if (ioctl(dd, HCIGETCONNINFO, (unsigned long) cr) < 0)
+  if (ioctl(dd, HCIGETCONNINFO, (unsigned long) cr) < 0) {
     throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_authenticate: Unable to get connection information. The connection may have been closed!!");
-
+		return -2;
+	}
+	
   cp.handle = cr->conn_info->handle;
 
   memset(&rq, 0, sizeof(rq));
@@ -1196,7 +1234,8 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_setAccessMode
   uint8_t lap[3];
   if (mode < 0x9e8b00 || mode > 0x9e8b3f) {
     throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_setAccessMode: Invalid Access Mode!!");
-  }
+  	return 0;
+	}
   lap[0] = (mode & 0xff);
   lap[1] = (mode >> 8) & 0xff;
   lap[2] = (mode >> 16) & 0xff;
@@ -1442,10 +1481,11 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_disposeLocalRecord
 
    sess = sdp_connect(&interface, &bdaddr, SDP_RETRY_IF_BUSY);
    if (!sess) {
-     send_searchCompleteEvent(env,SERVICE_SEARCH_DEVICE_NOT_REACHABLE,transID);
+		 send_searchCompleteEvent(env,SERVICE_SEARCH_DEVICE_NOT_REACHABLE,transID);
      return;
    }
-   if (DEBUG == 1) printf("Connected to sdp socket:socket %d, state %d, local %d, flags %d, tid 0x%02x", sess->sock,sess->state,sess->local,sess->flags,sess->tid);
+	 
+	 if (DEBUG == 1) printf("Connected to sdp socket:socket %d, state %d, local %d, flags %d, tid 0x%02x", sess->sock,sess->state,sess->local,sess->flags,sess->tid);
 
    int i,i_attr;
 

@@ -50,6 +50,7 @@ import de.avetana.bluetooth.connection.ConnectionNotifier;
 import de.avetana.bluetooth.connection.JSR82URL;
 import de.avetana.bluetooth.hci.Rssi;
 import de.avetana.bluetooth.l2cap.L2CAPConnectionNotifierImpl;
+import de.avetana.bluetooth.obex.HeaderSetImpl;
 import de.avetana.bluetooth.sdp.SDPConstants;
 import de.avetana.bluetooth.util.BTAddress;
 import de.avetana.bluetooth.util.DeviceFinder;
@@ -768,7 +769,21 @@ public class JSRTest extends JFrame implements ActionListener {
          else if(m_protocols.getSelectedIndex() == JSR82URL.PROTOCOL_OBEX) {
             ClientSession cs = (ClientSession)streamCon;
             HeaderSet hs = cs.createHeaderSet();
-            cs.connect(null);
+            /*cs.setAuthenticator(new Authenticator() {
+
+				public PasswordAuthentication onAuthenticationChallenge(String description, boolean isUserIdRequired, boolean isFullAccess) {
+					System.out.println ("onAuthenticationChallenge -" + description);
+					return new PasswordAuthentication ("mgm".getBytes(), "abcdefg".getBytes());
+				}
+
+				public byte[] onAuthenticationResponse(byte[] userName) {
+					System.out.println ("onAuthenticationResponse");
+					return "abcdefgh".getBytes();
+				}
+            	
+            });*/
+            //hs.createAuthenticationChallenge("client realm", true, true);
+            cs.connect(hs);
       
             InputStream is = this.getClass().getClassLoader().getResourceAsStream("avetana.vcf");
             byte b[] = new byte[is.available()];
@@ -776,8 +791,9 @@ public class JSRTest extends JFrame implements ActionListener {
 
             //This way sending a vcard works on any machine I know of.
             
+            hs = cs.createHeaderSet();
             hs.setHeader (HeaderSet.NAME, "avetana.vcf");
-            hs.setHeader (HeaderSet.TYPE, "text");
+            hs.setHeader (HeaderSet.TYPE, "text/x-vcard");
             hs.setHeader(0x49, b); // if everything fits inside a packet, the data can be packed in the PUT command
             Operation po = cs.put(hs);
             po.close();
@@ -848,6 +864,9 @@ public class JSRTest extends JFrame implements ActionListener {
      }
    }
 
+   //used in OBEX authentication
+   private boolean authenticationFailed = false;
+   
    /**
     * Offers service : SDP server!
     */
@@ -858,8 +877,8 @@ public class JSRTest extends JFrame implements ActionListener {
          public void run () {
            try {
              //JSR82URL url=new JSR82URL("btspp://localhost:0dad43655df111d69f6e00039353e858;name=JSRTest");
-             //JSR82URL url=new JSR82URL("btspp://localhost:" + new UUID (SDPConstants.UUID_SERIAL_PORT)+ ";name=JSRTest");
-             JSR82URL url=new JSR82URL("btspp://localhost:00112233445566778899aabbccddeeff;name=JSRTest");
+             JSR82URL url=new JSR82URL("btspp://localhost:ce37ca6e288a409a9796191882ee44fc;name=JSRTest");
+             //JSR82URL url=new JSR82URL("btspp://localhost:00112233445566778899aabbccddeeff;name=JSRTest");
              url.setParameter("encrypt", new Boolean(m_encrypt.isSelected()));
              url.setParameter("authenticate", new Boolean(m_authentication.isSelected()));
              url.setParameter("master", new Boolean(m_master.isSelected()));
@@ -906,17 +925,52 @@ public class JSRTest extends JFrame implements ActionListener {
 					//recognised as an OBEX Service with a other UUID
 		    	notify = Connector.open("btgoep://localhost:" + new UUID (SDPConstants.UUID_OBEX_OBJECT_PUSH) + ";name=OBEXTest;authenticate=false;master=false;encrypt=false");
 				serviceStatus.setText ("ready");
+				
+				Authenticator authHandler = null;/*new Authenticator() {
+
+					public PasswordAuthentication onAuthenticationChallenge(String description, boolean isUserIdRequired, boolean isFullAccess) {
+						System.out.println ("onAuthenticationChallenge server desc " + description);
+						return new PasswordAuthentication ("mgm".getBytes(), "abcdefg".getBytes());
+					}
+
+					public byte[] onAuthenticationResponse(byte[] userName) {
+						System.out.println ("onAuthenticationResponse");
+						return "abcdefg".getBytes();
+					}
+	            	
+	            };*/
+
+	            authenticationFailed = false;
 				((SessionNotifier)notify).acceptAndOpen(new ServerRequestHandler() {
 					
 					public int onConnect (HeaderSet request, HeaderSet response) {
 						serviceStatus.setText ("RequestHandler got connect");
-						return ResponseCodes.OBEX_HTTP_OK;
+						
+						int retCode = ResponseCodes.OBEX_HTTP_OK;
+						//If an authenticationResponseHeader is in the Request and authenticationFailed
+						//has not been called by the SessionNofifier, you can assume that authentication was
+						//successfull.
+						//you could also (alternatively) test whether onAuthenticationResponse has been called
+						//and not onAuthenticationFailure
+/*
+						if (request.getHeader(HeaderSetImpl.AUTH_RESPONSE) != null && authenticationFailed == false)
+							retCode = ResponseCodes.OBEX_HTTP_OK;
+						else {
+							response.createAuthenticationChallenge("Server realm", true, true);
+							retCode = ResponseCodes.OBEX_HTTP_UNAUTHORIZED;
+						}
+						*/
+						System.out.println ("Returning ret code " + Integer.toHexString(retCode));
+						
+						return retCode;
 					}
 					
 					public int onPut (Operation op) {
+
 						try {
 							java.io.InputStream is = op.openInputStream();
 						serviceStatus.setText ("Got data bytes " + is.available() + " name " + op.getReceivedHeaders().getHeader(HeaderSet.NAME) + " type " + op.getType());
+						System.out.println ("Got data bytes " + is.available() + " name " + op.getReceivedHeaders().getHeader(HeaderSet.NAME) + " type " + op.getType());
 						File f = File.createTempFile("obex", ".tmp");
 						FileOutputStream fos = new FileOutputStream (f);
 						byte b[] = new byte[1000];
@@ -931,6 +985,7 @@ public class JSRTest extends JFrame implements ActionListener {
 					}
 					
 					public void onDisconnect (HeaderSet req, HeaderSet resp) {
+						serviceStatus.setText("Disconnected");
 						obexDisconnected = true;
 					}
 					
@@ -948,7 +1003,12 @@ public class JSRTest extends JFrame implements ActionListener {
 						}
 						return 0xa0;
 					}
-				});
+					
+					public void onAuthenticationFailure (byte[] user) {
+						System.out.println ("Authentication failed");
+						authenticationFailed = true;
+					}
+				}, authHandler);
 				
 				} catch (Exception e) { e.printStackTrace(); }
 			}

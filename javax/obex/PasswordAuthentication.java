@@ -1,7 +1,7 @@
 /*
  *  PasswordAuthentication.java
  *
- *  $Revision: 1.1 $ $Date: 2004/10/28 06:19:01 $ 
+ *  $Revision: 1.2 $ $Date: 2005/02/02 13:33:02 $ 
  * 
  *  (c) Copyright 2001, 2002 Motorola, Inc.  ALL RIGHTS RESERVED.
  */
@@ -14,6 +14,9 @@ package javax.obex;
  */
 public class PasswordAuthentication {
 
+	private byte[] userName;
+	private byte[] password;
+	
     /**
      * Creates a new <code>PasswordAuthentication</code> with the user name
      * and password provided.
@@ -26,7 +29,8 @@ public class PasswordAuthentication {
      * <code>null</code>
      */
     public PasswordAuthentication(byte[] userName, byte[] password) {
-throw new RuntimeException("Not Implemented! Used to compile Code");
+    		this.userName = userName;
+    		this.password = password;
     }
 
     /**
@@ -36,7 +40,7 @@ throw new RuntimeException("Not Implemented! Used to compile Code");
      * @return the user name
      */
     public byte[] getUserName() {
-throw new RuntimeException("Not Implemented! Used to compile Code");
+    		return userName;
     }
 
     /**
@@ -45,6 +49,6 @@ throw new RuntimeException("Not Implemented! Used to compile Code");
      * @return the password
      */
     public byte[] getPassword() {
-throw new RuntimeException("Not Implemented! Used to compile Code");
+    		return password;
     }
 }

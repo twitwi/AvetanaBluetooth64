@@ -219,10 +219,10 @@ public class LocalServiceRecord extends SDPServiceRecord {
   			return new PElement ("data", new String (Base64.encode (((UUID)e.getValue()).toByteArray())));
   		case DataElement.DATSEQ:
   			ret = new PElement ("array");
-  			Vector v = e.getVector();
-  			for (int i = 0;i < v.size();i++) {
-  				ret.addChild(makePElement ((DataElement)v.elementAt(i)));
-  			}
+  			Enumeration v = (Enumeration)e.getValue();
+  			while (v.hasMoreElements())
+  				ret.addChild(makePElement ((DataElement)v.nextElement()));
+  			
   			return ret;
   		default:
   			System.err.println ("Unhandeled DataElement type" + e.getDataType());
@@ -399,14 +399,16 @@ public class LocalServiceRecord extends SDPServiceRecord {
    */
 
   public UUID getServiceClassID() {
-    Vector v = this.getAttributeValue(SDPConstants.ATTR_SERVICE_CLASS_ID_LIST).getVector();
-    return (UUID)((DataElement)v.elementAt(v.size() - 1)).getValue();
+    UUID u[] = getServiceClassIDList();
+    return u.length == 0 ? null : u[u.length - 1];
   }
   
   public UUID[] getServiceClassIDList() {
-  		Vector v = this.getAttributeValue(SDPConstants.ATTR_SERVICE_CLASS_ID_LIST).getVector();
+  		Enumeration enum = (Enumeration)getAttributeValue(SDPConstants.ATTR_SERVICE_CLASS_ID_LIST).getValue();
+  		Vector v = new Vector ();
+  		while (enum.hasMoreElements()) v.add(((DataElement)enum.nextElement()).getValue());
   		UUID ret[] = new UUID[v.size()];
-  		for (int i = 0;i < ret.length;i++) ret[i] = (UUID)((DataElement)v.elementAt(i)).getValue();
+  		v.toArray(ret);
   		return ret;
   }
 

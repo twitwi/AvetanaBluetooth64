@@ -8,7 +8,9 @@ package de.avetana.bluetooth.obex;
 
 import javax.bluetooth.RemoteDevice;
 import javax.microedition.io.StreamConnection;
+
 import javax.obex.*;
+
 import java.io.*;
 
 /**
@@ -33,6 +35,8 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 	private long conID = -1;
 	private InputStream is;
 	private OutputStream os;
+	private Authenticator auth = null;
+	private byte[] nonce = null;
 	
 	public OBEXConnection (StreamConnection con)  throws IOException {
 		this.con = con;
@@ -43,7 +47,9 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 	/* (non-Javadoc)
 	 * @see javax.microedition.io.Connection#close()
 	 */
-	public void close() {
+	public void close() throws IOException  {
+		is.close();
+		os.close();
 		con.close();
 	}
 	
@@ -51,15 +57,15 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 		return RemoteDevice.getRemoteDevice(con);
 	}
 	
-	public javax.obex.HeaderSet createHeaderSet() {
-		return new de.avetana.bluetooth.obex.HeaderSetImpl();
+	public HeaderSet createHeaderSet() {
+		return new HeaderSetImpl();
 	}
 
 	/* (non-Javadoc)
 	 * @see javax.obex.ClientSession#setAuthenticator(javax.obex.Authenticator)
 	 */
 	public void setAuthenticator(Authenticator auth) {
-		
+		this.auth = auth;
 	}
 
 	/* (non-Javadoc)
@@ -79,7 +85,7 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 	/* (non-Javadoc)
 	 * @see javax.obex.ClientSession#connect(javax.obex.HeaderSet)
 	 */
-	public javax.obex.HeaderSet connect(javax.obex.HeaderSet headers) throws IOException {
+	public HeaderSet connect(HeaderSet headers) throws IOException {
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		bos.write(0x10);
 		bos.write (0);
@@ -87,18 +93,87 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 		bos.write (hsToByteArray (headers));
 		sendCommand (CONNECT, bos.toByteArray());
 		byte[] b = receiveCommand();
-		if (b[0] != (byte)0xa0) throw new IOException ("Connection not accepted " + Integer.toHexString((int)(b[0] & 0xff)));
 		mtu = 0xffff & ((0xff & b[5]) << 8 | (0xff & b[6]));
 		//System.out.println ("Returning from connect");
 		HeaderSet hs =  parseHeaders (b, 7);
-		if (hs.getHeader(HeaderSet.CONNECTION_ID) != null) conID = ((Long)hs.getHeader(HeaderSet.CONNECTION_ID)).longValue();
+
+		//handler an authenticationResponse in the response to connect
+		byte[] authResp = (byte[])hs.getHeader(HeaderSetImpl.AUTH_RESPONSE);
+		if (authResp != null && auth != null) {
+			handleAuthResponse(authResp, auth);
+		}
+
+		//Handle a authentication challenge in the response to connect
+		byte authChallenge[] = (byte[])hs.getHeader(HeaderSetImpl.AUTH_CHALLENGE);
+		
+		if (authChallenge != null && auth != null) {
+			
+			byte[] resp = HeaderSetImpl.createAuthResponse(authChallenge, auth);
+
+			bos = new ByteArrayOutputStream();
+			bos.write(0x10);
+			bos.write (0);
+			bos.write (new byte[] { 0x20, 0x00 });
+			headers.setHeader(HeaderSetImpl.AUTH_RESPONSE, resp);
+			bos.write (hsToByteArray (headers));
+			sendCommand (CONNECT, bos.toByteArray());
+			b = receiveCommand();
+			if (b.length > 7) {
+				mtu = 0xffff & ((0xff & b[5]) << 8 | (0xff & b[6]));
+			//System.out.println ("Returning from connect");
+				hs =  parseHeaders (b, 7);
+			}
+		}
+		
+		
+		if (b[0] != (byte)0xa0) throw new IOException ("Connection not accepted " + Integer.toHexString((int)(b[0] & 0xff)));
+		if (hs.getHeader(HeaderSetImpl.CONNECTION_ID) != null) conID = ((Long)hs.getHeader(HeaderSetImpl.CONNECTION_ID)).longValue();
 		return hs;
+	}
+
+	/**
+	 * @param authResp
+	 * @param authenticator
+	 * @throws IOException
+	 */
+	protected void handleAuthResponse(byte[] authResp, Authenticator authenticator) throws IOException {
+
+		int offset = 18;
+		
+		byte[] digest = new byte[16];
+		System.arraycopy(authResp, 2, digest, 0, 16);
+		
+		byte[] user = null;
+		if (authResp[18] == (byte)0x01) {
+			user = new byte[(byte)authResp[19]];
+			System.arraycopy (authResp, 20, user, 0, user.length);
+			offset += 2 + user.length;
+		}
+		byte[] passwd = auth.onAuthenticationResponse(user);
+		
+		if (authResp.length > offset && authResp[offset] == (byte)0x02) {
+			nonce = new byte[16];
+			System.arraycopy(authResp, offset + 2, nonce, 0, 16);
+		}
+		
+		String check = "", digestS ="";
+		try {
+			check = new String (nonce, 0, 16, "iso-8859-1") + ":" + new String (passwd, 0, passwd.length, "iso-8859-1");
+			MD5 md5 = new MD5();
+			md5.update(check.toCharArray(), check.length());
+			md5.md5final();
+			byte checkB[] = md5.toByteArray();
+			digestS = new String (digest, "iso-8859-1");
+			check = new String (checkB, "iso-8859-1");
+			if (!check.equals(digestS)) throw new IOException ("Authentication failure");
+		} catch (UnsupportedEncodingException e) {e.printStackTrace();}
+				
 	}
 
 	/* (non-Javadoc)
 	 * @see javax.obex.ClientSession#disconnect(javax.obex.HeaderSet)
 	 */
-	public javax.obex.HeaderSet disconnect(javax.obex.HeaderSet headers) throws IOException {
+	public HeaderSet disconnect(HeaderSet headers) throws IOException {
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		bos.write (hsToByteArray (headers));
 		sendCommand (DISCONNECT, bos.toByteArray());
@@ -111,7 +186,7 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 	/* (non-Javadoc)
 	 * @see javax.obex.ClientSession#setPath(javax.obex.HeaderSet, boolean, boolean)
 	 */
-	public javax.obex.HeaderSet setPath(javax.obex.HeaderSet headers, boolean backup, boolean create) throws IOException {
+	public HeaderSet setPath(HeaderSet headers, boolean backup, boolean create) throws IOException {
 			byte b1[] = OBEXConnection.hsToByteArray(headers);
 			byte b2[] = new byte[b1.length + 2];
 			b2[0] = b2[1] = 0;
@@ -127,7 +202,7 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 	/* (non-Javadoc)
 	 * @see javax.obex.ClientSession#delete(javax.obex.HeaderSet)
 	 */
-	public javax.obex.HeaderSet delete(javax.obex.HeaderSet headers) throws IOException {
+	public HeaderSet delete(HeaderSet headers) throws IOException {
 		byte b1[] = OBEXConnection.hsToByteArray(headers);
 		sendCommand (OBEXConnection.PUT, b1);
 		byte[] resp = receiveCommand();
@@ -138,14 +213,14 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 	/* (non-Javadoc)
 	 * @see javax.obex.ClientSession#get(javax.obex.HeaderSet)
 	 */
-	public Operation get(javax.obex.HeaderSet headers) throws IOException {
+	public Operation get(HeaderSet headers) throws IOException {
 		return new OperationImpl (this, headers, OBEXConnection.GET);
 	}
 
 	/* (non-Javadoc)
 	 * @see javax.obex.ClientSession#put(javax.obex.HeaderSet)
 	 */
-	public Operation put(javax.obex.HeaderSet headers) throws IOException {
+	public Operation put(HeaderSet headers) throws IOException {
 		return new OperationImpl (this, headers, OBEXConnection.PUT);
 	}
 		
@@ -202,10 +277,10 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 			read += Math.max(0, is.read (data, read, toRead - read));
 //			System.out.println ("Received " + read);
 		}
-		//for (int i = 0;i < data.length;i++)
-		//	System.out.print (" " + Integer.toHexString(0xff & data[i] ));
-		//System.out.println();
-		//System.out.print ("Data received ");
+/*		for (int i = 0;i < data.length;i++)
+			System.out.print (" " + Integer.toHexString(0xff & data[i] ));
+		System.out.println();
+		System.out.print ("Data received ");*/
 		return data;
 	}
 	
@@ -227,11 +302,14 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 		return v;
 	}
 	
-	static protected byte[] hsToByteArray (javax.obex.HeaderSet hs) {
+	static protected byte[] hsToByteArray (HeaderSet hs) {
 		if (hs == null) return new byte[0];
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		int[] hids = hs.getHeaderList();
-		
+		int[] hids = new int[0];
+		try {
+			hids = hs.getHeaderList();
+		} catch (IOException e1) {
+		}
 		int has48header = -1;
 		
 		for (int i = 0;i < hids.length + (has48header != -1 ? 1 : 0);i++) {
@@ -249,9 +327,14 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 				case HeaderSetImpl.NAME:
 				case HeaderSetImpl.DESCRIPTION:
 					String nameObj = (String)header;
-					writeShortLen (bos, 3 + 2 * (nameObj.length() + 1));
-					bos.write (nameObj.getBytes ("UTF-16BE"));
-					bos.write (new byte[] { 0, 0});
+					//UTF-8 -> UTF-16BE convertion some J2ME implementations do not handle
+					//UTF-16BE encoding. 
+					byte[] b = nameObj.getBytes("UTF-8");
+					byte[] b2 = new byte[b.length * 2 + 2];
+					for (int j = 0;j < b2.length;j++) b2[j] = 0;
+					for (int j = 0;j < b.length;j++) b2[j * 2 + 1] = b[j];
+					writeShortLen (bos, 3 + b2.length);
+					bos.write (b2);
 					break;
 				case HeaderSetImpl.TYPE:
 					String typeObj = (String)header;
@@ -272,7 +355,7 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 	}
 
 	static protected HeaderSetImpl parseHeaders (byte[] data, int offset) {
-		HeaderSetImpl hs = (HeaderSetImpl)new de.avetana.bluetooth.obex.HeaderSetImpl();
+		HeaderSetImpl hs = (HeaderSetImpl)new HeaderSetImpl();
 
 		while (offset < data.length) {
 			int id = (int)data[offset] & 0xff;
@@ -287,13 +370,16 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 			case HeaderSetImpl.NAME:
 			case HeaderSetImpl.DESCRIPTION:
 				try {
-					String nameObj = new String (data, offset + 3, len - 2 - 3, "UTF-16BE");
+					byte d2[] = new byte[(len - 2 - 3) / 2];
+					for (int i = 0;i < d2.length;i++) d2[i] = data[offset + 3 + 1 + i * 2];
+					String nameObj = new String (d2, "UTF-8");
 					hs.setHeader(id, nameObj);
 					break;
 				} catch (Exception e) { System.err.println(len + " " + offset + " " + data.length); e.printStackTrace(); }
 				break;
 			case HeaderSetImpl.TYPE:
 				try {
+					if (data[offset + len - 1] != 0) len++; //Fix for implementations that do not end the TYPE Header with a 0-byte
 					String typeObj = new String (data, offset + 3, len - 1 - 3, "iso-8859-1");
 					hs.setHeader(id, typeObj);
 					break;
@@ -301,9 +387,16 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 				break;
 			default:
 				if (len <= 3) break;
-				byte http[] =new byte[len - 3];
-				System.arraycopy (data, offset + 3, http, 0, len - 3);
-				hs.setHeader (id, http);
+				try {
+					byte http[] = new byte[len - 3];
+					System.arraycopy (data, offset + 3, http, 0, len - 3);
+					hs.setHeader (id, http);
+				} catch (Exception e) {
+					System.err.println ("Error in parsing " + Integer.toHexString(id));
+					for (int i = offset;i < data.length;i++)
+						System.err.print (Integer.toHexString((int)(data[i] & 0xff)) + " ");
+					System.err.println();
+				}
 				break;
 			}
 			offset += len;
@@ -324,6 +417,10 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 	
 	public int getMTU() {
 		return mtu;
+	}
+	
+	public Authenticator getAuthenticator() {
+		return auth;
 	}
 
 }

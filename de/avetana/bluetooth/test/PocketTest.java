@@ -502,7 +502,7 @@ public class PocketTest extends Frame {
 					}
 					inStream = null;
 					outStream = null;
-				if (scon != null) scon.close(); 
+				if (scon != null) try { scon.close(); } catch (IOException  e2) {}
 				scon = null;
 			} else if (e.getSource() == sendBut) {
 				if (outStream != null) {
@@ -581,7 +581,7 @@ public class PocketTest extends Frame {
 				closeBut.setEnabled (false);
 				sendBut.setEnabled (false);
 				pollBut.setEnabled (false);
-				if (scon != null) scon.close(); 
+				if (scon != null) try { scon.close(); } catch (IOException e2) {}
 				scon = null;
 			} else if (e.getSource() == sendBut) {
 				if (scon != null) {

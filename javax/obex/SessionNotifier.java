@@ -1,7 +1,7 @@
 /*
  *  SessionNotifier.java
  *
- *  $Revision: 1.1 $ $Date: 2004/10/28 06:19:01 $
+ *  $Revision: 1.2 $ $Date: 2005/02/02 13:33:02 $
  *
  *  (c) Copyright 2001, 2002 Motorola, Inc.  ALL RIGHTS RESERVED.
  */
@@ -144,5 +144,6 @@ public interface SessionNotifier extends Connection {
      */
     public Connection acceptAndOpen(ServerRequestHandler handler,
         Authenticator auth) throws IOException;
+    
 }
 

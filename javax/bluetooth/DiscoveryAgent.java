@@ -300,7 +300,16 @@ public class DiscoveryAgent {
         throws BluetoothStateException, IllegalArgumentException {
       if (myListener == null) throw new NullPointerException("DiscoveryAgent.searchServices: DiscoveryListener is null.");
       if(attrSet==null || attrSet.length==0) {
-        attrSet=new int[]{0x0000, 0x0001, 0x0002, 0x0004, 0x100};
+        attrSet=new int[]{0x0000, 0x0001, 0x0002, 0x0003, 0x0004 };
+      } else {
+      	int addatts = 0;
+      	for (int i = 0;i < attrSet.length;i++) { if (attrSet[i] > 4) addatts++; }
+      	int[] attrSet2 = new int[5 + addatts];
+      	for (int i = 0;i < 5;i++) attrSet2[i] = i;
+      	addatts = 0;
+      	for (int i = 0;i < attrSet.length;i++) { if (attrSet[i] > 4) attrSet2[5 + addatts++] = attrSet[i]; }
+      	attrSet = attrSet2;
+      	
       }
       if(bluetoothStack==null) throw new IllegalArgumentException("Stack is not defined!!");
       return bluetoothStack.searchServices(attrSet,uuidSet,btDev,myListener);

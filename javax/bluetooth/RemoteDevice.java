@@ -244,7 +244,7 @@ public class RemoteDevice {
         RemoteDevice dev=null;
 		if (conn instanceof BTConnection) dev = ((BTConnection)conn).getRemoteDevice();
 		else if (conn instanceof OBEXConnection) dev = ((OBEXConnection)conn).getRemoteDevice();
-		else if (conn instanceof SessionNotifierImpl) dev = ((SessionNotifierImpl)conn).getRemoteDevice();
+		else if (conn instanceof SessionNotifierImpl) dev = ((LocalConnectionNotifier)((SessionNotifierImpl)conn).getConnectionNotifier()).getRemoteDevice();
 		else if (conn instanceof ConnectionNotifier) dev = ((ConnectionNotifier)conn).getRemoteDevice();
 		else throw new ClassCastException ("Connection type not supported");
         if(dev==null) throw new IOException("The remote device could not be determined!");

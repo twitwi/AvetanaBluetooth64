@@ -26,7 +26,7 @@
 package de.avetana.bluetooth.stack;
 
 
-import java.io.IOException;
+import java.io.*;
 
 import javax.bluetooth.DiscoveryAgent;
 import javax.bluetooth.DiscoveryListener;
@@ -58,15 +58,56 @@ import de.avetana.bluetooth.util.LibLoader;
 
 public class BlueZ
 {
+	
+    public static ConnectionFactory myFactory=new ConnectionFactory();
+
+    public static int m_transactionId = 0;
+    public static final String  m_version;
+
 	// Loads the library containing the native code implementation.
 	// It is usually called "libavetanaBT.so" under UNIX/Linux, but is loaded
 	// with the "avetanaBT" string, since this is how JNI implements platform
 	// independence.
-	static {try {LibLoader.loadCommLib("avetanaBT"); } catch (Exception e ) { e.printStackTrace(); System.exit(0);} }
-        public static ConnectionFactory myFactory=new ConnectionFactory();
-
-        public static int m_transactionId = 0;
-
+	static {
+		try {LibLoader.loadCommLib("avetanaBT"); } catch (Exception e ) { e.printStackTrace(); System.exit(0);}
+		InputStream is = ClassLoader.getSystemResourceAsStream("version.xml");
+		BufferedReader br = new BufferedReader (new InputStreamReader (is));
+		String version = "0";
+		String revision = "0";
+		String build = "0";
+		
+		String line = "";
+		try {
+			
+		while ((line = br.readLine()) != null) {
+			line = line.toLowerCase();
+			if (line.indexOf("<version") != -1) {
+				revision = "0";
+				build = "0";
+				int idx = line.indexOf("value");
+				idx = line.indexOf("\"", idx + 1);
+				int idx2 = line.indexOf("\"", idx + 1);
+				version = line.substring(idx + 1, idx2);
+			} else if (line.indexOf("<revision") != -1) {
+				build = "0";
+				int idx = line.indexOf("value");
+				idx = line.indexOf("\"", idx + 1);
+				int idx2 = line.indexOf("\"", idx + 1);
+				revision = line.substring(idx + 1, idx2);				
+			} else if (line.indexOf("<build") != -1) {
+				int idx = line.indexOf("value");
+				idx = line.indexOf("\"", idx + 1);
+				int idx2 = line.indexOf("\"", idx + 1);
+				build = line.substring(idx + 1, idx2);				
+			}
+		}
+		} catch (Exception e) {}
+		
+		m_version = version + "." + revision + "." + build;
+		
+		System.out.println ("avetanaBluetooth version " + m_version);
+		
+	}
 
 	/**
 	 * Opens the HCI device.

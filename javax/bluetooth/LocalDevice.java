@@ -155,7 +155,7 @@ public class LocalDevice {
      * @exception BluetoothStateException if the Bluetooth system is in
      * a state that does not allow the discoverable mode to be changed
      */
-    public boolean setDiscoverable(int mode) throws BluetoothStateException, Exception {
+    public boolean setDiscoverable(int mode) throws BluetoothStateException {
       if((mode > 0x9E8B3F || mode < 0x9E8B00) &&
          (mode != DiscoveryAgent.NOT_DISCOVERABLE || mode != DiscoveryAgent.GIAC ||
           mode != DiscoveryAgent.LIAC)) throw new IllegalArgumentException("Invalid mode value!");
@@ -317,11 +317,14 @@ public class LocalDevice {
      */
     public ServiceRecord getRecord(Connection notifier) throws Exception{
       if(notifier==null) throw new NullPointerException("Notifier is null!");
-      if (notifier instanceof SessionNotifierImpl) notifier = ((SessionNotifierImpl)notifier).getConnectionNotifier();
       if(!(notifier instanceof StreamConnectionNotifier) &&
-         !(notifier instanceof L2CAPConnectionNotifier)) {
-        throw new IllegalArgumentException("Notifier must be an instance of StreamConnectionNotifier or an instance of L2CapConnectionNotifier");
+         !(notifier instanceof L2CAPConnectionNotifier) &&
+		 !(notifier instanceof SessionNotifierImpl)) {
+        throw new IllegalArgumentException("Notifier must be an instance of StreamConnectionNotifier, L2CAPConnectionNotifier or SessionNotifier");
       }
+      
+      if (notifier instanceof SessionNotifierImpl) notifier = ((SessionNotifierImpl)notifier).getConnectionNotifier();
+      
       if(((ConnectionNotifier)notifier).isNotifierClosed())
         throw new IllegalArgumentException("The connection is already closed!");
       ServiceRecord myRecord=((ConnectionNotifier)notifier).getServiceRecord();

@@ -1,7 +1,7 @@
 /*
  *  HeaderSet.java
  *
- *  $Revision: 1.2 $ $Date: 2005/01/14 12:33:40 $ 
+ *  $Revision: 1.3 $ $Date: 2005/02/02 13:33:02 $ 
  * 
  *  (c) Copyright 2001, 2002 Motorola, Inc.  ALL RIGHTS RESERVED.
  */
@@ -174,7 +174,6 @@ public interface HeaderSet {
      */
     public static final int APPLICATION_PARAMETER = 0x4C;
 
-    public static final int CONNECTION_ID = 0xCB;
     /**
      * Sets the value of the header identifier to the value provided.  The type
      * of object must correspond to the Java type defined in the description of
@@ -225,7 +224,7 @@ public interface HeaderSet {
      * @exception IOException if an error occurred in the transport layer during
      * the operation or the connection has been closed
      */
-    public int[] getHeaderList();
+    public int[] getHeaderList() throws IOException;
 
     /**
      * Sets the authentication challenge header.  The <code>realm</code> will

@@ -237,7 +237,7 @@ public class ServiceFinderPane extends JPanel implements Cancelable, ActionListe
    * @param cod The device class
    */
   public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
-  	//System.out.println ("Device discovered " + btDevice.getBluetoothAddress());
+  	inform ("Device discovered " + btDevice.getBluetoothAddress());
     String addr=null, name=null;
     try {
       addr=btDevice.getBluetoothAddress();
@@ -277,6 +277,7 @@ public class ServiceFinderPane extends JPanel implements Cancelable, ActionListe
    */
   public void inform(String message) {
     if(m_dialog!=null) m_dialog.setString(message);
+//    System.out.println (message);
   }
 
   /**
@@ -443,12 +444,16 @@ public class ServiceFinderPane extends JPanel implements Cancelable, ActionListe
   }
 
   public void inquiryCompleted(int discType) {
-  	if (discType == DiscoveryListener.INQUIRY_COMPLETED)
+  	inform ("Inquiry completed " + discType);
+  	if (discType == DiscoveryListener.INQUIRY_COMPLETED) {
+ 		synchronized (this) { try { wait (500); } catch (Exception e) {} }
+		inform ("starting service search");
   		serviceSearch();
+  	}
   }
 
   public void serviceSearchCompleted(int transID, int respCode) {
-  	//System.out.println ("Service search completed " + respCode);
+  	inform ("Service search completed " + respCode);
   	nbOfServiceSearch--;
     serviceSearchTransID = respCode == DiscoveryListener.SERVICE_SEARCH_TERMINATED ? -2 : -1;
     synchronized(this) {

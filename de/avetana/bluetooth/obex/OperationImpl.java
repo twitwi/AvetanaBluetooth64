@@ -6,6 +6,7 @@
  */
 package de.avetana.bluetooth.obex;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -41,15 +42,37 @@ public class OperationImpl implements Operation {
 		if ((opCode & 0x7f) == OBEXConnection.PUT) oos = new OBEXPutOutputStream();
 		else oos = new OBEXGetOutputStream();
 		ois = new OBEXInputStream();
+		
 		this.opCode = opCode;
 		if (hs.getHeader(0x49) != null && opCode == OBEXConnection.PUT) opCode = OBEXConnection.CLOSE;
 		//Only Client connections initiate the Commands
 		if (con instanceof OBEXConnection) {
 			con.sendCommand(opCode == OBEXConnection.GET ? (opCode | 0x80) : opCode, OBEXConnection.hsToByteArray(hs));
 			byte[] b = con.receiveCommand();
+			
+			HeaderSet rechs = OBEXConnection.parseHeaders(b, 3);
+
+			//handler an authenticationResponse in the response to connect
+			byte[] authResp = (byte[])rechs.getHeader(HeaderSetImpl.AUTH_RESPONSE);
+			if (authResp != null && con.getAuthenticator() != null) {
+				((OBEXConnection)con).handleAuthResponse(authResp, con.getAuthenticator());
+			}
+
+			//If an authentication challenge is in the response, get the authentication response from the authenticator and try again.
+			byte authChallenge[] = (byte[])rechs.getHeader(HeaderSetImpl.AUTH_CHALLENGE);
+			if (authChallenge != null && con.getAuthenticator() != null) {
+				byte[] resp = HeaderSetImpl.createAuthResponse(authChallenge, con.getAuthenticator());
+
+				hs.setHeader(HeaderSetImpl.AUTH_RESPONSE, resp);
+				con.sendCommand(opCode == OBEXConnection.GET ? (opCode | 0x80) : opCode, OBEXConnection.hsToByteArray(hs));
+				b = con.receiveCommand();
+				//System.out.println ("Returning from connect");
+				rechs =  OBEXConnection.parseHeaders (b, 3);
+			}
+
 			respCode = (int)b[0] & 0xff;
 			if (b[0] != (byte)0x90 && b[0] != (byte)0xa0) throw new IOException ("Command not accepted " + Integer.toHexString(b[0] & 0xff) + "(" +  Integer.toHexString(opCode & 0xff) + ")");
-			newData (OBEXConnection.parseHeaders(b, 3));
+			newData (rechs);
 
 			if (opCode != OBEXConnection.CLOSE && opCode != OBEXConnection.GET) opNeedsClosing = true;
 			
@@ -228,7 +251,13 @@ public class OperationImpl implements Operation {
 	
 	protected void newData (HeaderSet header) {
 		if (recHeaders == null) recHeaders = con.createHeaderSet();
-		int[] hids = header.getHeaderList();	
+		int[] hids = new int[0];
+		try {
+			hids = header.getHeaderList();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		for (int i = 0;i < hids.length;i++) {
 			if (hids[i] == 0x48 || hids[i] == 0x49) { ((OBEXInputStream)ois).addData((byte[])header.getHeader(hids[i])); continue; }
 			else if (hids[i] == HeaderSet.LENGTH) len = ((Long)header.getHeader(HeaderSet.LENGTH)).longValue();
