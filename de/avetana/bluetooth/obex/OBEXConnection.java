@@ -104,35 +104,51 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 	 * @see javax.obex.ClientSession#setPath(javax.obex.HeaderSet, boolean, boolean)
 	 */
 	public javax.obex.HeaderSet setPath(javax.obex.HeaderSet headers, boolean backup, boolean create) throws IOException {
-		return null;
+			byte b1[] = OBEXConnection.hsToByteArray(headers);
+			byte b2[] = new byte[b1.length + 2];
+			b2[0] = b2[1] = 0;
+			if (backup) b2[0] |= 1;
+			if (!create) b2[0] |= 2;
+			System.arraycopy(b1, 0, b2, 2, b1.length);
+			sendCommand (OBEXConnection.SETPATH, b2);
+			byte[] resp = receiveCommand();
+			HeaderSet hs = OBEXConnection.parseHeaders(resp, 3);
+			return hs;
 	}
 
 	/* (non-Javadoc)
 	 * @see javax.obex.ClientSession#delete(javax.obex.HeaderSet)
 	 */
 	public javax.obex.HeaderSet delete(javax.obex.HeaderSet headers) throws IOException {
-		return null;
+		byte b1[] = OBEXConnection.hsToByteArray(headers);
+		sendCommand (OBEXConnection.PUT, b1);
+		byte[] resp = receiveCommand();
+		HeaderSet hs = OBEXConnection.parseHeaders(resp, 3);
+		return hs;
 	}
 
 	/* (non-Javadoc)
 	 * @see javax.obex.ClientSession#get(javax.obex.HeaderSet)
 	 */
 	public Operation get(javax.obex.HeaderSet headers) throws IOException {
-		return null;
+		return new OperationImpl (this, headers, OBEXConnection.GET);
 	}
 
 	/* (non-Javadoc)
 	 * @see javax.obex.ClientSession#put(javax.obex.HeaderSet)
 	 */
 	public Operation put(javax.obex.HeaderSet headers) throws IOException {
-		return new OperationImpl (this, headers);
+		return new OperationImpl (this, headers, OBEXConnection.PUT);
 	}
 		
 	public void sendCommand (int commId, byte[] data) throws IOException {
 		int len = 3 + data.length;
-		
-		os.write (new byte[] { (byte)commId, (byte)((len >> 8) & 0xff), (byte)(len & 0xff) });
-		os.write (data);
+		byte d2[] = new byte[len];
+		d2[0] = (byte)commId;
+		d2[1] =  (byte)((len >> 8) & 0xff);
+		d2[2] = (byte)(len & 0xff);
+		System.arraycopy (data, 0, d2, 3, data.length);
+		os.write (d2);
 		/*System.out.print ("Sending command ");
 		 System.out.print (" " + Integer.toHexString(commId & 0xff));	
 		 System.out.print (" " + Integer.toHexString((byte)((len >> 8) & 0xff)));	

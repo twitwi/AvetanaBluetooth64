@@ -25,19 +25,62 @@ public class OperationImpl implements Operation {
 	private CommandHandler con;
 	private HeaderSet hs;
 	private HeaderSet recHeaders;
-	private OBEXOutputStream oos;
-	private OBEXInputStream ois;
+	private OutputStream oos;
+	private InputStream ois;
 	private int respCode = 0;
 	private long len = -1;
 	private String type = null;
 	private boolean closed = false;
+	private int opCode;
+	private Thread receiverThread = null;
 	
-	protected OperationImpl (CommandHandler con, HeaderSet hs) {
+	protected OperationImpl (CommandHandler con, HeaderSet hs, int opCode) throws IOException {
 		this.con = con;
 		this.hs = hs;
-		oos = new OBEXOutputStream();
+		if ((opCode & 0x7f) == OBEXConnection.PUT) oos = new OBEXPutOutputStream();
+		else oos = new OBEXGetOutputStream();
 		ois = new OBEXInputStream();
+		this.opCode = opCode;
+		//Only Client connections initiate the Commands
+		if (con instanceof OBEXConnection) {
+			con.sendCommand(opCode == OBEXConnection.GET ? (opCode | 0x80) : opCode, OBEXConnection.hsToByteArray(hs));
+			byte[] b = con.receiveCommand();
+			if (b[0] != (byte)0x90 && b[0] != (byte)0xa0) throw new IOException ("Command not accepted " + Integer.toHexString(b[0] & 0xff));
+			newData (OBEXConnection.parseHeaders(b, 3));
+			
+			//If the data was marked end of body or the return code was 0xa0 don't
+			//need to start a receiver thread.
+			
+			if (recHeaders.getHeader(0x48) != null) { 
+				if (opCode == OBEXConnection.GET && b[0] != (byte)0xa0) {
+					startReceiverThread();
+				}
+			} 
+			hs = con.createHeaderSet();
+		}
 	}
+	
+	private void startReceiverThread() {
+		Runnable r = new Runnable() {
+			public void run() {
+				while (receiverThread != null) {
+					try {
+						byte b[] = con.receiveCommand();
+						newData (OBEXConnection.parseHeaders(b, 3));
+						if (b[0] == (byte)0xa0) receiverThread = null;
+						else con.sendCommand (OBEXConnection.GET, new byte[0]);
+
+					} catch (Exception e) {
+						receiverThread = null;
+					}
+				}
+			}
+		};
+		
+		receiverThread = new Thread (r);
+		receiverThread.start();
+	}
+	
 	/* (non-Javadoc)
 	 * @see javax.obex.Operation#abort()
 	 */
@@ -62,7 +105,6 @@ public class OperationImpl implements Operation {
 	 * @see javax.obex.Operation#sendHeaders(javax.obex.HeaderSet)
 	 */
 	public void sendHeaders(HeaderSet headers) throws IOException {
-		new Throwable().printStackTrace();
 		this.hs = headers;
 	}
 
@@ -131,6 +173,8 @@ public class OperationImpl implements Operation {
 	 */
 	public void close() {
 		try {
+			//Only relevant for Client-GET Operations
+			receiverThread = null;
 			this.con.sendCommand(OBEXConnection.CLOSE, new byte[] { 0x49, 0x00, 0x03 });
 			this.con.receiveCommand();
 		} catch (IOException e) {
@@ -138,13 +182,17 @@ public class OperationImpl implements Operation {
 		}
 	}
 	
-	class OBEXOutputStream extends OutputStream {
+	class OBEXPutOutputStream extends OutputStream {
 
 		/* (non-Javadoc)
 		 * @see java.io.OutputStream#write(int)
 		 */
 		public void write(int b) throws IOException {
 			write (new byte[] { (byte)(b & 0xff) });
+		}
+		
+		public  void write (byte b[]) throws IOException {
+			write (b, 0, b.length);
 		}
 		
 		public synchronized void write (byte b[], int off, int len) throws IOException {
@@ -176,7 +224,7 @@ public class OperationImpl implements Operation {
 		if (recHeaders == null) recHeaders = con.createHeaderSet();
 		int[] hids = header.getHeaderList();	
 		for (int i = 0;i < hids.length;i++) {
-			if (hids[i] == 0x48 || hids[i] == 0x49) { ois.addData((byte[])header.getHeader(hids[i])); continue; }
+			if (hids[i] == 0x48 || hids[i] == 0x49) { ((OBEXInputStream)ois).addData((byte[])header.getHeader(hids[i])); continue; }
 			else if (hids[i] == HeaderSet.LENGTH) len = ((Long)header.getHeader(HeaderSet.LENGTH)).longValue();
 			else if (hids[i] == HeaderSet.TYPE) type = (String)header.getHeader (HeaderSet.TYPE);
 			recHeaders.setHeader (hids[i], header.getHeader(hids[i]));
@@ -222,14 +270,18 @@ public class OperationImpl implements Operation {
 	    }
 
 	    public synchronized int read() throws IOException {
-	      if (closed == true) throw new IOException("Connection closed");;
+	      if (closed == true) throw new IOException("Connection closed");
+	      if (opCode == OBEXConnection.GET && receiverThread == null && available() == 0) return -1;
+	      if (opCode == OBEXConnection.PUT && available() == 0) return -1;
 	      waitForData();
 	      return (int)buffer[readPos++];
 	    }
 
 	    public synchronized int read (byte[] b, int off, int len) throws IOException {
-	      waitForData();
 	      if (closed == true) throw new IOException("Connection closed");;
+	      if (opCode == OBEXConnection.GET && receiverThread == null && available() == 0) return -1;
+	      if (opCode == OBEXConnection.PUT && available() == 0) return -1;
+	      waitForData();
 	      int av = available();
 	      int r = av > b.length - off ? b.length - off : av;
 	      r = r > len ? len : r;
@@ -246,6 +298,27 @@ public class OperationImpl implements Operation {
 	      readPos = writePos = 0;
 	    }
 
+	  }
+	  
+	  class OBEXGetOutputStream extends OutputStream {
+
+		/* (non-Javadoc)
+		 * @see java.io.OutputStream#write(int)
+		 */
+		public void write(int b) throws IOException {
+			((OBEXInputStream)ois).addData(new byte[] { (byte)b });
+		}
+		
+		public void write (byte[] b, int offset, int len) throws IOException {
+			byte[] b2 = new byte[len];
+			System.arraycopy(b, offset, b2, 0, len);
+			((OBEXInputStream)ois).addData(b2);
+		}
+		
+		public void write (byte b2[]) {
+			((OBEXInputStream)ois).addData(b2);		
+		}
+	  	
 	  }
 
 }

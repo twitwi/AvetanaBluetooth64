@@ -11,6 +11,8 @@ import java.io.*;
 import javax.microedition.io.*;
 import javax.obex.*;
 
+import de.avetana.bluetooth.connection.ConnectionNotifier;
+
 /**
  * @author gmelin
  *
@@ -26,6 +28,7 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 	private OutputStream os;
 	private int mtu = 0x2000;
 	private Operation m_putOperation = null;
+	private Operation m_getOperation = null;
 	
 	public SessionNotifierImpl (StreamConnectionNotifier locConNot) {
 		this.locConNot = locConNot;
@@ -44,6 +47,9 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 		return this;
 	}
 	
+	public de.avetana.bluetooth.connection.ConnectionNotifier getConnectionNotifier() {
+		return (ConnectionNotifier)locConNot;
+	}
 	public HeaderSet createHeaderSet() {
 		if (myHandler != null) return myHandler.createHeaderSet();
 		else return new HeaderSetImpl();
@@ -55,6 +61,11 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 				try {
 					while (true) {
 						byte[] data = receiveCommand ();
+						System.out.print ("Received command ");
+						for (int i = 0;i < data.length;i++) {
+							System.out.print (" " + Integer.toHexString((int)(data[i] & 0xff)));
+						}
+						System.out.println();
 						switch ((int)(data[0] & 0xff)) {
 							case 0x80: {
 								mtu = 0xffff & ((0xff & data[5]) << 8 | (0xff & data[6]));
@@ -92,7 +103,7 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 							case 0x82: {
 								HeaderSet request = OBEXConnection.parseHeaders(data, 3);
 								HeaderSet response = myHandler.createHeaderSet();
-								if (m_putOperation == null) m_putOperation = new OperationImpl (SessionNotifierImpl.this, response);
+								if (m_putOperation == null) m_putOperation = new OperationImpl (SessionNotifierImpl.this, request, OBEXConnection.PUT);
 								((OperationImpl)m_putOperation).newData (request);
 								int ret = 0x90;
 								if (data[0] == (byte)0x82) {
@@ -100,15 +111,36 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 									response = ((OperationImpl)m_putOperation).getHeadersToSend();
 								}
 								
-								byte[] rhead = OBEXConnection.hsToByteArray(response);
-								byte retdata[] = new byte[3 + rhead.length];
-								retdata[0] = (byte)ret;
-								retdata[1] = (byte)((retdata.length >> 8) & 0xff);
-								retdata[2] = (byte)((retdata.length >> 0) & 0xff);
-								System.arraycopy(rhead, 0, retdata, 3, rhead.length);
-								os.write(retdata);
-								os.flush();
+								sendCommand (ret, OBEXConnection.hsToByteArray(response));
 								//System.out.println ("OBEX PUT ret " + ret + " got " + (int)(data[0] & 0xff) + " len " + retdata.length);
+								break;
+							}
+							case 0x83:	{
+								HeaderSet request = OBEXConnection.parseHeaders(data, 3);
+								int ret = 0xa0;
+								if (m_getOperation == null) {
+									m_getOperation = new OperationImpl (SessionNotifierImpl.this, request, OBEXConnection.GET);
+									ret = myHandler.onGet(m_getOperation);
+								}
+								
+								HeaderSet response = ((OperationImpl)m_getOperation).getHeadersToSend();
+								
+								if (ret == 0x90 || ret == 0xa0) {
+									InputStream is = m_getOperation.openInputStream();
+									int respLen = OBEXConnection.hsToByteArray(response).length;
+									byte d2[] = new byte[Math.min(is.available(), mtu - respLen - 3)];
+									is.read(d2);
+									if (is.available() == 0) {
+										response.setHeader(0x49, d2);
+										ret = 0xa0;
+									} else {
+										response.setHeader(0x48, d2);
+										ret = 0x90;
+									}
+									sendCommand (ret, OBEXConnection.hsToByteArray(response));
+									if (ret == 0xa0) m_getOperation = null;
+									System.out.println ("Sent response " + Integer.toHexString (ret));
+								}
 								break;
 							}
 							default:
@@ -140,8 +172,7 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 	 * @see javax.microedition.io.Connection#close()
 	 */
 	public void close() {
-		// TODO Auto-generated method stub
-
+		locConNot.close();
 	}
 
 	public byte[] receiveCommand () throws IOException {
