@@ -28,7 +28,7 @@
 # COPYRIGHTS, TRADEMARKS OR OTHER RIGHTS, RELATING TO USE OF THIS SOFTWARE IS
 # DISCLAIMED.
 #
-# $Id: Makefile.in,v 1.1 2005/04/04 22:15:25 cdiflora Exp $
+# $Id: Makefile.in,v 1.2 2005/04/05 15:54:21 cdiflora Exp $
 
 # C Compiler to use
 CC             = g++
@@ -67,4 +67,4 @@ de_avetana_bluetooth_stack_BlueZ.h: clean $(BIN_DIR)/avetanaBT.jar
 
 # Native language (C) library - libavetanaBT.so
 libavetanaBT.so: BlueZ.cpp de_avetana_bluetooth_stack_BlueZ.h 
-	$(CC) -shared -lbluetooth $(CFLAGS) BlueZ.cpp -o $(BIN_DIR)/libAvetanaBT.so $(LDFLAGS)
+	$(CC) -shared -lbluetooth $(CFLAGS) BlueZ.cpp -o $(BIN_DIR)/libavetanaBT.so $(LDFLAGS)
