@@ -8,10 +8,20 @@
 extern "C" {
 #endif
 /* Inaccessible static: myFactory */
+/* Inaccessible static: m_transactionId */
+/* Inaccessible static: mutexes */
+/*
+ * Class:     de_avetana_bluetooth_stack_BlueZ
+ * Method:    hciGetLinkQuality
+ * Signature: (Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciGetLinkQuality
+  (JNIEnv *, jobject, jstring);
+
 /*
  * Class:     de_avetana_bluetooth_stack_BlueZ
  * Method:    hciOpenDevice
- * Signature: (I)I
+ * Signature: (ILde/avetana/bluetooth/stack/BlueZ;)I
  */
 JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciOpenDevice
   (JNIEnv *, jclass, jint, jobject);
@@ -26,16 +36,8 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciCloseDevice
 
 /*
  * Class:     de_avetana_bluetooth_stack_BlueZ
- * Method:    macScan
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_macScan
-  (JNIEnv *, jclass);
-
-/*
- * Class:     de_avetana_bluetooth_stack_BlueZ
  * Method:    hciInquiry
- * Signature: (IIIJ)Lde/avetana/bluetooth/hci/HCIInquiryResult;
+ * Signature: (IIIJLjavax/bluetooth/DiscoveryAgent;)Lde/avetana/bluetooth/hci/HCIInquiryResult;
  */
 JNIEXPORT jobject JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciInquiry
   (JNIEnv *, jclass, jint, jint, jint, jlong, jobject);
@@ -107,7 +109,7 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_readBytes
 /*
  * Class:     de_avetana_bluetooth_stack_BlueZ
  * Method:    writeBytes
- * Signature: (I[BI)V
+ * Signature: (I[BII)V
  */
 JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_writeBytes
   (JNIEnv *, jclass, jint, jbyteArray, jint, jint);
@@ -115,10 +117,10 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_writeBytes
 /*
  * Class:     de_avetana_bluetooth_stack_BlueZ
  * Method:    listService
- * Signature: (Ljava/lang/String;[S[I)V
+ * Signature: (Ljava/lang/String;[[B[II)V
  */
 JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_listService
-  (JNIEnv *, jclass, jstring, jobjectArray, jintArray, jint transID);
+  (JNIEnv *, jclass, jstring, jobjectArray, jintArray, jint);
 
 /*
  * Class:     de_avetana_bluetooth_stack_BlueZ
@@ -131,7 +133,7 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_createService
 /*
  * Class:     de_avetana_bluetooth_stack_BlueZ
  * Method:    updateService
- * Signature: ([BIJ)I
+ * Signature: (Ljavax/bluetooth/ServiceRecord;J)I
  */
 JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_updateService
   (JNIEnv *, jclass, jobject, jlong);
@@ -235,7 +237,7 @@ JNIEXPORT jboolean JNICALL Java_de_avetana_bluetooth_stack_BlueZ_pageAndConnAllo
 /*
  * Class:     de_avetana_bluetooth_stack_BlueZ
  * Method:    authenticate
- * Signature: (ILjava/lang/String;)I
+ * Signature: (ILjava/lang/String;Ljava/lang/String;)I
  */
 JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_authenticate
   (JNIEnv *, jclass, jint, jstring, jstring);
@@ -256,11 +258,13 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_encrypt
 JNIEXPORT jbooleanArray JNICALL Java_de_avetana_bluetooth_stack_BlueZ_connectionOptions
   (JNIEnv *, jclass, jint, jstring);
 
+/*
+ * Class:     de_avetana_bluetooth_stack_BlueZ
+ * Method:    getRssi
+ * Signature: (Ljava/lang/String;)I
+ */
 JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_getRssi
   (JNIEnv *, jclass, jstring);
-
-JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciLinkQuality
- (JNIEnv *, jclass , jstring );
 
 #ifdef __cplusplus
 }
