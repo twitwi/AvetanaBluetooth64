@@ -48,7 +48,6 @@ public class LocalDevice {
     private String bdAddrString;
     private ConnectionNotifier m_notifier=null;
 
-    static { try { BluetoothStack.getBluetoothStack(); } catch (Exception e) {}}
     /**
      * The default constructor is hidden so that no one can create a new instance of the LocalDevice.  To get the LocalDevice
      * object for this device, use the <code>getLocalDevice()</code> static method in this class.
@@ -58,8 +57,7 @@ public class LocalDevice {
     private LocalDevice() throws BluetoothStateException
     {
         try { bluetoothManager = BluetoothStack.getBluetoothStack(); }
-        catch (Exception e) { throw new BluetoothStateException("Unable to load Bluetooth Manager. "); }
-        if (bluetoothManager == null) throw new BluetoothStateException("Unable to load Bluetooth Manager. ");
+        catch (Exception e) { throw new BluetoothStateException(e.getMessage()); }
     }
 
     /*  End of the LocalDevice constructor  */

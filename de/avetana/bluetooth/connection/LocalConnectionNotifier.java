@@ -78,7 +78,8 @@ public class LocalConnectionNotifier extends ConnectionNotifier implements Strea
         int channel = (int)((LocalServiceRecord)myRecord).getChannelNumberElement().getLong();
         this.parsedURL.setAttrNumber(channel);
       }catch(Exception ex) {
-        throw new IOException("ERROR - The service record could not be added in the local Bluetooth BCC!");
+      	ex.printStackTrace();
+        throw new IOException("ERROR - The service record could not be added in the local Bluetooth BCC! " + m_serviceHandle);
       }
       try {
         BlueZ.registerNotifier(this);

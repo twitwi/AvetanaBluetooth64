@@ -2,12 +2,9 @@ package de.avetana.bluetooth.l2cap;
 
 
 import java.io.*;
-import de.avetana.bluetooth.util.BTAddress;
-import de.avetana.bluetooth.util.BTAddressFormatException;
 import de.avetana.bluetooth.stack.BlueZ;
 import de.avetana.bluetooth.connection.*;
 import javax.bluetooth.*;
-import javax.microedition.io.Connection;
 
 /**
  * The implementation of the javax.bluetooth.L2CAPConnection class.

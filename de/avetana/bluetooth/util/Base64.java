@@ -116,5 +116,9 @@ public class Base64 {
 
                 return b;
         }
+        
+        public static void main (String args[]) {
+        	  System.out.println(":::" + new String(Base64.encode(new byte[] { 0x00, 0x08 })) + ":::");
+        }
 
 }

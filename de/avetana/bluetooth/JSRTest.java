@@ -1,20 +1,56 @@
 package de.avetana.bluetooth;
 
-import javax.swing.JFrame;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Container;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 
-import javax.swing.*;
-import java.awt.HeadlessException;
-import java.awt.*;
-import java.awt.event.*;
-import javax.microedition.io.*;
-import de.avetana.bluetooth.util.*;
-import javax.bluetooth.*;
-import java.io.*;
-import de.avetana.bluetooth.l2cap.*;
-import de.avetana.bluetooth.rfcomm.RFCommConnection;
-import de.avetana.bluetooth.connection.*;
-import de.avetana.bluetooth.stack.*;
+import javax.bluetooth.DeviceClass;
+import javax.bluetooth.DiscoveryAgent;
+import javax.bluetooth.L2CAPConnection;
+import javax.bluetooth.LocalDevice;
+import javax.bluetooth.RemoteDevice;
+import javax.bluetooth.UUID;
+import javax.microedition.io.Connection;
+import javax.microedition.io.Connector;
+import javax.microedition.io.StreamConnection;
+import javax.microedition.io.StreamConnectionNotifier;
+import javax.obex.*;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JSplitPane;
+import javax.swing.JTextField;
+import javax.swing.JToggleButton;
+
+import de.avetana.bluetooth.connection.BTConnection;
+import de.avetana.bluetooth.connection.ConnectionNotifier;
+import de.avetana.bluetooth.connection.JSR82URL;
+import de.avetana.bluetooth.l2cap.L2CAPConnectionNotifierImpl;
+import de.avetana.bluetooth.util.BTAddress;
+import de.avetana.bluetooth.util.DeviceFinder;
+import de.avetana.bluetooth.util.ServiceFinderPane;
 
 /**
  * <b>COPYRIGHT:</b><br> (c) Copyright 2004 Avetana GmbH ALL RIGHTS RESERVED. <br><br>
@@ -102,7 +138,7 @@ public class JSRTest extends JFrame implements ActionListener {
   // the protocol choosen. (VERSION 1.2)
   private Connection streamCon = null;
   // Connection notifier for SDP server profiles
-  private ConnectionNotifier notify=null;
+  private Connection notify=null;
   // Own thread for receiving and sending data for the protocols, which use connection streams.
   private DStreamThread receiverThread = null;
   // L2CAP Data needs to be polled from the stream in order to clear the InputBuffer
@@ -115,6 +151,8 @@ public class JSRTest extends JFrame implements ActionListener {
   //these two classes
   private DiscoveryAgent m_agent;
   private LocalDevice m_local;
+  
+  private boolean obexDisconnected = false;
 
   // Current selected protocol
   private int currentIndex=0;
@@ -269,7 +307,7 @@ public class JSRTest extends JFrame implements ActionListener {
      clientURL.add(connectionURL);
      clientURL.add(connectTo);
      int i=-1;
-     c.gridx=++i;c.gridy=0;c.anchor=c.WEST;c.weightx=0;c.weighty=0;c.gridwidth=2;
+     c.gridx=++i;c.gridy=0;c.anchor=GridBagConstraints.WEST;c.weightx=0;c.weighty=0;c.gridwidth=2;
      clSer.add(statusPanel);
      c.gridy=++i;
      clSer.add(m_client,c);
@@ -285,22 +323,22 @@ public class JSRTest extends JFrame implements ActionListener {
      clSer.add(m_authentication,c);
      c.gridy=++i;
      clSer.add(m_encrypt,c);
-     c.gridx =1;c.anchor=c.EAST;
+     c.gridx =1;c.anchor=GridBagConstraints.EAST;
      securityNotAvailable=new JLabel();
      securityNotAvailable.setForeground(Color.red);
      clSer.add(securityNotAvailable,c);
 
-     c.gridx =0;c.gridy=++i;c.insets=new Insets(1,1,1,1);c.anchor=c.WEST;
+     c.gridx =0;c.gridy=++i;c.insets=new Insets(1,1,1,1);c.anchor=GridBagConstraints.WEST;
      clSer.add(m_master,c);
 
      JPanel dataExchange=new JPanel(new GridBagLayout());
      dataExchange.setBorder(BorderFactory.createTitledBorder("Data Exchange"));
      c=new GridBagConstraints();
-     c.gridx=0;c.anchor=c.WEST;c.gridy=0;c.weightx=1;c.weighty=1;
+     c.gridx=0;c.anchor=GridBagConstraints.WEST;c.gridy=0;c.weightx=1;c.weighty=1;
      dataExchange.add(this.sendData,c);
-     c.gridx=1;c.anchor=c.EAST;
+     c.gridx=1;c.anchor=GridBagConstraints.EAST;
      dataExchange.add(this.dataReceived,c);
-     c.gridx=2;c.anchor=c.EAST;
+     c.gridx=2;c.anchor=GridBagConstraints.EAST;
      dataExchange.add(this.l2CAPBut,c);
 
      JPanel activeConnection=new JPanel(new GridLayout(0,2));
@@ -499,14 +537,7 @@ public class JSRTest extends JFrame implements ActionListener {
      int index=m_protocols.getSelectedIndex();
      if(index==-1) return;
 
-     if(index==JSR82URL.PROTOCOL_OBEX) {
-       JOptionPane.showMessageDialog(null, "Protocol not yet supported by test application!", "Warning",JOptionPane.WARNING_MESSAGE);
-       m_protocols.setSelectedIndex(currentIndex);
-       getProperties();
-       return;
-     }
-
-     if(index!=currentIndex && (connectTo.isSelected() || m_offerService.isSelected())) {
+      if(index!=currentIndex && (connectTo.isSelected() || m_offerService.isSelected())) {
        int i=JOptionPane.showConfirmDialog(null, "A connection exists. Do you want to close it?","Change protocol",
                                      JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
        if(i==JOptionPane.OK_OPTION) {
@@ -692,13 +723,16 @@ public class JSRTest extends JFrame implements ActionListener {
            receiverThread = new DStreamThread();
            receiverThread.start();
            this.l2CAPBut.setEnabled(false);
-         } else {
+         } else if (streamCon instanceof L2CAPConnection) {
            is = null;os = null;
            if(receiverThread!=null) {receiverThread.stopReading();receiverThread=null;}
            this.l2CAPBut.setEnabled(true);
+         } else if (streamCon instanceof ClientSession) {
+            is = null;os = null;
+            if(receiverThread!=null) {receiverThread.stopReading();receiverThread=null;}
+            this.l2CAPBut.setEnabled(false);
          }
          enableConnAttributes(true);
-         System.out.println ("Started Receiver Thread " + is + " " + os);
        }
        else if (e.getSource() == connectTo && connectTo.isSelected() == false) {
          closeConnection();
@@ -710,6 +744,18 @@ public class JSRTest extends JFrame implements ActionListener {
            os.write(b);
          else if(m_protocols.getSelectedIndex() == JSR82URL.PROTOCOL_L2CAP)
            ((L2CAPConnection)streamCon).send(b);
+         else if(m_protocols.getSelectedIndex() == JSR82URL.PROTOCOL_OBEX) {
+            ClientSession cs = (ClientSession)streamCon;
+            HeaderSet hs = cs.createHeaderSet();
+            byte text[] = "Test Message from avetanaBlueooth".getBytes("iso-8859-1");
+            hs.setHeader (HeaderSet.NAME, "test.txt");
+            hs.setHeader (HeaderSet.TYPE, "text");
+            cs.connect(null);
+            Operation po = cs.put(hs);
+            po.openOutputStream().write(text);
+            po.close();
+            cs.disconnect(null);
+         }
        } else if (e.getSource() == dataReceived) {
        } else if (e.getSource() == this.l2CAPBut) {
          if (!((L2CAPConnection)streamCon).ready()) {
@@ -774,6 +820,46 @@ public class JSRTest extends JFrame implements ActionListener {
              } catch (Exception e) { e.printStackTrace(); }
          }
        };
+     }else if(m_protocols.getSelectedIndex()==JSR82URL.PROTOCOL_OBEX) {
+		obexDisconnected = false;
+		r = new Runnable() {
+			public void run() {
+				try {
+		    	notify = Connector.open("btgoep://localhost:ce37ca6e288a409a9796191882ee44fc;name=OBEXTest;authenticate=false;master=false;encrypt=false");
+				serviceStatus.setText ("ready");
+				((SessionNotifier)notify).acceptAndOpen(new ServerRequestHandler() {
+					
+					public int onConnect (HeaderSet request, HeaderSet response) {
+						serviceStatus.setText ("RequestHandler got connect");
+						return ResponseCodes.OBEX_HTTP_OK;
+					}
+					
+					public int onPut (Operation op) {
+						try {
+							java.io.InputStream is = op.openInputStream();
+						serviceStatus.setText ("Got data bytes " + is.available() + " name " + op.getReceivedHeaders().getHeader(HeaderSet.NAME) + " type " + op.getType());
+						File f = File.createTempFile("obex", ".tmp");
+						FileOutputStream fos = new FileOutputStream (f);
+						byte b[] = new byte[1000];
+						int len;
+						while (is.available() > 0 && (len = is.read(b)) > 0) {
+							fos.write (b, 0, len);
+						}
+						fos.close();
+						System.out.println ("Wrote data to " + f.getAbsolutePath());
+						} catch (Exception e) { e.printStackTrace(); }
+						return 0xa0;
+					}
+					
+					public void onDisconnect (HeaderSet req, HeaderSet resp) {
+						obexDisconnected = true;
+					}
+				});
+				
+				} catch (Exception e) { e.printStackTrace(); }
+			}
+		};
+		
      }
      if(r!=null) {
        new Thread (r).start();
@@ -786,7 +872,7 @@ public class JSRTest extends JFrame implements ActionListener {
    private void revokeService() {
      try {
        closeConnection();
-       if (notify != null) { notify.close(); notify = null; }
+       if (notify != null) { obexDisconnected = true; notify.close(); notify = null; }
        serviceStatus.setText("closed");
        m_offerService.setSelected(false);
      } catch (Exception e) { e.printStackTrace();  serviceStatus.setText("error");}

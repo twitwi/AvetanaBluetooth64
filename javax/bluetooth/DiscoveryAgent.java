@@ -27,13 +27,16 @@
 
 package javax.bluetooth;
 
-import java.io.*;
-import java.util.*;
-import de.avetana.bluetooth.stack.BluetoothStack;
-import de.avetana.bluetooth.sdp.*;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Vector;
+
+import de.avetana.bluetooth.sdp.RemoteServiceRecord;
+import de.avetana.bluetooth.sdp.ServiceFoundException;
+import de.avetana.bluetooth.sdp.TimeOutException;
 import de.avetana.bluetooth.stack.BlueZ;
+import de.avetana.bluetooth.stack.BluetoothStack;
 import de.avetana.bluetooth.util.BTAddress;
-import de.avetana.bluetooth.util.BTAddressFormatException;
 
 /**
  * The <code>DiscoveryAgent</code> class provides methods to perform

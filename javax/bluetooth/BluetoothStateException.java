@@ -26,8 +26,7 @@
 
 package javax.bluetooth;
 
-import java.lang.*;
-import java.io.*;
+import java.io.IOException;
 /**
  * The <code>BluetoothStateException</code> is thrown when
  * a request is made to the Bluetooth system that

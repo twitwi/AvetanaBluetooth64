@@ -1,12 +1,8 @@
 package de.avetana.bluetooth.rfcomm;
 
 
-import java.io.*;
-import de.avetana.bluetooth.util.BTAddress;
-import de.avetana.bluetooth.util.BTAddressFormatException;
 import de.avetana.bluetooth.stack.BlueZ;
 import de.avetana.bluetooth.connection.*;
-import javax.microedition.io.*;
 
 /**
  * The class used to open new RFCOMM client-connections.

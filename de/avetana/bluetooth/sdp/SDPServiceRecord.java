@@ -2,7 +2,6 @@ package de.avetana.bluetooth.sdp;
 
 import javax.bluetooth.*;
 import java.util.*;
-import java.io.*;
 
 /**
  * The top-class implementing methods common with all instances of Service Record.

@@ -1,7 +1,6 @@
 package de.avetana.bluetooth.connection;
 
 import javax.bluetooth.*;
-import javax.microedition.io.*;
 import java.util.*;
 
 /**

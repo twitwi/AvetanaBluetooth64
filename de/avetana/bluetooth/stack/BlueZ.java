@@ -26,18 +26,19 @@
 package de.avetana.bluetooth.stack;
 
 
-import javax.bluetooth.*;
-import java.util.*;
-import javax.swing.*;
-import de.avetana.bluetooth.util.BTAddress;
-import de.avetana.bluetooth.util.BTAddressFormatException;
-import de.avetana.bluetooth.util.LibLoader;
-import javax.microedition.io.*;
-import de.avetana.bluetooth.rfcomm.*;
-import de.avetana.bluetooth.l2cap.*;
+import javax.bluetooth.DiscoveryAgent;
+import javax.bluetooth.DiscoveryListener;
+import javax.bluetooth.ServiceRecord;
+import javax.swing.JOptionPane;
+
+import de.avetana.bluetooth.connection.ConnectionFactory;
+import de.avetana.bluetooth.connection.ConnectionNotifier;
+import de.avetana.bluetooth.connection.JSR82URL;
 import de.avetana.bluetooth.hci.HCIInquiryResult;
-import de.avetana.bluetooth.connection.*;
+import de.avetana.bluetooth.l2cap.L2CAPConnParam;
 import de.avetana.bluetooth.sdp.LocalServiceRecord;
+import de.avetana.bluetooth.util.BTAddress;
+import de.avetana.bluetooth.util.LibLoader;
 
 /**
  * This class provides the methods to access the underlying BlueZ functions.
@@ -518,6 +519,7 @@ public class BlueZ
           int defaultCh=(proto==JSR82URL.PROTOCOL_RFCOMM?1:10);
           int channel=(a_notifier.getConnectionURL().getAttrNumber()!=null?
                       a_notifier.getConnectionURL().getAttrNumber().intValue():defaultCh);
+          //System.out.println ("Registered notifier at channel " + channel)
           if(proto==JSR82URL.PROTOCOL_L2CAP) {
             registerL2CAPService((int)a_notifier.getServiceHandle(),
                             channel,
@@ -556,6 +558,7 @@ public class BlueZ
               ConnectionNotifier not=(ConnectionNotifier)myFactory.getNotifiers().elementAt(i);
               // Nur eine Verbindung pro Kanal!
               short proto=(not.getConnectionURL()==null?JSR82URL.PROTOCOL_RFCOMM:not.getConnectionURL().getProtocol());
+              if (proto == JSR82URL.PROTOCOL_OBEX) proto = JSR82URL.PROTOCOL_RFCOMM;
               int defaultCh=(proto==JSR82URL.PROTOCOL_RFCOMM?1:10);
               int ch=(not.getConnectionURL()!=null && not.getConnectionURL().getAttrNumber()!=null)?
                       not.getConnectionURL().getAttrNumber().intValue():defaultCh;

@@ -2,7 +2,6 @@ package de.avetana.bluetooth.connection;
 
 import java.io.*;
 import de.avetana.bluetooth.stack.BlueZ;
-import javax.bluetooth.RemoteDevice;
 import javax.microedition.io.*;
 
 /**

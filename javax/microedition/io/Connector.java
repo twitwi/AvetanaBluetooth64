@@ -25,12 +25,13 @@
 package javax.microedition.io;
 
 import java.io.*;
+
 import javax.bluetooth.BluetoothStateException;
-import javax.bluetooth.DiscoveryAgent;
-import javax.bluetooth.LocalDevice;
-import de.avetana.bluetooth.rfcomm.*;
+
 import de.avetana.bluetooth.l2cap.*;
-import javax.bluetooth.RemoteDevice;
+import de.avetana.bluetooth.obex.*;
+
+import de.avetana.bluetooth.rfcomm.RFCommConnection;
 import de.avetana.bluetooth.stack.*;
 import de.avetana.bluetooth.connection.*;
 
@@ -46,32 +47,37 @@ import de.avetana.bluetooth.connection.*;
  * (see http://www.w3.org/Addressing/rfc1808.txt for more information).
  *
  *
- *
+ * @todo Move auth / enc / authorize test to native code
  */
 public class Connector {
     public static final int READ       = 0;
     public static final int WRITE      = 0;
     public static final int READ_WRITE = 0;
+    private static BluetoothStack stack = null;
 
-    static { try { BluetoothStack.getBluetoothStack(); } catch (Exception e) {}}
 
     public static Connection open(String url) throws IOException {
-
+    		if (stack == null) {
+    			try {
+    				stack = BluetoothStack.getBluetoothStack();	
+    			} catch (Exception e) { throw new IOException (e.getMessage()); }
+    		}
         try {
           JSR82URL myURL=new JSR82URL(url);
-          if((myURL.isAuthenticated() || myURL.isEncrypted() || myURL.isAuthorized()) &&
-             System.getProperty("os.name").toLowerCase().equals("linux") && myURL.getProtocol()!=JSR82URL.PROTOCOL_L2CAP)
-                throw new IOException("The current implementation of Bluetooth under linux does not support secured connections");
+                    
           if(myURL.getBTAddress()==null) {
-            if(myURL.getProtocol()!=JSR82URL.PROTOCOL_L2CAP) return new LocalConnectionNotifier(myURL);
-            else return new L2CAPConnectionNotifierImpl(myURL);
+            if(myURL.getProtocol()==JSR82URL.PROTOCOL_RFCOMM) return new LocalConnectionNotifier(myURL);
+            else if(myURL.getProtocol()==JSR82URL.PROTOCOL_L2CAP) return new L2CAPConnectionNotifierImpl(myURL);
+            else if(myURL.getProtocol() == JSR82URL.PROTOCOL_OBEX)
+            return new SessionNotifierImpl (new LocalConnectionNotifier (myURL));
           }
           else {
-            BluetoothStack bluetooth  = BluetoothStack.getBluetoothStack();
             if(myURL.getProtocol() == JSR82URL.PROTOCOL_RFCOMM)
-              return bluetooth.openRFCommConnection(myURL);
+              return stack.openRFCommConnection(myURL);
             else if(myURL.getProtocol() == JSR82URL.PROTOCOL_L2CAP)
-              return bluetooth.openL2CAPConnection(myURL);
+              return stack.openL2CAPConnection(myURL);
+            if(myURL.getProtocol() == JSR82URL.PROTOCOL_OBEX)
+                return new OBEXConnection ((RFCommConnection)stack.openRFCommConnection(myURL));
           }
         }
         catch (BluetoothStateException e) { throw new IOException("" + e); }
@@ -109,51 +115,64 @@ public class Connector {
     }
 
     /**
-     * Create and open a connection input stream. This method is not implemented and will throw a Runtime Exception.
+     * Create and open a connection dataInputStream. 
      * @param url The URL for the connection.
      * @return A DataInputStream.
+     * @throws IOException
      * @throws IllegalArgumentException If a parameter is invalid.
      * @throws ConnectionNotFoundException If the connection cannot be found.
      * @throws IOException If some other kind of I/O error occurs.
      */
-    public static DataInputStream openDataInputStream(String url) {
-        throw new RuntimeException("Not implemented");
-    }
+    public static DataInputStream openDataInputStream(String url) throws Exception {
+        return new DataInputStream (openInputStream (url));
+     }
 
     /**
-     * Create and open a connection output stream. This method is not implemented and will throw a Runtime Exception.
+     * Create and open a connection dataOutput stream. 
      * @param url The URL for the connection.
      * @return A DataOutputStream.
      * @throws IllegalArgumentException If a parameter is invalid.
      * @throws ConnectionNotFoundException If the connection cannot be found.
      * @throws IOException If some other kind of I/O error occurs.
      */
-    public static DataOutputStream openDataOutputStream(String url) { //TODO openDataOutputStream
-        throw new RuntimeException("This implementation of javax.microedition.io.Connector only supports open(String url).");
+    public static DataOutputStream openDataOutputStream(String url) throws Exception {
+       return new DataOutputStream (openOutputStream (url));
     }
 
     /**
-     * Create and open a connection input stream. This method is not implemented and will throw a Runtime Exception.
+     * Create and open a connection input stream. 
      * @param url The URL for the connection.
      * @return A InputStream.
      * @throws IllegalArgumentException If a parameter is invalid.
      * @throws ConnectionNotFoundException If the connection cannot be found.
      * @throws IOException If some other kind of I/O error occurs.
      */
-    public static InputStream openInputStream(String url) { //TODO openInputStream
-        throw new RuntimeException("This implementation of javax.microedition.io.Connector only supports open(String url).");
+    public static InputStream openInputStream(String url) throws Exception {
+    		JSR82URL jurl = new JSR82URL (url);
+    		if (jurl.getProtocol() != JSR82URL.PROTOCOL_RFCOMM) throw new IOException ("Only RFComm connection provide an InputStream");
+    		Connection con = open (url);
+    		if (con instanceof StreamConnection) return ((StreamConnection)con).openInputStream();
+    		else if (con instanceof StreamConnectionNotifier) return ((StreamConnectionNotifier)con).acceptAndOpen().openInputStream();
+    		else throw new IOException ("Could not get Stream from connection");
+ 
     }
 
     /**
-     * Create and open a connection input stream. This method is not implemented and will throw a Runtime Exception.
+     * Create and open a connection output stream. 
      * @param url The URL for the connection.
      * @return A DataOutputStream.
      * @throws IllegalArgumentException If a parameter is invalid.
      * @throws ConnectionNotFoundException If the connection cannot be found.
      * @throws IOException If some other kind of I/O error occurs.
      */
-    public static OutputStream openOutputStream(String url) { //TODO openOutputStream
-        throw new RuntimeException("This implementation of javax.microedition.io.Connector only supports open(String url).");
-    }
-}
+    public static OutputStream openOutputStream(String url) throws Exception { 
+   		JSR82URL jurl = new JSR82URL (url);
+		if (jurl.getProtocol() != JSR82URL.PROTOCOL_RFCOMM) throw new IOException ("Only RFComm connection provide an OutputStream");
+		Connection con = open (url);
+		if (con instanceof StreamConnection) return ((StreamConnection)con).openOutputStream();
+		else if (con instanceof StreamConnectionNotifier) return ((StreamConnectionNotifier)con).acceptAndOpen().openOutputStream();
+		else throw new IOException ("Could not get Stream from connection");
+   }
+    
+ }
 

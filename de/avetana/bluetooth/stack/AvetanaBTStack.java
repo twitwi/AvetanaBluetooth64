@@ -1,6 +1,5 @@
 package de.avetana.bluetooth.stack;
 
-import de.avetana.bluetooth.rfcomm.*;
 import de.avetana.bluetooth.connection.*;
 import de.avetana.bluetooth.sdp.*;
 import de.avetana.bluetooth.hci.HCIInquiryResult;

@@ -1,17 +1,20 @@
 
 package de.avetana.bluetooth.util;
 
-import java.io.*;
-import javax.swing.*;
-import java.awt.*;
-import java.util.*;
-import java.awt.event.*;
-import java.util.prefs.*;
-import javax.swing.tree.*;
-import javax.swing.event.*;
-import de.avetana.bluetooth.sdp.*;
-import de.avetana.bluetooth.stack.*;
-import javax.bluetooth.*;
+import java.awt.BorderLayout;
+import java.awt.Container;
+import java.awt.Frame;
+import java.awt.HeadlessException;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.bluetooth.UUID;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+
+import de.avetana.bluetooth.sdp.ServiceDescriptor;
 
 /**
  * <b>COPYRIGHT:</b><br> (c) Copyright 2004 Avetana GmbH ALL RIGHTS RESERVED. <br><br>

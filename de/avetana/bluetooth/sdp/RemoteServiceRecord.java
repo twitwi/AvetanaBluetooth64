@@ -5,7 +5,6 @@ import javax.bluetooth.*;
 import java.io.IOException;
 import java.util.*;
 import de.avetana.bluetooth.util.BTAddress;
-import de.avetana.bluetooth.util.BTAddressFormatException;
 import de.avetana.bluetooth.stack.BlueZ;
 
 /**
@@ -177,6 +176,7 @@ public class RemoteServiceRecord extends SDPServiceRecord {
     Enumeration protocolDescriptorList = (Enumeration)protocolDescriptorListElement.getValue();
     long l2capPSM=-1;
     long rfcommChannel=-1;
+    boolean isObex = false;
     while (protocolDescriptorList.hasMoreElements()) {
       DataElement protocolDescriptorElement = (DataElement)protocolDescriptorList.nextElement();
       if (protocolDescriptorElement == null)
@@ -199,13 +199,14 @@ public class RemoteServiceRecord extends SDPServiceRecord {
                 }
               }
             }
-            //else if(lg == 0x0008) System.err.println("OBEX FOUND!!!");
+            else if(lg == 0x0008) isObex = true;
             else continue;
           }
         }
       }
     }
-    if (rfcommChannel!=-1) url+="btspp://"+m_remote.getBluetoothAddress()+":"+rfcommChannel;
+    if (isObex && rfcommChannel != -1) url += "btgoep://"+m_remote.getBluetoothAddress()+":"+rfcommChannel;
+    else if (rfcommChannel!=-1) url+="btspp://"+m_remote.getBluetoothAddress()+":"+rfcommChannel;
     else if (l2capPSM!=-1) url+="btl2cap://"+m_remote.getBluetoothAddress()+":"+l2capPSM;
     if(url.equals("")) return null;
     url+=";";

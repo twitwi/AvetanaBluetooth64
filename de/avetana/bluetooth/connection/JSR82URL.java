@@ -1,6 +1,5 @@
 package de.avetana.bluetooth.connection;
 
-import javax.bluetooth.*;
 import java.util.*;
 import de.avetana.bluetooth.util.*;
 
@@ -158,7 +157,7 @@ public class JSR82URL {
          try {
            m_attrNumber=new Integer(toWork.substring(channel+1, ser).trim());
          }catch(Exception ex) {
-           throw new BadURLFormat("Bad channel Number!");
+           throw new BadURLFormat("Bad channel Number! " + toWork);
          }
          parseURL(toWork.substring(ser+1));
        }

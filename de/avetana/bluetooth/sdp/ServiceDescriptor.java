@@ -2,7 +2,6 @@ package de.avetana.bluetooth.sdp;
 
 
 import de.avetana.bluetooth.util.BTAddress;
-import de.avetana.bluetooth.util.BTAddressFormatException;
 import javax.bluetooth.*;
 
 /**

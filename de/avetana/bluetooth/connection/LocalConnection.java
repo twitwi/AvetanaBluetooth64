@@ -1,13 +1,5 @@
 package de.avetana.bluetooth.connection;
 
-
-import javax.microedition.io.StreamConnection;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.DataInputStream;
-import java.io.OutputStream;
-import java.io.DataOutputStream;
-
 /**
  * The class used to manage RFCOMM or RFCOM-based client connection.
  *
