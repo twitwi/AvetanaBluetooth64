@@ -1,6 +1,7 @@
 package de.avetana.bluetooth.sdp;
 
 import javax.bluetooth.*;
+
 import java.io.*;
 import java.util.*;
 import de.avetana.bluetooth.util.*;
@@ -85,7 +86,8 @@ public class LocalServiceRecord extends SDPServiceRecord {
     rec.m_type=protocol;
     DataElement serviceClassIDList = new DataElement(DataElement.DATSEQ);
     DataElement scidProt = null;
-    if(protocol==JSR82URL.PROTOCOL_RFCOMM) scidProt = new DataElement(DataElement.UUID, new UUID(SDPConstants.UUID_SERIAL_PORT));
+    if ((svcID.toLong() & 0x1100l) == 0x1100l) ;
+    else if(protocol==JSR82URL.PROTOCOL_RFCOMM) scidProt = new DataElement(DataElement.UUID, new UUID(SDPConstants.UUID_SERIAL_PORT));
     else if(protocol==JSR82URL.PROTOCOL_OBEX) scidProt = new DataElement(DataElement.UUID, new UUID(SDPConstants.UUID_OBEX_OBJECT_PUSH));
     if (scidProt != null) serviceClassIDList.addElement(scidProt);
     if (svcID != null && !svcID.equals (UUID.NULL_UUID) && (scidProt == null || !svcID.equals(scidProt.getValue())))  
@@ -176,8 +178,12 @@ public class LocalServiceRecord extends SDPServiceRecord {
   	switch (e.getDataType()) {
   		case DataElement.STRING:
  		case DataElement.URL:
-  			return new PElement ("string", (String)e.getValue());
-  		case DataElement.U_INT_1:
+  			//try {
+			//	return newDataElement (4, ((String)e.getValue()).getBytes("UTF-8"));
+			//} catch (UnsupportedEncodingException e1) {
+				return new PElement ("string", (String)e.getValue());
+			//}
+ 		case DataElement.U_INT_1:
   			return newDataElement (1, 1, e.getLong());
   		case DataElement.U_INT_2:
   			return newDataElement (1, 2, e.getLong());
@@ -345,7 +351,18 @@ public class LocalServiceRecord extends SDPServiceRecord {
    * @return nothing - Throws an Exception
    */
   public String getConnectionURL(int requiredSecurity, boolean mustBeMaster) {
-    throw new RuntimeException("This is a local Service Record: no connection URL is available!");
+  	String url = "";
+  	if (getProtocol() == JSR82URL.PROTOCOL_L2CAP) url = "btl2cap://";
+  	if (getProtocol() == JSR82URL.PROTOCOL_RFCOMM) url = "btspp://";
+  	if (getProtocol() == JSR82URL.PROTOCOL_OBEX) url = "btgoep://";
+  	try {
+		url += LocalDevice.getLocalDevice().getBluetoothAddress() + ":";
+	} catch (BluetoothStateException e) {
+		e.printStackTrace();
+	}
+  	url += getChannelNumberElement().getLong();
+  	if (mustBeMaster) url += ";master=true";
+  	return url;
   }
 
   /**

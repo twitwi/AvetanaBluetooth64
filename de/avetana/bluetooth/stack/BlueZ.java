@@ -26,6 +26,8 @@
 package de.avetana.bluetooth.stack;
 
 
+import java.io.IOException;
+
 import javax.bluetooth.DiscoveryAgent;
 import javax.bluetooth.DiscoveryListener;
 import javax.bluetooth.ServiceRecord;
@@ -457,7 +459,7 @@ public class BlueZ
          * @return
          * @throws BlueZException
          */
-        public synchronized static native int authenticate(int handle, String deviceAddr) throws BlueZException;
+        public synchronized static native int authenticate(int handle, String deviceAddr, String pin) throws BlueZException;
 
         /**
          * Turns on/off the encryption of an ACL link
@@ -513,27 +515,37 @@ public class BlueZ
          * @param a_notifier The connection notifier created by the user.
          * @throws Exception
          */
-        public static void registerNotifier(ConnectionNotifier a_notifier) throws Exception{
-          if(a_notifier.getConnectionURL()==null) throw new Exception("No connection URL previously defined!");
+        public static void registerNotifier(final ConnectionNotifier a_notifier) throws Exception{
+        	  if(a_notifier.getConnectionURL()==null) throw new Exception("No connection URL previously defined!");
           myFactory.addNotifier(a_notifier);
-          short proto=(a_notifier.getConnectionURL()==null?JSR82URL.PROTOCOL_RFCOMM:a_notifier.getConnectionURL().getProtocol());
+          final short proto=(a_notifier.getConnectionURL()==null?JSR82URL.PROTOCOL_RFCOMM:a_notifier.getConnectionURL().getProtocol());
           int defaultCh=(proto==JSR82URL.PROTOCOL_RFCOMM?1:10);
-          int channel=(a_notifier.getConnectionURL().getAttrNumber()!=null?
+          final int channel=(a_notifier.getConnectionURL().getAttrNumber()!=null?
                       a_notifier.getConnectionURL().getAttrNumber().intValue():defaultCh);
           //System.out.println ("Registered notifier at channel " + channel)
-          if(proto==JSR82URL.PROTOCOL_L2CAP) {
-            registerL2CAPService((int)a_notifier.getServiceHandle(),
-                            channel,
-                            a_notifier.getConnectionURL().isLocalMaster(),
-                            a_notifier.getConnectionURL().isAuthenticated(),
-                            a_notifier.getConnectionURL().isEncrypted(), -1,-1);
-          } else {
-            registerService((int)a_notifier.getServiceHandle(),
-                            channel,
-                            a_notifier.getConnectionURL().isLocalMaster(),
-                            a_notifier.getConnectionURL().isAuthenticated(),
-                            a_notifier.getConnectionURL().isEncrypted());
-          }
+          Runnable r = new Runnable() {
+          	public void run() {
+                try {
+                if(proto==JSR82URL.PROTOCOL_L2CAP) {
+						BlueZ.registerL2CAPService((int)a_notifier.getServiceHandle(),
+						                channel,
+						                a_notifier.getConnectionURL().isLocalMaster(),
+						                a_notifier.getConnectionURL().isAuthenticated(),
+						                a_notifier.getConnectionURL().isEncrypted(), -1,-1);
+                  } else {
+                    registerService((int)a_notifier.getServiceHandle(),
+                                    channel,
+                                    a_notifier.getConnectionURL().isLocalMaster(),
+                                    a_notifier.getConnectionURL().isAuthenticated(),
+                                    a_notifier.getConnectionURL().isEncrypted());
+                  }
+				} catch (BlueZException e) {
+					a_notifier.setFailure(new IOException (e.getMessage()));
+					a_notifier.setConnectionID(-1);
+				}
+          	}
+          };
+          new Thread (r).start();
         }
 
         /**

@@ -75,9 +75,13 @@ public class InqTest implements DiscoveryListener {
 		int transID = da.searchServices(new int[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x100, 0x303 }, uuids, new RemoteDevice (addr), this);
 		System.out.println ("Started");
 		BufferedReader br = new BufferedReader (new InputStreamReader (System.in));
-		br.readLine();
-		if (!searchCompleted) da.cancelServiceSearch(transID);
-		System.out.println ("Canceled");
+		//br.readLine();
+		//if (!searchCompleted) da.cancelServiceSearch(transID);
+		//System.out.println ("Canceled");
+		while (!searchCompleted) {
+			synchronized (this) { wait(100); }
+		}
+		System.exit(0);
 	}
 	
 	public static void main(String[] args) throws Exception {

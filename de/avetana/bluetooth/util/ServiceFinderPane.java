@@ -237,6 +237,7 @@ public class ServiceFinderPane extends JPanel implements Cancelable, ActionListe
    * @param cod The device class
    */
   public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
+  	//System.out.println ("Device discovered " + btDevice.getBluetoothAddress());
     String addr=null, name=null;
     try {
       addr=btDevice.getBluetoothAddress();
@@ -255,7 +256,8 @@ public class ServiceFinderPane extends JPanel implements Cancelable, ActionListe
    * @param transID The SDP transaction ID
    * @param servRecord The new services discovered
    */
-  public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {  	
+  public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
+  	//System.out.println ("services Discovered " + servRecord[0]);
     for(int i=0;i<servRecord.length;i++) {
       try {
         RemoteDevice dev=servRecord[i].getHostDevice();
@@ -317,7 +319,9 @@ public class ServiceFinderPane extends JPanel implements Cancelable, ActionListe
       for(int i=0;i<m_remote.size();i++) {
         RemoteDevice dev=(RemoteDevice)m_remote.elementAt(i);
         try {
+        	//System.out.println ("Searching services for " + dev.getBluetoothAddress());
           serviceSearchTransID = m_agent.searchServices(attrids, m_search, dev, this);
+      	//System.out.println ("done starting Searching services for " + dev.getBluetoothAddress());
           synchronized(this) {
             nbOfServiceSearch++;
             if(nbOfServiceSearch==maxServiceSearch) {
@@ -439,11 +443,13 @@ public class ServiceFinderPane extends JPanel implements Cancelable, ActionListe
   }
 
   public void inquiryCompleted(int discType) {
-  	if (discType == DiscoveryListener.INQUIRY_COMPLETED) serviceSearch();
+  	if (discType == DiscoveryListener.INQUIRY_COMPLETED)
+  		serviceSearch();
   }
 
   public void serviceSearchCompleted(int transID, int respCode) {
-    nbOfServiceSearch--;
+  	//System.out.println ("Service search completed " + respCode);
+  	nbOfServiceSearch--;
     serviceSearchTransID = respCode == DiscoveryListener.SERVICE_SEARCH_TERMINATED ? -2 : -1;
     synchronized(this) {
       this.notifyAll();

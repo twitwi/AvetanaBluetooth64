@@ -1,5 +1,7 @@
 package de.avetana.bluetooth.connection;
 
+import java.io.IOException;
+
 import javax.bluetooth.*;
 import de.avetana.bluetooth.sdp.*;
 import de.avetana.bluetooth.stack.*;
@@ -46,7 +48,13 @@ public abstract class ConnectionNotifier implements Connection {
   /**
    * The connection ID
    */
-  protected int m_fid=-1;
+  protected int m_fid=0;
+  
+  /**
+   * When registering of a connection fails, the reason is given here
+   */
+  
+  protected IOException failEx = null;
 
   /**
    * The service record handle
@@ -79,6 +87,10 @@ public abstract class ConnectionNotifier implements Connection {
    */
   public void setConnectionID(int fid) {
     this.m_fid = fid;
+  }
+  
+  public void setFailure (IOException e) {
+  	this.failEx = e;
   }
 
   /**
@@ -151,17 +163,26 @@ public abstract class ConnectionNotifier implements Connection {
   }
 
   /**
-   * Closes the connection NOTIFIER (and not the connection itself) and remove the service from the BCC.
+   * Remove the notifier and the SDP Record
    */
-  public synchronized void close() {
+  
+  protected void removeNotifier() {
   	if (isClosed) return;
     try {
       BlueZ.myFactory.removeNotifier(this);
-      m_fid = -2;
-      notifyAll();
       if (m_serviceHandle != 0) BlueZ.disposeLocalRecord(m_serviceHandle);
       m_serviceHandle = 0;
-      isClosed=true;
-    }catch(Exception ex) {}
+    } catch (Exception e) {}
+  }
+  /**
+   * Closes the connection NOTIFIER (and not the connection itself) .
+   */
+  
+  
+  public synchronized void close() {
+  	removeNotifier();
+  	isClosed=true;
+  	m_fid = 0;
+  	notifyAll();
   }
 }

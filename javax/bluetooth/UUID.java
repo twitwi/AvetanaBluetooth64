@@ -176,6 +176,7 @@ public class UUID {
               tmp[0]=toCharr[i*2];
               tmp[1]=toCharr[(i+1)*2-1];
               uuidBytes[i]=Short.decode("0x"+new String(tmp)).byteValue();
+              uuidLong = Long.parseLong (uuidValue.substring(0, 8), 16);
             }catch(Exception ex) {throw new IllegalArgumentException();}
           }
         }

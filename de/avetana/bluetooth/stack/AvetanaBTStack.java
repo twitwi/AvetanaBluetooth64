@@ -80,8 +80,8 @@ public class AvetanaBTStack extends BluetoothStack {
 
   public int authenticate(RemoteDevice dev) throws Exception {
     BTConnection bs=isConnected(dev);
-    if(bs==null || bs.getConnectionID() == -1) throw new Exception("This remote device is not connected!");
-    return BlueZ.authenticate(bs.getConnectionID(), dev.getBTAddress().toString());
+//    if(bs==null || bs.getConnectionID() == -1) throw new Exception("This remote device is not connected!");
+    return BlueZ.authenticate(bs == null ? -1 : bs.getConnectionID(), dev.getBTAddress().toString(), null);
   }
 
   public boolean getConnectionFlag(RemoteDevice dev, int pos) throws Exception {

@@ -39,7 +39,8 @@ public class LibLoader {
 	    String libName = name;
 	    String sysName = System.getProperty("os.name");
 	    
-	    if (sysName.toLowerCase().indexOf("windows") != -1) libName = libName + ".dll";
+	    if (sysName.toLowerCase().indexOf("windows") != -1 && sysName.toLowerCase().indexOf("ce") != -1) libName = libName + "CE.dll";
+	    else if (sysName.toLowerCase().indexOf("windows") != -1) libName = libName + ".dll";
 	    else if (sysName.toLowerCase().indexOf("linux") != -1) libName = "lib" + libName + ".so";
 	    else if (sysName.toLowerCase().indexOf("mac os x") != -1) libName = "lib" + libName + ".jnilib";
 	    else throw new Exception ("Unsupported operating system" + sysName);
@@ -50,7 +51,6 @@ public class LibLoader {
 	    		Class cl = new LibLoader().getClass();
 	    		ClassLoader clo = cl.getClassLoader();
 	    		if (clo == null) {
-	    			System.out.println ("Trying to use SystemClassLoader...");
 	    			is = ClassLoader.getSystemResourceAsStream(libName);
 	    		}else is = clo.getResourceAsStream(libName);
 	 
@@ -72,10 +72,10 @@ public class LibLoader {
 	    }
 	    String path = fd.getAbsolutePath();
 	    fd.delete();
-	    File f = new File(path);
+	    final File f = new File(path);
 	    f.mkdirs();
-	    f = new File (f, libName);
-	    FileOutputStream fos = new FileOutputStream (f);
+	    final File f2 = new File (f, libName);
+	    FileOutputStream fos = new FileOutputStream (f2);
 
 	    byte[] b = new byte[1000];
 	    int len;
@@ -83,8 +83,15 @@ public class LibLoader {
 	      fos.write(b, 0, len);
 	    }
 	    fos.close();
-	    System.load(f.getAbsolutePath());
+	    System.load(f2.getAbsolutePath());
 
+	    Runnable r = new Runnable() {
+	    		public void run() {
+	    			f2.delete();
+	    			f.delete();
+	    		}
+	    };
+	    Runtime.getRuntime().addShutdownHook(new Thread (r));
 	  }
 
 /*  public static void loadCommLib (String name) throws Exception {

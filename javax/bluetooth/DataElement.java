@@ -28,6 +28,7 @@
 */
 package javax.bluetooth;
 
+import java.io.UnsupportedEncodingException;
 import java.util.*;
 import de.avetana.bluetooth.util.Debug;
 /**
@@ -427,7 +428,12 @@ public class DataElement {
             case URL: {
                     headerByteSize = 2;
                     String string      = (String)value;
-                    byte[] stringBytes = string.getBytes();
+                    byte[] stringBytes;
+                    try {
+						stringBytes = string.getBytes("UTF-8");
+					} catch (UnsupportedEncodingException e) {
+						stringBytes = string.getBytes();
+					}
                     byte[] bytes       = new byte[stringBytes.length + 2];
                     bytes[0] = (byte)(valueType == URL ? URL : 0x25);
                     bytes[1] = (byte)stringBytes.length;
@@ -640,7 +646,12 @@ public class DataElement {
             case 0x27: {
                     byte[] valueObject = new byte[(int)(dataBytes.length - headerByteSize)];
                     System.arraycopy(dataBytes, (int)(headerByteSize), valueObject, 0, valueObject.length);
-                    return new String(valueObject);
+                    try {
+						return new String(valueObject, "UTF-8");
+					} catch (UnsupportedEncodingException e) {
+						// TODO Auto-generated catch block
+						return new String (valueObject);
+					}
                 }
             case DATSEQ:
             case DATALT: {

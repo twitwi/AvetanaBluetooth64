@@ -46,7 +46,7 @@ public class BluetoothStream extends BTConnection implements StreamConnection {
   /**
    * The own defined and implemented input stream.
    */
-  protected MInputStream inStream;
+  protected MInputStream inStream = null;
 
   /**
    * The own defined and implemented output stream.
@@ -92,7 +92,7 @@ public class BluetoothStream extends BTConnection implements StreamConnection {
             if (data > 0) inStream.addData(b, data);
             else if (data == -1) inStream.close();
             else this.wait(50);
-          } catch (Exception e) { closed = true; isReading = false; }
+          } catch (Exception e) { e.printStackTrace(); closed = true; isReading = false; }
         }
       }
     };
@@ -117,7 +117,7 @@ public class BluetoothStream extends BTConnection implements StreamConnection {
    * @throws java.io.IOException
    */
   public DataInputStream openDataInputStream() throws java.io.IOException {
-    if(!isReading) this.startReading();
+    if(inStream == null) this.startReading();
     return new DataInputStream(inStream);
   }
 
@@ -144,7 +144,7 @@ public class BluetoothStream extends BTConnection implements StreamConnection {
    * @return The inputstream used by this connection
    */
   public InputStream openInputStream() throws IOException  {
-    if(!isReading) this.startReading();
+    if(inStream == null) this.startReading();
     return inStream;
   }
 
@@ -155,10 +155,10 @@ public class BluetoothStream extends BTConnection implements StreamConnection {
   protected class MInputStream extends InputStream {
 
     byte[] buffer = new byte[100];
-    int readPos = 0, writePos = 0;
+    private int readPos = 0, writePos = 0;
 
     public synchronized int available () {
-      return closed ? 0 : writePos - readPos;
+      return Math.max (0, writePos - readPos);
     }
 
     public synchronized void addData(byte[] b, int len) {
@@ -186,14 +186,12 @@ public class BluetoothStream extends BTConnection implements StreamConnection {
     }
 
     public synchronized int read() throws IOException {
-      if (closed == true) throw new IOException("Connection closed");;
       waitForData();
-      return (int)buffer[readPos++];
+      return (int)(buffer[readPos++] & 0xff);
     }
 
     public synchronized int read (byte[] b, int off, int len) throws IOException {
       waitForData();
-      if (closed == true) throw new IOException("Connection closed");;
       int av = available();
       int r = av > b.length - off ? b.length - off : av;
       r = r > len ? len : r;
@@ -202,12 +200,8 @@ public class BluetoothStream extends BTConnection implements StreamConnection {
       return r;
     }
 
-    public void close() {
+    public synchronized void close() {
       closed = true;
-    }
-
-    public void reset() {
-      readPos = writePos = 0;
     }
 
   }

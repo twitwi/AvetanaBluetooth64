@@ -238,7 +238,7 @@ JNIEXPORT jboolean JNICALL Java_de_avetana_bluetooth_stack_BlueZ_pageAndConnAllo
  * Signature: (ILjava/lang/String;)I
  */
 JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_authenticate
-  (JNIEnv *, jclass, jint, jstring);
+  (JNIEnv *, jclass, jint, jstring, jstring);
 
 /*
  * Class:     de_avetana_bluetooth_stack_BlueZ

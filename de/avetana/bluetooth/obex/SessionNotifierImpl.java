@@ -63,11 +63,6 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 				try {
 					while (true) {
 						byte[] data = receiveCommand ();
-						System.out.print ("Received command ");
-						for (int i = 0;i < data.length;i++) {
-							System.out.print (" " + Integer.toHexString((int)(data[i] & 0xff)));
-						}
-						System.out.println();
 						switch ((int)(data[0] & 0xff)) {
 							case 0x80: {
 								mtu = 0xffff & ((0xff & data[5]) << 8 | (0xff & data[6]));
@@ -141,7 +136,6 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 									}
 									sendCommand (ret, OBEXConnection.hsToByteArray(response));
 									if (ret == 0xa0) m_getOperation = null;
-									System.out.println ("Sent response " + Integer.toHexString (ret));
 								}
 								break;
 							}

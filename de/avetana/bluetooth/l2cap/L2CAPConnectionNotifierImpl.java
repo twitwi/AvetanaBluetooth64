@@ -91,8 +91,11 @@ public class L2CAPConnectionNotifierImpl extends ConnectionNotifier implements L
    * @exception BluetoothStateException if the server device could
    * not be placed in connectable mode because the device user has configured the device to be non-connectable.
    */
-  public L2CAPConnection acceptAndOpen() throws IOException, ServiceRegistrationException {
-    try {
+  public synchronized L2CAPConnection acceptAndOpen() throws IOException, ServiceRegistrationException {
+    if (m_fid == -2) throw  new IOException ("Already waiting to be connected or connected");
+  	m_fid = -2;
+  	failEx = null;
+  	try {
       m_serviceHandle=BlueZ.createService((LocalServiceRecord)myRecord);
       if(m_serviceHandle < 0) throw new Exception();
       myRecord.setAttributeValue(0x0, new DataElement(DataElement.U_INT_4, new Long(m_serviceHandle).longValue()));
@@ -104,23 +107,28 @@ public class L2CAPConnectionNotifierImpl extends ConnectionNotifier implements L
     try {
       BlueZ.registerNotifier(this);
     }catch(Exception ex) {
+    	  m_fid = 0;
       throw new IOException("ERROR - Unable to register the local Service Record!");
     }
 
-    synchronized (this) {
-      while(m_fid==-1) {
+     while(m_fid==-2) {
         try {wait(200);}catch(Exception ex) {}
-      }
-    }
+     }
 
     if (m_fid > 0) {
+    	  removeNotifier();
       L2CAPConnectionImpl con=new L2CAPConnectionImpl(m_fid);
       con.m_receiveMTU = m_recMTU;
       con.m_transmitMTU = m_transMTU;
       con.setRemoteDevice(m_remote);
       con.setConnectionURL(parsedURL);
+      m_fid = 0;
       return con;
-    } else throw new IOException ("Service Revoked");
+    } else {
+    		m_fid = 0;
+    		if (failEx != null) throw failEx;
+    		throw new IOException ("Service Revoked");
+    }
 
   }
   

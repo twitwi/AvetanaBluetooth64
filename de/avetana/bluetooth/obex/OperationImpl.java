@@ -274,7 +274,7 @@ public class OperationImpl implements Operation {
 	      if (opCode == OBEXConnection.GET && receiverThread == null && available() == 0) return -1;
 	      if (opCode == OBEXConnection.PUT && available() == 0) return -1;
 	      waitForData();
-	      return (int)buffer[readPos++];
+	      return (int)(buffer[readPos++] & 0xff);
 	    }
 
 	    public synchronized int read (byte[] b, int off, int len) throws IOException {

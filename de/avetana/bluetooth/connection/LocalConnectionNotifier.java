@@ -70,7 +70,11 @@ public class LocalConnectionNotifier extends ConnectionNotifier implements Strea
     * @return the opened stream connection
     * @throws IOException
    */
-  public StreamConnection acceptAndOpen() throws IOException{
+  public synchronized StreamConnection acceptAndOpen() throws IOException{
+    if (m_fid == -2) throw  new IOException ("Already waiting to be connected");
+  	m_fid = -2;
+  	failEx = null;
+  	
       try {
         m_serviceHandle=BlueZ.createService((LocalServiceRecord)myRecord);
         if(m_serviceHandle < 0) throw new Exception();
@@ -83,23 +87,25 @@ public class LocalConnectionNotifier extends ConnectionNotifier implements Strea
       }
       try {
         BlueZ.registerNotifier(this);
-
       }catch(Exception ex) {
         throw new IOException("ERROR - Unable to register the local Service Record!");
       }
-
-      synchronized (this) {
-        while(m_fid==-1) {
-          try {wait(200);}catch(Exception ex) {}
-        }
+      
+      while(m_fid==-2) {
+        try {wait(200);}catch(Exception ex) {}
       }
-
+      
       if (m_fid > 0) {
+      	removeNotifier();
         LocalConnection con=new LocalConnection(m_fid);
         con.setRemoteDevice(m_remote);
         con.setConnectionURL(parsedURL);
+        m_fid = 0;
         return con;
-      } else
+      } else {
+        m_fid = 0;
+        if (failEx != null) throw failEx;
         throw new IOException ("Service Revoked");
+      }
   }
 }

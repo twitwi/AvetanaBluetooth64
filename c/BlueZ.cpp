@@ -1114,7 +1114,7 @@ JNIEXPORT jbooleanArray JNICALL Java_de_avetana_bluetooth_stack_BlueZ_connection
  *
  */
 JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_authenticate
-  (JNIEnv *env, jclass obj, jint connectionHandle, jstring badr) {
+  (JNIEnv *env, jclass obj, jint connectionHandle, jstring badr, jstring pin) {
 
   struct hci_conn_info_req *cr;
   struct hci_request rq;

@@ -98,7 +98,7 @@ public class JSRTest extends JFrame implements ActionListener {
   // Server application
   private JToggleButton m_offerService = new JToggleButton ("Offer service");
   // Options for existing connections
-  private JToggleButton m_encryptLink, m_authenticateLink, m_switchMaster;
+  private JButton m_encryptLink, m_authenticateLink, m_switchMaster;
   // Remote Device infos
   private JButton m_remote=new JButton("Get remote device infos");
   // Local device properties
@@ -344,9 +344,9 @@ public class JSRTest extends JFrame implements ActionListener {
 
      JPanel activeConnection=new JPanel(new GridLayout(0,2));
      activeConnection.setBorder(BorderFactory.createTitledBorder("Change the state of an active connection"));
-     this.m_encryptLink = new JToggleButton("Encrypt connection");
-     this.m_authenticateLink = new JToggleButton("Authenticate remote device");
-     this.m_switchMaster =new JToggleButton("Switch Master/Slave");
+     this.m_encryptLink = new JButton("Encrypt connection");
+     this.m_authenticateLink = new JButton("Authenticate remote device");
+     this.m_switchMaster =new JButton("Switch Master/Slave");
      activeConnection.add(this.m_encryptLink,c);
      activeConnection.add(this.m_authenticateLink,c);
      activeConnection.add(m_switchMaster,c);
@@ -665,7 +665,7 @@ public class JSRTest extends JFrame implements ActionListener {
    public void authenticateLink() {
      try {
        RemoteDevice dev=((BTConnection)streamCon).getRemoteDevice();
-       dev.authenticate();
+       JOptionPane.showMessageDialog(this, "Authentification " + (dev.authenticate() ? "successfull" : "Non successfull"));
      }catch(Exception ex) {
        showError(ex.getMessage());
      }
@@ -750,9 +750,10 @@ public class JSRTest extends JFrame implements ActionListener {
        }
        else if (e.getSource() == sendData) {
          if(m_protocols.getSelectedIndex() == JSR82URL.PROTOCOL_RFCOMM) {
-            byte b[] = new byte[100];
-            for (int i = 0; i < b.length; i++) b[i] = (byte) (256 * Math.random());
+            byte b[] = new byte[300];
+            for (int i = 0; i < b.length; i++) b[i] = (byte) (0x100 * Math.random());
          	os.write(b);
+         	//System.out.println ("Wrote " + (int)(b[0] & 0xff) + " " + (int)(b[1] & 0xff));
          }
          else if(m_protocols.getSelectedIndex() == JSR82URL.PROTOCOL_L2CAP) {
          	byte[] b = new byte[(int)((double)((L2CAPConnection)streamCon).getTransmitMTU() * Math.random())];
@@ -949,9 +950,12 @@ public class JSRTest extends JFrame implements ActionListener {
      public void run() {
        running = true;
        received = 0;
-       byte b[] = new byte[200];
+       byte b[] = new byte[300];
        try {
          while (running) {
+           //int v1 = is.read();
+           //int v2 = is.read();
+           //System.out.println (v1 + " " + v2);
            dataReceived.setText("Received " + received);
            int a = is.read(b);
            received += a;
