@@ -129,6 +129,9 @@
 	  Updates in inquiry error handling.
 	  Added Link Quality code from Christiano di Flora diflora@unina.it
     </build>
+    <build value="35" date="2005-03-18" time="15:07">
+	 Added patches to compile in Java5
+    </build>
     
    </revision>
   </version>
