@@ -110,6 +110,8 @@ int extract_uuid_len(const char *p, int *scanned);
 void extract_str_len(const char *p, int *len);
 void extract_seq_len(const char *p, int *len);
 void extract_int_len(const char *p, int *len);
+int find_conn(int s, int dev_id, long arg);
+
 
 /**
  * Listen for an incomming connection on the given channel.
@@ -372,7 +374,7 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciLinkQuality
 * @return An estimation of the Received Signal Strength Indicator.
 */
 JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_getRssi
- (JNIEnv *env, jobject obj, jstring bdaddr_jstr)
+ (JNIEnv *env, jclass cls, jstring bdaddr_jstr)
 
 {
     char *bdaddr_str;
@@ -393,23 +395,23 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_getRssi
 	dev_id = hci_for_each_dev(HCI_UP, find_conn, (long) &bdaddr);
 	if (dev_id < 0) {
 	//No previous connection
-	return -20;
+	return 0x100;
 	}
 
 	dd = hci_open_dev(dev_id);
 	if (dd < 0) {
-		return -21;
+		return 0x100;
 	};
 
     cr = (hci_conn_info_req *)malloc(sizeof(*cr) + sizeof(struct hci_conn_info));
 	
 	if (!cr)
-		return -19;
+		return 0x100;
 
 	bacpy(&cr->bdaddr, &bdaddr);
 	cr->type = ACL_LINK;
 	if (ioctl(dd, HCIGETCONNINFO, (unsigned long) cr) < 0) {
-	     return -22;
+	     return 0x100;
 	}
 
 	memset(&rq, 0, sizeof(rq));
@@ -421,11 +423,11 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_getRssi
 	rq.rlen   = READ_RSSI_RP_SIZE;
 
 	if (hci_send_req(dd, &rq, 100) < 0) {
-	       return -23;
+	       return 0x100;
 	}
 
 	if (rp.status) {
-		return 24;
+		return 0x100;
 	}
            return rp.rssi;
 

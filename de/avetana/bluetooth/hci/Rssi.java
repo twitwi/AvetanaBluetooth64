@@ -7,6 +7,7 @@
 package de.avetana.bluetooth.hci;
 
 import de.avetana.bluetooth.stack.BlueZ;
+import de.avetana.bluetooth.stack.BlueZException;
 import de.avetana.bluetooth.util.BTAddress;
 
 /**
@@ -26,6 +27,12 @@ public class Rssi {
 		 * @return -13 < n <  13 for the connection quality ( 0 is best), NOT_CONNECTED if the device is not connected or NOT_IMPLEMENTED if no rssi value is available.  
 		 */
 	public static int getRssi (BTAddress adr) {
-		return BlueZ.getRssi (adr.toString());
+		try {
+			return BlueZ.getRssi (adr.toString());
+		} catch (BlueZException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return NOT_CONNECTED;
 	}
 }
