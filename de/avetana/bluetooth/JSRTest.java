@@ -52,7 +52,6 @@ import de.avetana.bluetooth.l2cap.L2CAPConnectionNotifierImpl;
 import de.avetana.bluetooth.util.BTAddress;
 import de.avetana.bluetooth.util.DeviceFinder;
 import de.avetana.bluetooth.util.ServiceFinderPane;
-import de.avetana.bluetooth.sdp.SDPConstants;
 
 /**
  * <b>COPYRIGHT:</b><br> (c) Copyright 2004 Avetana GmbH ALL RIGHTS RESERVED. <br><br>
@@ -738,6 +737,7 @@ public class JSRTest extends JFrame implements ActionListener {
            is = null;os = null;
            if(receiverThread!=null) {receiverThread.stopReading();receiverThread=null;}
            this.l2CAPBut.setEnabled(true);
+           System.out.println ("ReceiveMTU=" + ((L2CAPConnection)streamCon).getReceiveMTU() + " TransmitMTU=" + ((L2CAPConnection)streamCon).getTransmitMTU());
          } else if (streamCon instanceof ClientSession) {
             is = null;os = null;
             this.l2CAPBut.setEnabled(true);
@@ -749,12 +749,17 @@ public class JSRTest extends JFrame implements ActionListener {
          closeConnection();
        }
        else if (e.getSource() == sendData) {
-         byte b[] = new byte[100];
-         for (int i = 0; i < b.length; i++) b[i] = (byte) (256 * Math.random());
-         if(m_protocols.getSelectedIndex() == JSR82URL.PROTOCOL_RFCOMM)
-           os.write(b);
-         else if(m_protocols.getSelectedIndex() == JSR82URL.PROTOCOL_L2CAP)
-           ((L2CAPConnection)streamCon).send(b);
+         if(m_protocols.getSelectedIndex() == JSR82URL.PROTOCOL_RFCOMM) {
+            byte b[] = new byte[100];
+            for (int i = 0; i < b.length; i++) b[i] = (byte) (256 * Math.random());
+         	os.write(b);
+         }
+         else if(m_protocols.getSelectedIndex() == JSR82URL.PROTOCOL_L2CAP) {
+         	byte[] b = new byte[(int)((double)((L2CAPConnection)streamCon).getTransmitMTU() * Math.random())];
+            for (int i = 0; i < b.length; i++) b[i] = (byte) (256 * Math.random());
+         	((L2CAPConnection)streamCon).send(b);       	
+         	System.out.println ("Sent " + b.length + " bytes ");
+         }
          else if(m_protocols.getSelectedIndex() == JSR82URL.PROTOCOL_OBEX) {
             ClientSession cs = (ClientSession)streamCon;
             HeaderSet hs = cs.createHeaderSet();
@@ -814,7 +819,7 @@ public class JSRTest extends JFrame implements ActionListener {
            try {
              //JSR82URL url=new JSR82URL("btspp://localhost:0dad43655df111d69f6e00039353e858;name=JSRTest");
              //JSR82URL url=new JSR82URL("btspp://localhost:" + new UUID (SDPConstants.UUID_SERIAL_PORT)+ ";name=JSRTest");
-             JSR82URL url=new JSR82URL("btspp://localhost:" + new UUID (0x12345678) + ";name=JSRTest");
+             JSR82URL url=new JSR82URL("btspp://localhost:00112233445566778899aabbccddeeff;name=JSRTest");
              url.setParameter("encrypt", new Boolean(m_encrypt.isSelected()));
              url.setParameter("authenticate", new Boolean(m_authentication.isSelected()));
              url.setParameter("master", new Boolean(m_master.isSelected()));
@@ -846,6 +851,7 @@ public class JSRTest extends JFrame implements ActionListener {
              notify = (ConnectionNotifier)Connector.open(url.toString());
              streamCon = ((L2CAPConnectionNotifierImpl)notify).acceptAndOpen();
              serviceStatus.setText("connected with fid="+((BTConnection)streamCon).getConnectionID());
+             System.out.println ("ReceiveMTU=" + ((L2CAPConnection)streamCon).getReceiveMTU() + " TransmitMTU=" + ((L2CAPConnection)streamCon).getTransmitMTU());
              JSRTest.this.l2CAPBut.setEnabled(true);
              enableConnAttributes(true);
              } catch (Exception e) { e.printStackTrace(); }
