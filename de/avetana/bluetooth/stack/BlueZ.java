@@ -27,6 +27,7 @@ package de.avetana.bluetooth.stack;
 
 
 import java.io.*;
+import java.util.Vector;
 
 import javax.bluetooth.DiscoveryAgent;
 import javax.bluetooth.DiscoveryListener;
@@ -63,6 +64,19 @@ public class BlueZ
 
     public static int m_transactionId = 0;
     public static final String  m_version;
+    private static Vector mutexes = new Vector();
+    
+    private static class Mutex {
+		int fid;
+		
+		public Mutex (int fid) {
+			this.fid = fid;
+		}
+		
+		public boolean equals (Object m2) {
+			return (m2 instanceof Mutex && ((Mutex)m2).fid == fid);
+		}
+}
 
 	// Loads the library containing the native code implementation.
 	// It is usually called "libavetanaBT.so" under UNIX/Linux, but is loaded
@@ -70,14 +84,15 @@ public class BlueZ
 	// independence.
 	static {
 		try {LibLoader.loadCommLib("avetanaBT"); } catch (Exception e ) { e.printStackTrace(); System.exit(0);}
-		InputStream is = ClassLoader.getSystemResourceAsStream("version.xml");
-		BufferedReader br = new BufferedReader (new InputStreamReader (is));
 		String version = "0";
 		String revision = "0";
 		String build = "0";
-		
+
 		String line = "";
 		try {
+			InputStream is = ClassLoader.getSystemResourceAsStream("version.xml");
+			if (is == null) is = new BlueZ().getClass().getClassLoader().getResourceAsStream("version.xml");
+			BufferedReader br = new BufferedReader (new InputStreamReader (is));
 			
 		while ((line = br.readLine()) != null) {
 			line = line.toLowerCase();
@@ -101,12 +116,13 @@ public class BlueZ
 				build = line.substring(idx + 1, idx2);				
 			}
 		}
-		} catch (Exception e) {}
-		
+		} catch (Exception e) {
+			version = "not";
+			revision = "available";
+			build ="";
+		}
 		m_version = version + "." + revision + "." + build;
-		
 		System.out.println ("avetanaBluetooth version " + m_version);
-		
 	}
 
 	/**
@@ -329,7 +345,15 @@ public class BlueZ
          * Closes an existing connection.
          * @param fid The integer, which uniquely identifies the connection (the file descriptor under linux).
          */
-        public static native void closeConnection (int fid) ;
+        
+        public static void closeConnectionS (int fid) {
+      	  synchronized (getMutex (fid)) {
+      	  	closeConnection (fid);
+      	  	mutexes.remove(new Mutex (fid));
+      	  }        	
+        }
+        
+        private static native void closeConnection (int fid) ;
 
         /**
          * Reads bytes from an existing connection (RFCOMM, L2CAP or another type of connection)
@@ -339,7 +363,14 @@ public class BlueZ
          * @return THe number of bytes read of -1 if an error occured
          * @throws BlueZException
          */
-        public synchronized static native int readBytes (int fid, byte[] b, int len) throws BlueZException;
+        public static int readBytesS (int fid, byte[] b, int len) throws BlueZException {
+        	  synchronized (getMutex (fid)) {
+        	  	int rlen = readBytes (fid, b, len);
+        	  	return rlen;
+        	  }
+        }
+
+        private static native int readBytes (int fid, byte[] b, int len) throws BlueZException;
 
         /**
          * Writes byte to an existing connection
@@ -348,8 +379,27 @@ public class BlueZ
          * @param len The length of b
          * @param off The offset into b at which to start
          */
-        public synchronized static  native void writeBytes (int fid, byte b[], int off, int len);
+        
+        public static void writeBytesS (int fid, byte b[], int off, int len) {
+        		synchronized (getMutex (fid)) {
+        			writeBytes (fid, b, off, len);
+        		}
+       	
+        }
+        
+        private static native void writeBytes (int fid, byte b[], int off, int len);
 
+        
+    		private static Object getMutex (int num) {
+    			synchronized (mutexes) {
+    				Mutex m = new Mutex (num);
+    				int i = mutexes.indexOf(m);
+    				if (i != -1) return mutexes.elementAt(i);
+    				else {  mutexes.add (m); return m; }
+    			}
+    		}
+
+        
         /**
          * Lists all SDP services, which match a desired list of UUIDs. Only the attributes contained in attrIds will
          * populate the returned service records.

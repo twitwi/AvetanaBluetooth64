@@ -143,7 +143,7 @@ public class PocketTest extends Frame {
 				String device = dataList.getSelectedItem();
 				device = device.substring(0, device.indexOf(" "));
 				try {
-					LocalDevice.getLocalDevice().getDiscoveryAgent().searchServices(null, new UUID[] {new UUID(0x100) }, new RemoteDevice (device), this);
+					LocalDevice.getLocalDevice().getDiscoveryAgent().searchServices(new int[] { 0x100 }, new UUID[] {new UUID(0x100) }, new RemoteDevice (device), this);
 				} catch (Exception e1) {
 					// TODO Auto-generated catch block
 					serviceList.add (e1.getMessage());

@@ -18,30 +18,36 @@ import java.io.*;
  * TODO To change the template for this generated type comment go to
  * Window - Preferences - Java - Code Style - Code Templates
  */
-public class MultiAOTest {
+public class MultiAOTest extends Thread{
 
-	public MultiAOTest() throws Exception {
-		StreamConnectionNotifier scnot = (StreamConnectionNotifier)Connector.open ("btspp://localhost:" + new UUID (SDPConstants.UUID_DIALUP_NETWORKING) + ";name=test");
-		BufferedReader br = new BufferedReader (new InputStreamReader (System.in));
-		while (true) {
-			System.out.println ("Before acceptAndOpen");
+	int id;
+	public MultiAOTest(int id) throws Exception {
+		this.id = id;
+	}
+	
+	public void run() {
+		try {
+			StreamConnectionNotifier scnot = (StreamConnectionNotifier)Connector.open ("btspp://localhost:"+ id + "0112233445566778899aabbccddeeff;name=test" + id);
+			System.out.println ("Before acceptAndOpen " + id);
 			StreamConnection scon = scnot.acceptAndOpen();
-			System.out.println ("acceptAndOpen done");
+			System.out.println ("acceptAndOpen done " + id);
 			InputStream is = scon.openInputStream();
 			OutputStream os = scon.openOutputStream();
-			System.out.println ("opening of streams done");
-			br.readLine();
+			System.out.println ("opening of streams done " + id);
+			is.read();
+			System.out.println ("Stream " + id + " has received data");
+			os.write(new byte[100]);
 			is.close();
 			os.close();
-			System.out.println ("closing of streams done");
-			br.readLine();
 			scon.close();
-			System.out.println ("closing of connection done");
-			br.readLine();
-		}
+			System.out.println ("Stream " + id + " closed");
+		} catch (Exception e) { e.printStackTrace(); }
 	}
 	
 	public static void main(String[] args) throws Exception {
-		new MultiAOTest();
+		BufferedReader br = new BufferedReader (new InputStreamReader (System.in));
+		new MultiAOTest(1).start();
+		br.readLine();
+		new MultiAOTest(2).start();
 	}
 }

@@ -252,7 +252,7 @@ public class JSR82URL {
     }
     if(m_address==null) retour+="localhost:"+m_localUUID;
     else retour+=m_address.toStringSep(false);
-    if(m_attrNumber!=null) retour+=":"+m_attrNumber.intValue();
+    if(m_attrNumber!=null && m_address != null) retour+=":"+m_attrNumber.intValue();
     String[] paramKey=getParameterKeys();
     for(int i=0;i<paramKey.length;i++) {
       try {

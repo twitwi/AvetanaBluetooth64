@@ -113,7 +113,7 @@ public class BTConnection {
    */
   public synchronized void close() {
     if  (fid > 0) {
-      BlueZ.closeConnection(fid);
+      BlueZ.closeConnectionS(fid);
       BlueZ.myFactory.removeConnection(this);
     }
     closed=true;

@@ -25,6 +25,7 @@ public class HeaderSetImpl implements HeaderSet {
     public static final int AUTH_RESPONSE = 0x4E;
 
 	private Hashtable headers;
+	private int lastResponse = -1;
 	
 	public HeaderSetImpl() {
 		headers = new Hashtable();
@@ -170,7 +171,12 @@ public class HeaderSetImpl implements HeaderSet {
 	 * @see javax.obex.HeaderSet#getResponseCode()
 	 */
 	public int getResponseCode() throws IOException {
-		throw new IOException ("Method not implemented. Get your Response code from Operation class");
+		if (lastResponse == -1) throw new IOException ("No Response code for this HeaderSet");
+		return lastResponse;
+	}
+	
+	protected void setRespCode (byte code) {
+		lastResponse = (int)(code & 0xff);
 	}
 
 }

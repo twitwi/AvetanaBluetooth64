@@ -50,7 +50,6 @@ import de.avetana.bluetooth.connection.ConnectionNotifier;
 import de.avetana.bluetooth.connection.JSR82URL;
 import de.avetana.bluetooth.hci.Rssi;
 import de.avetana.bluetooth.l2cap.L2CAPConnectionNotifierImpl;
-import de.avetana.bluetooth.obex.HeaderSetImpl;
 import de.avetana.bluetooth.sdp.SDPConstants;
 import de.avetana.bluetooth.util.BTAddress;
 import de.avetana.bluetooth.util.DeviceFinder;
@@ -700,7 +699,7 @@ public class JSRTest extends JFrame implements ActionListener {
        else if (e.getSource() == m_client) chooseClientConnection();
        else if (e.getSource() == m_server ) chooseServerConnection();
        else if (e.getSource() == m_offerService && m_offerService.isSelected() == true) offerService();
-       else if (e.getSource() == m_remote) getRemoteDevInfos();
+       else if (e.getSource() == m_remote)  	getRemoteDevInfos();
        else if (e.getSource() == m_offerService && m_offerService.isSelected() == false) revokeService();
        else if (e.getSource() == m_encryptLink) encryptLink();
        else if (e.getSource() == m_authenticateLink) authenticateLink();
@@ -763,8 +762,14 @@ public class JSRTest extends JFrame implements ActionListener {
          else if(m_protocols.getSelectedIndex() == JSR82URL.PROTOCOL_L2CAP) {
          	byte[] b = new byte[(int)((double)((L2CAPConnection)streamCon).getTransmitMTU() * Math.random())];
             for (int i = 0; i < b.length; i++) b[i] = (byte) (256 * Math.random());
+         	//byte[] b1 = new byte[] { 1,2,3,4,5 };
+         	
+         	//byte[] b2 = new byte[] { 11,22,33,44,55 };
+            //((L2CAPConnection)streamCon).send(b1);       	
+         	//((L2CAPConnection)streamCon).send(b2);       	
          	((L2CAPConnection)streamCon).send(b);       	
          	System.out.println ("Sent " + b.length + " bytes ");
+         	//((L2CAPConnection)streamCon).close(); 
          }
          else if(m_protocols.getSelectedIndex() == JSR82URL.PROTOCOL_OBEX) {
             ClientSession cs = (ClientSession)streamCon;
@@ -783,7 +788,8 @@ public class JSRTest extends JFrame implements ActionListener {
             	
             });*/
             //hs.createAuthenticationChallenge("client realm", true, true);
-            cs.connect(hs);
+            HeaderSet hs2 = cs.connect(hs);
+            System.out.println ("Connected with response code " + hs2.getResponseCode());
       
             InputStream is = this.getClass().getClassLoader().getResourceAsStream("avetana.vcf");
             byte b[] = new byte[is.available()];
@@ -901,7 +907,7 @@ public class JSRTest extends JFrame implements ActionListener {
        r = new Runnable() {
          public void run () {
            try {
-             JSR82URL url=new JSR82URL("btl2cap://localhost:ce37ca6e288a409a9796191882ee44fc;name=L2CAPTest");
+             JSR82URL url=new JSR82URL("btl2cap://localhost:ce37ca6e288a409a9796191882ee44fc;name=L2CAPTest;receiveMTU=672");
              url.setParameter("encrypt", new Boolean(m_encrypt.isSelected()));
              url.setParameter("authenticate", new Boolean(m_authentication.isSelected()));
              url.setParameter("master", new Boolean(m_master.isSelected()));
@@ -991,7 +997,14 @@ public class JSRTest extends JFrame implements ActionListener {
 					
 					public int onGet (Operation op) {
 						
+						
 						try {
+							HeaderSet hs = op.getReceivedHeaders();
+
+							int[] hl = hs.getHeaderList();
+							for (int i = 0;i < hl.length;i++) {
+								System.out.println ("Received header " + hl[i] + " : " + hs.getHeader(hl[i]));
+							}
 							op.openOutputStream().write ("Test Message from avetanaBluetooth".getBytes());
 						HeaderSet set = op.getReceivedHeaders();
 						set.setHeader(HeaderSet.TYPE, "text/plain");

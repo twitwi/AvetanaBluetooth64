@@ -84,15 +84,17 @@ public class LocalServiceRecord extends SDPServiceRecord {
                                                          short protocol) {
     LocalServiceRecord rec=new LocalServiceRecord();
     rec.m_type=protocol;
+    
     DataElement serviceClassIDList = new DataElement(DataElement.DATSEQ);
     DataElement scidProt = null;
     if ((svcID.toLong() & 0x1100l) == 0x1100l) ;
     else if(protocol==JSR82URL.PROTOCOL_RFCOMM) scidProt = new DataElement(DataElement.UUID, new UUID(SDPConstants.UUID_SERIAL_PORT));
     else if(protocol==JSR82URL.PROTOCOL_OBEX) scidProt = new DataElement(DataElement.UUID, new UUID(SDPConstants.UUID_OBEX_OBJECT_PUSH));
-    if (scidProt != null) serviceClassIDList.addElement(scidProt);
     if (svcID != null && !svcID.equals (UUID.NULL_UUID) && (scidProt == null || !svcID.equals(scidProt.getValue())))  
     		serviceClassIDList.addElement(new DataElement (DataElement.UUID, svcID));
+    if (scidProt != null) serviceClassIDList.addElement(scidProt);
     rec.m_attributes.put(new Integer(SDPConstants.ATTR_SERVICE_CLASS_ID_LIST), serviceClassIDList);
+    
     DataElement protocolDescriptorList = new DataElement(DataElement.DATSEQ);
     DataElement l2capDescriptor = new DataElement(DataElement.DATSEQ);
     l2capDescriptor.addElement(new DataElement(DataElement.UUID, new UUID(SDPConstants.UUID_L2CAP)));

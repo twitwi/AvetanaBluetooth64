@@ -6,7 +6,6 @@
  */
 package de.avetana.bluetooth.obex;
 
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -83,6 +82,8 @@ public class OperationImpl implements Operation {
 				startReceiverThread();
 			}
 			hs = con.createHeaderSet();
+		} else { // The command must come from the SessionNotifierImpl -> Save the headers received
+			recHeaders = hs;
 		}
 	}
 	

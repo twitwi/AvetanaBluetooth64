@@ -128,6 +128,7 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 		
 		if (b[0] != (byte)0xa0) throw new IOException ("Connection not accepted " + Integer.toHexString((int)(b[0] & 0xff)));
 		if (hs.getHeader(HeaderSetImpl.CONNECTION_ID) != null) conID = ((Long)hs.getHeader(HeaderSetImpl.CONNECTION_ID)).longValue();
+		((HeaderSetImpl)hs).setRespCode (b[0]);
 		return hs;
 	}
 
@@ -179,7 +180,9 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 		sendCommand (DISCONNECT, bos.toByteArray());
 		byte[] b = receiveCommand();
 		if (b[0] != (byte)0xa0) throw new IOException ("Disconnection error");
-		return parseHeaders (b, 3);
+		HeaderSet hs = parseHeaders (b, 3);
+		((HeaderSetImpl)hs).setRespCode (b[0]);
+		return hs;
 
 	}
 
@@ -196,6 +199,7 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 			sendCommand (OBEXConnection.SETPATH, b2);
 			byte[] resp = receiveCommand();
 			HeaderSet hs = OBEXConnection.parseHeaders(resp, 3);
+			((HeaderSetImpl)hs).setRespCode (resp[0]);
 			return hs;
 	}
 
@@ -207,6 +211,7 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 		sendCommand (OBEXConnection.PUT, b1);
 		byte[] resp = receiveCommand();
 		HeaderSet hs = OBEXConnection.parseHeaders(resp, 3);
+		((HeaderSetImpl)hs).setRespCode (b1[0]);
 		return hs;
 	}
 

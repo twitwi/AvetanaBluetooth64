@@ -88,7 +88,7 @@ public class BluetoothStream extends BTConnection implements StreamConnection {
         isReading=true;
         while (!closed) {
           try {
-            int data = BlueZ.readBytes(fid, b, b.length);
+            int data = BlueZ.readBytesS(fid, b, b.length);
             if (data > 0) inStream.addData(b, data);
             else if (data == -1) inStream.close();
             else this.wait(50);
@@ -211,15 +211,15 @@ public class BluetoothStream extends BTConnection implements StreamConnection {
    */
   protected class MOutputStream extends OutputStream {
     public void write (int data) throws IOException {
-      BlueZ.writeBytes (fid, new byte[] { (byte)data }, 0, 1);
+      BlueZ.writeBytesS (fid, new byte[] { (byte)data }, 0, 1);
     }
 
     public void write (byte[] b) throws IOException {
-      BlueZ.writeBytes (fid, b, 0, b.length);
+      BlueZ.writeBytesS (fid, b, 0, b.length);
     }
 
     public void write (byte[] b, int off, int len) throws IOException {
-      BlueZ.writeBytes (fid, b, off, len);
+      BlueZ.writeBytesS (fid, b, off, len);
     }
 
   }

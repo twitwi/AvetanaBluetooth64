@@ -31,7 +31,6 @@ package de.avetana.bluetooth.util;
  */
 
 import java.io.*;
-import java.security.MessageDigest;
 
 public class LibLoader {
 
@@ -114,7 +113,7 @@ public class LibLoader {
 	    		try {
 	    			f2.deleteOnExit();
 	    			f.deleteOnExit();
-	    		} catch (Exception e) {
+	    		} catch (Throwable e) {
 	    		}
 	    }
 	   }

@@ -43,6 +43,7 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
   protected int m_receiveMTU=672;
   //This buffer is used to store data when ready was called and data is available
   private byte[] m_buffer = null;
+  private byte[] bint = null;
   private JSR82URL m_connectionURL;
 
   /**
@@ -118,14 +119,6 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
   }
 
   /**
-   * Closes this connection and removes it from the connection factory of the BlueZ class.
-   */
-  public void close() {
-    BlueZ.closeConnection(fid);
-    BlueZ.myFactory.removeConnection(this);
-  }
-
-  /**
    * Returns the MTU that the remote device supports. This value
    * is obtained after the connection has been configured. If the
    * application had specified TransmitMTU in the <code>Connector.open()</code>
@@ -196,13 +189,13 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
   public synchronized boolean ready() throws IOException {
     if(closed) throw new IOException("Connection does not exists or was previously closed");
     if (m_buffer != null) return true;
-    byte[] b2 = new byte[m_receiveMTU];
+    if (bint == null || bint.length != m_receiveMTU) bint = new byte[m_receiveMTU];
     int r = -1;
-    try { r = BlueZ.readBytes(fid, b2, b2.length); } catch (Exception e) { throw new IOException (e.getMessage()); }
+    try { r = BlueZ.readBytesS(fid, bint, m_receiveMTU); } catch (Exception e) { throw new IOException (e.getMessage()); }
     if (r >= 0) {
       m_buffer = new byte[r];
-      System.arraycopy(b2, 0, m_buffer, 0, r);
-    } else if (r == -1) throw new IOException  ("Connection closed");
+      System.arraycopy(bint, 0, m_buffer, 0, r);
+    } else if (r == -1) { close(); throw new IOException  ("Connection closed"); }
     return (r >= 0);
   }
 
@@ -223,8 +216,8 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
     if(data.length > m_transmitMTU) {
       byte[] newData=new byte[m_transmitMTU];
       System.arraycopy(data,0,newData,0,m_transmitMTU);
-      BlueZ.writeBytes(fid, newData, 0, newData.length);
+      BlueZ.writeBytesS(fid, newData, 0, newData.length);
     } else
-      BlueZ.writeBytes(fid, data, 0, data.length);
+      BlueZ.writeBytesS(fid, data, 0, data.length);
   }
 }

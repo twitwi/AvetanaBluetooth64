@@ -186,7 +186,10 @@ public class DiscoveryAgent {
      * not allow an inquiry to be started due to other operations that are being performed by the device
      */
     public synchronized boolean startInquiry(int accessCode, DiscoveryListener listener) throws BluetoothStateException {
-        if (listener != null) { if (!listeners.contains(listener)) listeners.addElement(listener); }
+    		if (!isInquiring) listeners = new Vector();
+
+    		if (listener != null) { if (!listeners.contains(listener)) listeners.addElement(listener); }
+    		
         if (isInquiring) {
             Enumeration remoteDevices = foundRemoteDevices.elements();
             while (remoteDevices.hasMoreElements()) {
@@ -204,8 +207,6 @@ public class DiscoveryAgent {
               foundRemoteDevices = new Vector();
               //bluetoothStack.registerDiscoveryAgent(DiscoveryAgent.this);
               try {
-                DiscoveryListener[] discList = new DiscoveryListener[listeners.size()];
-                listeners.copyInto(discList);
                   foundRemoteDevices = bluetoothStack.Inquire(DiscoveryAgent.this);
                   cachedRemoteDevices=new Vector();
                   for(int i=0;i<foundRemoteDevices.size();i++) {
@@ -219,7 +220,12 @@ public class DiscoveryAgent {
                   for(int u=0;u<listeners.size();u++)
                       ((DiscoveryListener)listeners.elementAt(u)).inquiryCompleted(DiscoveryListener.INQUIRY_COMPLETED);
               }
-              catch (Exception e) {inquiringException=e;}
+              catch (Exception e) {
+              	inquiringException=e;
+              	isInquiring = false;
+                for(int u=0;u<listeners.size();u++)
+                    ((DiscoveryListener)listeners.elementAt(u)).inquiryCompleted(DiscoveryListener.INQUIRY_ERROR);
+              	}
             }
           };
           new Thread(r).start();

@@ -150,7 +150,6 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 									m_getOperation = new OperationImpl (SessionNotifierImpl.this, request, OBEXConnection.GET);
 									response = ((OperationImpl)m_getOperation).getHeadersToSend();
 									handleAuthResponse(request);
-									boolean success = handleAuthResponse(request);
 									handleAuthChallenge(request, response);
 									ret = myHandler.onGet(m_getOperation);
 								} else 	response = ((OperationImpl)m_getOperation).getHeadersToSend();

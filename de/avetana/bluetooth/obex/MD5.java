@@ -85,13 +85,6 @@ package de.avetana.bluetooth.obex;
  *
  */
 
-
-//
-// Imports
-//
-import java.io.*;
-
-
 //
 // MD5 Class
 //

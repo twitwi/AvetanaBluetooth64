@@ -61,6 +61,7 @@
 /* Bluetooth includes */
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/poll.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/l2cap.h>
@@ -626,9 +627,8 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_openRFCommNative
 
    /* Set new options */
    if(transmitMTU!=-1 || receiveMTU!=-1) {
-     opts.omtu = (transmitMTU==-1?0:transmitMTU);
+     opts.omtu = (transmitMTU==-1?672:transmitMTU);
      opts.imtu = (receiveMTU==-1?672:receiveMTU);
-     printf("Setting transmit to imtu=%d omtu=%d", opts.imtu, opts.omtu);
      if (setsockopt(s, SOL_L2CAP, L2CAP_OPTIONS, &opts, opt) < 0) {
        printf("Can't set L2CAP options. %s(%d)", strerror(errno), errno);
        throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_openL2CAPNative: Unable to set MTU options!");
@@ -677,7 +677,8 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_openRFCommNative
      return 0;
 	 }
    // R
-   jobject rec = env->NewObject(service_cls, service_constructor, s, opts.imtu, opts.omtu);
+	 
+   jobject rec = env->NewObject(service_cls, service_constructor, s, (jint)opts.imtu, (jint)opts.omtu);
    return rec;
  }
 
@@ -773,22 +774,25 @@ int openBTConnection(const char *name, int channel, int type, int master, int au
    int rlen = 0;
    jbyte *c = (jbyte *)malloc (len);
    int sel;
+	 struct pollfd pfd;
+	 
+	 pfd.fd = fd;
+	 pfd.events = POLLIN | POLLERR | POLLHUP | POLLNVAL;
 
-   FD_ZERO(&fds);
-
-   struct timeval tv = { 0, 100 };
-   FD_SET(fd, &fds);
-
-   sel = select(FD_SETSIZE, &fds, NULL, NULL, &tv);
-   if(sel > 0) { //Data is available
+   sel = poll(&pfd, 1, 20);
+   if (sel == -1 || (sel == 1 && ((pfd.revents & 0x10) == 0x10))) { // Error case
+     free (c);
+		 return -1;
+   } else if(sel > 0) { //Data is available (inc. 0-length packets)
+//	    printf ("Poll returned %X\n", pfd.revents);
      rlen = read (fd, c, len);
-   } else if (sel == -1) { // Error case
-     return -1;
-   } else rlen = -2; //0-Length Packet has arrived
-
+//		 printf ("Returning data from packet with size %d %d\n", rlen, sel);
+   } else rlen = -2; //No data available
+	 
    if (rlen > 0) {
      env->SetByteArrayRegion(arr, 0, rlen, c);
    }
+	 free (c);
    return rlen;
 
  }
@@ -815,6 +819,11 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_writeBytes
 
 	done += count;
  }
+
+  if (len == 0) { 
+	  int ret = write (fd, "foo", 0);
+	  printf ("Wrote 0-length packet %d\n", ret);
+  }
 
   env->ReleaseByteArrayElements(b, bytes, 0);
 }
@@ -1293,7 +1302,7 @@ int listenL2CAP(JNIEnv *env, int psm, int master, int auth, int encrypt, int omt
   }
   /* Set new options */
   opts.imtu = (imtu==-1?672:imtu);
-  opts.omtu = (omtu==-1?0:omtu);
+  opts.omtu = (omtu==-1?672:omtu);
   if(imtu!=-1 && omtu!=-1) {
     if (setsockopt(fd, SOL_L2CAP, L2CAP_OPTIONS, &opts, opt) < 0) {
       printf("WARNING - Can't set L2CAP options. %s(%d)\n", strerror(errno), errno);

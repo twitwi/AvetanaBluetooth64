@@ -24,17 +24,6 @@
 */
 package javax.microedition.io;
 
-import java.io.*;
-
-import javax.bluetooth.BluetoothStateException;
-
-import de.avetana.bluetooth.l2cap.*;
-import de.avetana.bluetooth.obex.*;
-
-import de.avetana.bluetooth.rfcomm.RFCommConnection;
-import de.avetana.bluetooth.stack.*;
-import de.avetana.bluetooth.connection.*;
-
 /**
  * This class only supports the RFCOMM Protocol for the moment.
  * It will be soon extended in order to support RFCOMM and maybe OBEX.

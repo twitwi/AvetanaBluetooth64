@@ -9,8 +9,6 @@ package de.avetana.bluetooth.test;
 import javax.bluetooth.*;
 import javax.microedition.io.*;
 
-import de.avetana.bluetooth.sdp.SDPConstants;
-
 import java.io.*;
 
 /**
