@@ -1,7 +1,7 @@
 /*
  *  HeaderSet.java
  *
- *  $Revision: 1.1 $ $Date: 2004/10/28 06:19:01 $ 
+ *  $Revision: 1.2 $ $Date: 2005/01/14 12:33:40 $ 
  * 
  *  (c) Copyright 2001, 2002 Motorola, Inc.  ALL RIGHTS RESERVED.
  */
@@ -174,6 +174,7 @@ public interface HeaderSet {
      */
     public static final int APPLICATION_PARAMETER = 0x4C;
 
+    public static final int CONNECTION_ID = 0xCB;
     /**
      * Sets the value of the header identifier to the value provided.  The type
      * of object must correspond to the Java type defined in the description of

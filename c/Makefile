@@ -23,7 +23,7 @@
 # COPYRIGHTS, TRADEMARKS OR OTHER RIGHTS, RELATING TO USE OF THIS SOFTWARE IS
 # DISCLAIMED.
 #
-# $Id: Makefile,v 1.3 2004/11/10 20:29:36 moritzg Exp $
+# $Id: Makefile,v 1.4 2005/01/14 12:33:40 moritzg Exp $
 
 # C Compiler to use
 CC             = g++
@@ -47,7 +47,7 @@ BIN_DIR        = ..
 ############
 
 # Default: make the library.
-all: libjbluez.so
+all: libavetanaBT.so
 
 # Remove the header file (this should always be regenerated before
 # compiling the library to ensure its up-to-date.
@@ -58,5 +58,5 @@ all: libjbluez.so
 #	javah -jni -classpath $(BIN_DIR)/jbluez.jar com.appliancestudio.jbluez.BlueZ
 
 # Native language (C) library - libjbluez.so
-libjbluez.so: BlueZ.cpp de_avetana_bluetooth_stack_BlueZ.h 
-	$(CC) -shared $(CFLAGS) BlueZ.cpp -o $(BIN_DIR)/libjbluez.so $(LDFLAGS)
+libavetanaBT.so: BlueZ.cpp de_avetana_bluetooth_stack_BlueZ.h 
+	$(CC) -shared $(CFLAGS) BlueZ.cpp -o $(BIN_DIR)/libavetanaBT.so $(LDFLAGS)

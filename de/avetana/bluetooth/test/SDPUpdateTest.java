@@ -8,6 +8,9 @@ package de.avetana.bluetooth.test;
 
 import javax.bluetooth.*;
 import javax.microedition.io.*;
+
+import de.avetana.bluetooth.sdp.SDPConstants;
+
 import java.io.*;
 
 /**
@@ -53,16 +56,16 @@ public class SDPUpdateTest {
 		srec.setAttributeValue(0x203, new DataElement (DataElement.U_INT_4, 4));
 		srec.setAttributeValue(0x204, new DataElement (DataElement.U_INT_8, new byte[] { 1,2,3,4,5,6,7,8 }));
 		srec.setAttributeValue(0x205, new DataElement (DataElement.U_INT_16, new byte[] { 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16 }));
-		srec.setAttributeValue(0x211, new DataElement (DataElement.INT_1, -11));
-		srec.setAttributeValue(0x212, new DataElement (DataElement.INT_2, -22));
-		srec.setAttributeValue(0x213, new DataElement (DataElement.INT_4, -44));
+		srec.setAttributeValue(0x211, new DataElement (DataElement.INT_1, 11));
+		srec.setAttributeValue(0x303, new DataElement (DataElement.U_INT_2, 256));
+		srec.setAttributeValue(0x213, new DataElement (DataElement.INT_4, 44));
 		srec.setAttributeValue(0x214, new DataElement (DataElement.INT_8, new byte[] { 11,22,33,44,55,66,77,88 }));
 		srec.setAttributeValue(0x215, new DataElement (DataElement.INT_16,new byte[] { 11,22,33,44,55,66,77,88,19,101,111,112,113,114,115,116 }));
 		srec.setAttributeValue(0x216, new DataElement (DataElement.STRING, "Test"));
 		//srec.setAttributeValue(0x217, new DataElement (true));
 		//srec.setAttributeValue(0x218, new DataElement (false));
 		srec.setAttributeValue(0x217, new DataElement (DataElement.URL, "http://Test"));
-		
+	    
 		//DataElement testEl = new DataElement (DataElement.U_INT_2, 0x1234);
 		//testEl.addElement();
 		LocalDevice.getLocalDevice().updateRecord(srec);

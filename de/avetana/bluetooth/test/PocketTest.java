@@ -14,8 +14,6 @@ import java.io.OutputStream;
 import javax.bluetooth.*;
 import javax.microedition.io.*;
 
-import de.avetana.bluetooth.JSRTest;
-
 import java.io.*;
 
 /**
@@ -34,7 +32,7 @@ public class PocketTest extends Frame {
 	/**
 	 * @throws java.awt.HeadlessException
 	 */
-	public PocketTest() throws HeadlessException {
+	public PocketTest() {
 		super();
 		this.setLayout(new BorderLayout());
 		final Choice ch = new Choice();

@@ -118,7 +118,7 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_writeBytes
  * Signature: (Ljava/lang/String;[S[I)V
  */
 JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_listService
-  (JNIEnv *, jclass, jstring, jobjectArray, jintArray, jint);
+  (JNIEnv *, jclass, jstring, jobjectArray, jintArray, jint transID);
 
 /*
  * Class:     de_avetana_bluetooth_stack_BlueZ
@@ -255,6 +255,10 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_encrypt
  */
 JNIEXPORT jbooleanArray JNICALL Java_de_avetana_bluetooth_stack_BlueZ_connectionOptions
   (JNIEnv *, jclass, jint, jstring);
+
+JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_getRssi
+  (JNIEnv *, jclass, jstring);
+
 
 #ifdef __cplusplus
 }

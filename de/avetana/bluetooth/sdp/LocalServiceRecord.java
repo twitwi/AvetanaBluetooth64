@@ -113,10 +113,12 @@ public class LocalServiceRecord extends SDPServiceRecord {
       protocolDescriptorList.addElement(obexDescriptor);
 
     rec.m_attributes.put(new Integer(SDPConstants.ATTR_PROTO_DESC_LIST), protocolDescriptorList);
+    
     DataElement browseClassIDList = new DataElement(DataElement.DATSEQ);
     UUID browseClassUUID = new UUID(SDPConstants.UUID_PUBLICBROWSE_GROUP);
     browseClassIDList.addElement(new DataElement(DataElement.UUID, browseClassUUID));
     rec.m_attributes.put(new Integer(5), browseClassIDList);
+    
     DataElement languageBaseAttributeIDList = new DataElement(DataElement.DATSEQ);
     languageBaseAttributeIDList.addElement(new DataElement(DataElement.U_INT_2, 25966));
     languageBaseAttributeIDList.addElement(new DataElement(DataElement.U_INT_2, 106));
@@ -124,11 +126,29 @@ public class LocalServiceRecord extends SDPServiceRecord {
     rec.m_attributes.put(new Integer(6), languageBaseAttributeIDList);
     DataElement profileDescriptorList = new DataElement(DataElement.DATSEQ);
     DataElement profileDescriptor = new DataElement(DataElement.DATSEQ);
-    profileDescriptor.addElement(new DataElement(DataElement.UUID, new UUID(SDPConstants.UUID_SERIAL_PORT)));
-    profileDescriptor.addElement(new DataElement(DataElement.U_INT_2, 256));
-    profileDescriptorList.addElement(profileDescriptor);
+    if (protocol == JSR82URL.PROTOCOL_RFCOMM) {
+    		profileDescriptor.addElement(new DataElement(DataElement.UUID, new UUID(SDPConstants.UUID_SERIAL_PORT)));
+    		profileDescriptor.addElement(new DataElement(DataElement.U_INT_2, 256));
+    } else if (protocol == JSR82URL.PROTOCOL_OBEX) {
+		profileDescriptor.addElement(new DataElement(DataElement.UUID, new UUID(SDPConstants.UUID_OBEX_OBJECT_PUSH)));
+		profileDescriptor.addElement(new DataElement(DataElement.U_INT_2, 256));
+    }
+    	profileDescriptorList.addElement(profileDescriptor);
     rec.m_attributes.put(new Integer(9), profileDescriptorList);
     rec.m_attributes.put(new Integer(256), new DataElement(DataElement.STRING, name));
+
+    if(protocol==JSR82URL.PROTOCOL_OBEX) {
+    		DataElement sfl = new DataElement (DataElement.DATSEQ);
+    		sfl.addElement(new DataElement (DataElement.U_INT_1, 1));
+    		sfl.addElement(new DataElement (DataElement.U_INT_1, 2));
+    		sfl.addElement(new DataElement (DataElement.U_INT_1, 4));
+    		sfl.addElement(new DataElement (DataElement.U_INT_1, 5));
+    		sfl.addElement(new DataElement (DataElement.U_INT_1, 6));
+    		sfl.addElement(new DataElement (DataElement.U_INT_1, 255));
+    		rec.m_attributes.put(new Integer (SDPConstants.ATTR_SUPPORTED_FORMATS_LIST), sfl);
+    		rec.m_attributes.put(new Integer (SDPConstants.ATTR_SERVICE_AVAILABILITY), new DataElement (DataElement.U_INT_1, 255));
+    }
+    
     return rec;
   }
 
@@ -186,15 +206,15 @@ public class LocalServiceRecord extends SDPServiceRecord {
  		case DataElement.U_INT_1:
   			return newDataElement (1, 1, e.getLong());
   		case DataElement.U_INT_2:
-  			return newDataElement (1, 2, e.getLong());
-  		case DataElement.U_INT_4:
-  			return newDataElement (1, 4, e.getLong());
-  		case DataElement.INT_1:
   			return newDataElement (2, 1, e.getLong());
+  		case DataElement.U_INT_4:
+  			return newDataElement (4, 1, e.getLong());
+  		case DataElement.INT_1:
+  			return newDataElement (1, 2, e.getLong());
   		case DataElement.INT_2:
   			return newDataElement (2, 2, e.getLong());
   		case DataElement.INT_4:
-  			return newDataElement (2, 4, e.getLong());
+  			return newDataElement (4, 2, e.getLong());
   		case DataElement.UUID:
   			return new PElement ("data", new String (Base64.encode (((UUID)e.getValue()).toByteArray())));
   		case DataElement.DATSEQ:

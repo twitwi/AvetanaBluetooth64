@@ -92,7 +92,7 @@ public class BluetoothStream extends BTConnection implements StreamConnection {
             if (data > 0) inStream.addData(b, data);
             else if (data == -1) inStream.close();
             else this.wait(50);
-          } catch (Exception e) { e.printStackTrace(); closed = true; isReading = false; }
+          } catch (Exception e) { closed = true; isReading = false; }
         }
       }
     };
@@ -117,8 +117,7 @@ public class BluetoothStream extends BTConnection implements StreamConnection {
    * @throws java.io.IOException
    */
   public DataInputStream openDataInputStream() throws java.io.IOException {
-    if(inStream == null) this.startReading();
-    return new DataInputStream(inStream);
+    return new DataInputStream(openInputStream());
   }
 
   /**

@@ -48,7 +48,9 @@ import javax.swing.JToggleButton;
 import de.avetana.bluetooth.connection.BTConnection;
 import de.avetana.bluetooth.connection.ConnectionNotifier;
 import de.avetana.bluetooth.connection.JSR82URL;
+import de.avetana.bluetooth.hci.Rssi;
 import de.avetana.bluetooth.l2cap.L2CAPConnectionNotifierImpl;
+import de.avetana.bluetooth.sdp.SDPConstants;
 import de.avetana.bluetooth.util.BTAddress;
 import de.avetana.bluetooth.util.DeviceFinder;
 import de.avetana.bluetooth.util.ServiceFinderPane;
@@ -627,14 +629,16 @@ public class JSRTest extends JFrame implements ActionListener {
    public void getRemoteDevInfos() {
    	 RemoteDevice rd = null;
    	 String name = "unknown";
+   	 int rssi = 0;
    	 try {
      	rd = RemoteDevice.getRemoteDevice(streamCon);
 		name = rd.getFriendlyName(false);
-	} catch (IOException e) {
+		rssi = Rssi.getRssi(rd.getBTAddress());
+	} catch (Exception e) {
 		showInfo (e.getMessage(), "Error");
 		return;
 	}
-     showInfo("Remote Device Address and Name\n" + rd.getBluetoothAddress() + " " + name,"Info");
+     showInfo("Remote Device Address, Name and Rssi\n" + rd.getBluetoothAddress() + " " + name + " " + rssi,"Info");
    }
 
    /**
@@ -764,13 +768,48 @@ public class JSRTest extends JFrame implements ActionListener {
          else if(m_protocols.getSelectedIndex() == JSR82URL.PROTOCOL_OBEX) {
             ClientSession cs = (ClientSession)streamCon;
             HeaderSet hs = cs.createHeaderSet();
+            cs.connect(null);
+      
+            InputStream is = this.getClass().getClassLoader().getResourceAsStream("avetana.vcf");
+            byte b[] = new byte[is.available()];
+            is.read(b);
+
+            //This way sending a vcard works on any machine I know of.
+            
+            hs.setHeader (HeaderSet.NAME, "avetana.vcf");
+            hs.setHeader (HeaderSet.TYPE, "text");
+            hs.setHeader(0x49, b); // if everything fits inside a packet, the data can be packed in the PUT command
+            Operation po = cs.put(hs);
+            po.close();
+
+            	//This way, it should work, but it does not on the S55, because the type is not recognised when
+            //Data is not sent within the PUT-Command as it is in the example above
+ /*           hs.setHeader(HeaderSet.NAME, "avetana.vcf");
+            hs.setHeader (HeaderSet.TYPE, "text/x-vcard");
+            Operation po = cs.put(hs);
+            OutputStream os = po.openOutputStream();
+            InputStream is = this.getClass().getClassLoader().getResourceAsStream("avetana.vcf");
+            byte b[] = new byte[100];
+            int read;
+            while ((read = is.read(b)) > 0) {
+            		os.write(b, 0, read);
+            }
+            os.close();
+            is.close();
+            po.close();
+*/
+            
+          /*
+            // 	Example on how to send a simple text message
+            //  Does not work on some phones that do not know about text messages 
             byte text[] = "Test Message from avetanaBlueooth".getBytes("iso-8859-1");
             hs.setHeader (HeaderSet.NAME, "test.txt");
             hs.setHeader (HeaderSet.TYPE, "text");
-            cs.connect(null);
+            //hs.setHeader(0x49, text); // if everything fits inside a packet, the data can be packed in the PUT command
             Operation po = cs.put(hs);
             po.openOutputStream().write(text);
             po.close();
+            */
             cs.disconnect(null);
          }
        } else if (e.getSource() == dataReceived) {
@@ -865,7 +904,7 @@ public class JSRTest extends JFrame implements ActionListener {
 				try {
 					//Obex must be offered with only the OBEX-ObjetPush UUID. It will not be
 					//recognised as an OBEX Service with a other UUID
-		    	notify = Connector.open("btgoep://localhost:" + new UUID (0x12345678) + ";name=OBEXTest;authenticate=false;master=false;encrypt=false");
+		    	notify = Connector.open("btgoep://localhost:" + new UUID (SDPConstants.UUID_OBEX_OBJECT_PUSH) + ";name=OBEXTest;authenticate=false;master=false;encrypt=false");
 				serviceStatus.setText ("ready");
 				((SessionNotifier)notify).acceptAndOpen(new ServerRequestHandler() {
 					

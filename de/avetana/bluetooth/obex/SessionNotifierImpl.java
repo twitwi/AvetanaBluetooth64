@@ -63,6 +63,8 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 				try {
 					while (true) {
 						byte[] data = receiveCommand ();
+						//System.out.println ("Received command ! " + Integer.toHexString((int)(data[0] & 0xff)));
+
 						switch ((int)(data[0] & 0xff)) {
 							case 0x80: {
 								mtu = 0xffff & ((0xff & data[5]) << 8 | (0xff & data[6]));
@@ -183,10 +185,10 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 		byte[] data = new byte[toRead];
 		System.arraycopy (start, 0, data, 0, 3);
 		while (read < toRead) 			read += Math.max(0, is.read (data, read, toRead - read));
-		/*System.out.print ("Data received ");
-		for (int i = 0;i < data.length;i++)
-			System.out.print (" " + Integer.toHexString(0xff & data[i] ));
-		System.out.println();*/
+		//System.out.print ("Data received ");
+		//for (int i = 0;i < data.length;i++)
+		//	System.out.print (" " + Integer.toHexString(0xff & data[i] ));
+		//System.out.println();
 		return data;
 	}
 

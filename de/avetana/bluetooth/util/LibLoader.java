@@ -31,16 +31,18 @@ package de.avetana.bluetooth.util;
  */
 
 import java.io.*;
+import java.security.MessageDigest;
 
 public class LibLoader {
 
 	public static void loadCommLib (String name) throws Exception {
 
-	    String libName = name;
 	    String sysName = System.getProperty("os.name");
 	    
-	    if (sysName.toLowerCase().indexOf("windows") != -1 && sysName.toLowerCase().indexOf("ce") != -1) libName = libName + "CE.dll";
-	    else if (sysName.toLowerCase().indexOf("windows") != -1) libName = libName + ".dll";
+	    if (sysName.toLowerCase().indexOf("windows") != -1 && sysName.toLowerCase().indexOf("ce") != -1) name = name + "CE";
+
+	    String libName = name;
+	    if (sysName.toLowerCase().indexOf("windows") != -1) libName = libName + ".dll";
 	    else if (sysName.toLowerCase().indexOf("linux") != -1) libName = "lib" + libName + ".so";
 	    else if (sysName.toLowerCase().indexOf("mac os x") != -1) libName = "lib" + libName + ".jnilib";
 	    else throw new Exception ("Unsupported operating system" + sysName);
@@ -62,11 +64,16 @@ public class LibLoader {
 		if (is == null) throw new Exception ("Native Library " + libName + " not in CLASSPATH !");
 
 	    File fd = null;
+	    String tmppath = System.getProperty("java.io.tmpdir");
+	    
+	    if (sysName.toLowerCase().indexOf("windows") != -1 && sysName.toLowerCase().indexOf("ce") != -1 && (tmppath == null || tmppath.endsWith("null")))
+	    		tmppath = File.separator + "Temp";
+	    		
 	    while (fd == null) {
 	      try {
 	      	do {
 	      		int count = (int)(100000f * Math.random());
-	      		fd = new File (System.getProperty("java.io.tmpdir") + File.separator + count);
+	      		fd = new File (tmppath, "" + count);
 	      	} while (fd.exists());
 	      } catch (Exception e) { e.printStackTrace(); System.err.println ("Writing of temp lib-file failed " + fd.getAbsolutePath()); }
 	    }
@@ -74,7 +81,9 @@ public class LibLoader {
 	    fd.delete();
 	    final File f = new File(path);
 	    f.mkdirs();
+	    	
 	    final File f2 = new File (f, libName);
+		//System.out.println ("Library stored in " + f2.getAbsolutePath());
 	    FileOutputStream fos = new FileOutputStream (f2);
 
 	    byte[] b = new byte[1000];
@@ -83,32 +92,31 @@ public class LibLoader {
 	      fos.write(b, 0, len);
 	    }
 	    fos.close();
-	    System.load(f2.getAbsolutePath());
-
+	    //if (sysName.toLowerCase().indexOf("windows") != -1 && sysName.toLowerCase().indexOf("ce") != -1) {
+	    //		System.out.println ("System temp path " + System.getProperty("java.io.tmpdir"));
+	    //		System.out.println ("System file.separator " + File.separator);
+	    //}
+	    try {
+	    		System.load(f2.getAbsolutePath());
+	    } catch (UnsatisfiedLinkError e) {
+	    		System.out.println ("Could not find own library " + name + ". Will try from ld.library.path");
+	    		System.loadLibrary(name);
+	    }
 	    Runnable r = new Runnable() {
 	    		public void run() {
-	    			f2.delete();
-	    			f.delete();
+	    			boolean delf1 = f2.delete();
+	    			boolean delf2 = f.delete();
 	    		}
 	    };
-	    Runtime.getRuntime().addShutdownHook(new Thread (r));
-	  }
-
-/*  public static void loadCommLib (String name) throws Exception {
-
-    String libName = "jbluez.dll";
-    
-    try {
-    		Class cl = new LibLoader().getClass();
-    		ClassLoader clo = cl.getClassLoader();
-    			System.load(System.getProperty("user.dir") + File.separatorChar + libName);
-    			return;
-    } catch (Exception e) {
-    		e.printStackTrace();
-    		throw new Exception ("Native Library " + libName + " is not a ressource !");
-    }
-
- 
-  }*/
+	    try {
+	    		Runtime.getRuntime().addShutdownHook(new Thread (r));
+	    } catch (NoSuchMethodError e3) {
+	    		try {
+	    			f2.deleteOnExit();
+	    			f.deleteOnExit();
+	    		} catch (Exception e) {
+	    		}
+	    }
+	   }
 
 }

@@ -59,10 +59,10 @@ import de.avetana.bluetooth.util.LibLoader;
 public class BlueZ
 {
 	// Loads the library containing the native code implementation.
-	// It is usually called "libjbluez.so" under UNIX/Linux, but is loaded
-	// with the "jbluez" string, since this is how JNI implements platform
+	// It is usually called "libavetanaBT.so" under UNIX/Linux, but is loaded
+	// with the "avetanaBT" string, since this is how JNI implements platform
 	// independence.
-	static {try {LibLoader.loadCommLib("jbluez"); } catch (Exception e ) { e.printStackTrace(); System.exit(0);} }
+	static {try {LibLoader.loadCommLib("avetanaBT"); } catch (Exception e ) { e.printStackTrace(); System.exit(0);} }
         public static ConnectionFactory myFactory=new ConnectionFactory();
 
         public static int m_transactionId = 0;
@@ -648,5 +648,10 @@ public class BlueZ
         public static byte[] newByteArray (int size) {
         		return new byte[size];
         }
-        
+
+		/**
+		 * @param adr
+		 * @return
+		 */
+		public static native int getRssi(String adr);        
 }

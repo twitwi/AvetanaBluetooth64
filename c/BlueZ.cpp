@@ -344,6 +344,13 @@ JNIEXPORT jobject JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciInquiry
 	return info;
 }
 
+JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_getRssi
+  (JNIEnv *env, jclass cls, jstring adr) {
+  return 0x101; //Not implemented
+  }
+
+  
+
 /**
  * Returns the BT address of a device.
  * BlueZ identifes the local address with a number. You use this number in the different BlueZ commands

@@ -31,7 +31,7 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 	protected int mtu = 0x2000;
 	
 	private RFCommConnection con;
-	private long conID;
+	private long conID = -1;
 	private InputStream is;
 	private OutputStream os;
 	
@@ -88,9 +88,12 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 		bos.write (hsToByteArray (headers));
 		sendCommand (CONNECT, bos.toByteArray());
 		byte[] b = receiveCommand();
-		if (b[0] != (byte)0xa0) throw new IOException ("Connection not accepted");
+		if (b[0] != (byte)0xa0) throw new IOException ("Connection not accepted " + Integer.toHexString((int)(b[0] & 0xff)));
 		mtu = 0xffff & ((0xff & b[5]) << 8 | (0xff & b[6]));
-		return parseHeaders (b, 7);
+		//System.out.println ("Returning from connect");
+		HeaderSet hs =  parseHeaders (b, 7);
+		if (hs.getHeader(HeaderSet.CONNECTION_ID) != null) conID = ((Long)hs.getHeader(HeaderSet.CONNECTION_ID)).longValue();
+		return hs;
 	}
 
 	/* (non-Javadoc)
@@ -148,12 +151,32 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 	}
 		
 	public void sendCommand (int commId, byte[] data) throws IOException {
+		//System.err.println ("Sending command " + Integer.toHexString(commId) + " conID "+ conID);
+		//new Throwable().printStackTrace();
 		int len = 3 + data.length;
+		if (conID != -1) len += 5;
 		byte d2[] = new byte[len];
 		d2[0] = (byte)commId;
 		d2[1] =  (byte)((len >> 8) & 0xff);
 		d2[2] = (byte)(len & 0xff);
-		System.arraycopy (data, 0, d2, 3, data.length);
+		if (conID != -1) {
+			d2[3] = (byte)0xcb;
+			d2[4] = (byte)(0xff & (conID >> 24)); 
+			d2[5] = (byte)(0xff & (conID >> 16)); 
+			d2[6] = (byte)(0xff & (conID >> 8)); 
+			d2[7] = (byte)(0xff & (conID >> 0)); 
+		}
+		System.arraycopy (data, 0, d2, len - data.length, data.length);
+		
+		//Special case for command SetPath that has two option bytes after the length field and before any other headers or the sessionID
+		if (commId == OBEXConnection.SETPATH) {
+			byte b1 = data[0];
+			byte b2 = data[1];
+			System.arraycopy(d2, 3, d2, 5, d2.length - data.length - 3);
+			d2[3] = b1;
+			d2[4] = b2;
+		}
+		
 		os.write (d2);
 		/*System.out.print ("Sending command ");
 		 System.out.print (" " + Integer.toHexString(commId & 0xff));	
@@ -167,15 +190,23 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 	public byte[] receiveCommand () throws IOException {
 		byte start[] = new byte[3];
 		int read = 0;
-		while (read < 3) read += Math.max(0, is.read(start, read, 3 - read));
+		while (read < 3) {
+//			System.out.println ("Waiting for data to be returned");
+			read += Math.max(0, is.read(start, read, 3 - read));
+//			System.out.println ("read bytes "+ read);
+		}
 		int toRead = 0xffff & (((start[1] & 0xff) << 8) | (start[2] & 0xff));
 		byte[] data = new byte[toRead];
 		System.arraycopy (start, 0, data, 0, 3);
-		while (read < toRead) 			read += Math.max(0, is.read (data, read, toRead - read));
-		/*System.out.print ("Data received ");
-		for (int i = 0;i < data.length;i++)
-			System.out.print (" " + Integer.toHexString(0xff & data[i] ));
-		System.out.println();*/
+		while (read < toRead) {
+//			System.out.println ("Waiting for data to be returned2");
+			read += Math.max(0, is.read (data, read, toRead - read));
+//			System.out.println ("Received " + read);
+		}
+		//for (int i = 0;i < data.length;i++)
+		//	System.out.print (" " + Integer.toHexString(0xff & data[i] ));
+		//System.out.println();
+		//System.out.print ("Data received ");
 		return data;
 	}
 	
@@ -201,8 +232,14 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 		if (hs == null) return new byte[0];
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		int[] hids = hs.getHeaderList();
-		for (int i = 0;i < hids.length;i++) {
-			Object header = hs.getHeader(hids[i]);
+		
+		int has48header = -1;
+		
+		for (int i = 0;i < hids.length + (has48header != -1 ? 1 : 0);i++) {
+			Object header = null;
+			if (i == hids.length) { header = hs.getHeader (hids[has48header]); i = has48header; }
+			else if (hids[i] == 0x48 || hids[i] == 0x49) { has48header = i; continue; }
+			else header = hs.getHeader(hids[i]);
 			try {
 				bos.write (hids[i]);
 				switch (hids[i]) {
@@ -230,6 +267,7 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 					break;
 				}
 			} catch (IOException e) { e.printStackTrace(); }
+			if (i == has48header) break;
 		}
 		return bos.toByteArray();
 	}
@@ -243,6 +281,7 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 			switch (id) {
 			case HeaderSetImpl.COUNT:
 			case HeaderSetImpl.LENGTH:	
+			case HeaderSetImpl.CONNECTION_ID:
 				hs.setHeader(id, new Long(parseLong (data, offset + 1)));
 				len = 5;
 				break;
