@@ -136,7 +136,8 @@ public class LocalServiceRecord extends SDPServiceRecord {
    * of this XML element. Useful for the Mac implementation
    * @return The XML-based string representation of the service record
    */
-  public String getSDPRecordXML() {
+  /*
+   public String getSDPRecordXML() {
     try {
       File f = File.createTempFile ("serviceRecord", ".xml");
       f.deleteOnExit();
@@ -217,13 +218,75 @@ public class LocalServiceRecord extends SDPServiceRecord {
       return null;
     }
   }
+*/
+  
+  public String getSDPRecordXML() {
+    try {
+      File f = File.createTempFile ("serviceRecord", ".xml");
+      f.deleteOnExit();
 
+      PElement plist = new PElement ("plist");
+      plist.setAttribute("version", "0.9");
+      PElement dict = new PElement ("dict");
+      plist.addChild(dict);
+      dict.addChild(new PElement ("key", "0000 - ServiceRecordHandle*"));
+      dict.addChild(new PElement ("integer", "65540"));
+      for (int i = 1;i < 65535;i++) {
+      	DataElement de = this.getAttributeValue(i);
+      	if (de == null) continue;
+      	String attId = "" + Integer.toHexString(i);
+      	while (attId.length() < 4) attId = "0" + attId;
+        dict.addChild(new PElement ("key", attId));
+      	dict.addChild (makePElement (de));
+      }
+
+      FileOutputStream fos = new FileOutputStream (f);
+      plist.writeXML(fos);
+
+      return f.getAbsolutePath();
+    } catch (Exception e) {
+      e.printStackTrace();
+      return null;
+    }
+  }
+
+  private PElement makePElement (DataElement e) {
+  	PElement ret = null;
+  	switch (e.getDataType()) {
+  		case DataElement.STRING:
+ 		case DataElement.URL:
+  			return new PElement ("string", (String)e.getValue());
+  		case DataElement.U_INT_1:
+  			return newDataElement (1, 1, e.getLong());
+  		case DataElement.U_INT_2:
+  			return newDataElement (1, 2, e.getLong());
+  		case DataElement.U_INT_4:
+  			return newDataElement (1, 4, e.getLong());
+  		case DataElement.INT_1:
+  			return newDataElement (2, 1, e.getLong());
+  		case DataElement.INT_2:
+  			return newDataElement (2, 2, e.getLong());
+  		case DataElement.INT_4:
+  			return newDataElement (2, 4, e.getLong());
+  		case DataElement.UUID:
+  			return new PElement ("data", new String (Base64.encode (((UUID)e.getValue()).toByteArray())));
+  		case DataElement.DATSEQ:
+  			ret = new PElement ("array");
+  			Vector v = e.getVector();
+  			for (int i = 0;i < v.size();i++) {
+  				ret.addChild(makePElement ((DataElement)v.elementAt(i)));
+  			}
+  			return ret;
+  		default:
+  			System.err.println ("Unhandeled DataElement type" + e.getDataType());
+  	}
+  	return ret;
+  }
   /**
    * Changes the channel number of an RFCOMM local service record
    * @param newChannel The new Channel number
    */
   public void updateChannelNumber(int newChannel) {
-
     DataElement parent = this.getChannelNumberElementParent();
     DataElement channel = this.getChannelNumberElement();
     if (parent == null) return;
@@ -318,7 +381,7 @@ public class LocalServiceRecord extends SDPServiceRecord {
     return null;
   }
 
-  private PElement newDataElement (int size, int type, int value) {
+  private PElement newDataElement (int size, int type, long value) {
     PElement dict = new PElement ("dict");
     dict.addChild(new PElement ("key", "DataElementSize"));
     dict.addChild(new PElement ("integer", "" + size));

@@ -7,6 +7,8 @@
 package de.avetana.bluetooth.obex;
 
 import de.avetana.bluetooth.rfcomm.*;
+
+import javax.bluetooth.RemoteDevice;
 import javax.obex.*;
 import java.io.*;
 
@@ -44,6 +46,10 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 	 */
 	public void close() {
 		con.close();
+	}
+	
+	public RemoteDevice getRemoteDevice() {
+		return con.getRemoteDevice();
 	}
 	
 	public javax.obex.HeaderSet createHeaderSet() {

@@ -61,7 +61,8 @@ public class ConnectionFactory {
    * Hashtable used to store all DiscoveryListener. The key values of this hashtable are String objects representing
    * BT device address.
    */
-  private Hashtable m_listeners;
+
+  private Hashtable m_sdpListeners;
 
   /**
    * Creates a new ConnectionFactory object. Initialize all encapsulated variables.
@@ -69,7 +70,7 @@ public class ConnectionFactory {
   public ConnectionFactory() {
     m_connections=new Vector();
     m_notifiers=new Vector();
-    m_listeners=new Hashtable();
+    m_sdpListeners = new Hashtable();
   }
 
   /**
@@ -91,12 +92,6 @@ public class ConnectionFactory {
    * @return A vector storing all registered notifiers
    */
   public Vector getNotifiers() {return m_notifiers;}
-
-  /**
-   * Returns the list of all registered DiscoveryListeners. A DiscoveryListener is associated with a BT device address
-   * @return The hashtable storing all DiscoveryListener (keys are BT device address stored as String )
-   */
-  public Hashtable getListeners() {return m_listeners;}
 
   /**
    * Unregisters a Connection
@@ -145,8 +140,17 @@ public class ConnectionFactory {
    * @param jbdAddr The string representation of the BT address of the remote device
    * @param list The Discoverylistener associated with this remote device
    */
-  public void addListener(String jbdAddr, DiscoveryListener list) {
-    m_listeners.put(jbdAddr, list);
+
+  public void addListener(int transactionID, DiscoveryListener list) {
+    m_sdpListeners.put(new Integer(transactionID), list);
+  }
+
+  public boolean isListener(int transID) {
+    return m_sdpListeners.contains(new Integer(transID));
+  }
+
+  public void removeListener(int transID) {
+    m_sdpListeners.remove(new Integer(transID));
   }
 
   /**
@@ -154,18 +158,8 @@ public class ConnectionFactory {
    * @param jbdAddr The string representation of the BT address of the remote device
    * @return The DiscoveryListener associated with a remote device
    */
-  public DiscoveryListener getListener(String jbdAddr) {
-    return (DiscoveryListener)m_listeners.get(jbdAddr);
-  }
-
-  /**
-   * Unregisters a couple (BT device address, DiscoveryListener)
-   * @param jbdAddr The string representation of the BT address of the remote device
-   * @return <code>true</code> - if the listener was successfully unregistered<br>
-   *         <code>false</code> - Otherwise.
-   */
-  public boolean removeListener(String jbdAddr) {
-    return (m_listeners.remove(jbdAddr)!=null?true:false);
+  public DiscoveryListener getListener(int id) {
+    return (DiscoveryListener)m_sdpListeners.get(new Integer (id));
   }
 
   /**

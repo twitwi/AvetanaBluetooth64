@@ -63,6 +63,8 @@ public class BlueZ
 	static {try {LibLoader.loadCommLib("jbluez"); } catch (Exception e ) { e.printStackTrace(); System.exit(0);} }
         public static ConnectionFactory myFactory=new ConnectionFactory();
 
+        public static int m_transactionId = 0;
+
 
 	/**
 	 * Opens the HCI device.
@@ -313,7 +315,7 @@ public class BlueZ
          * @param attrIds The list of Attributes which will populate the Service record.
          * @throws BlueZException
          */
-        public static native void listService (String bdaddr_jstr, byte[][] uuid, int[] attrIds) throws BlueZException;
+        public static synchronized native void listService (String bdaddr_jstr, byte[][] uuid, int[] attrIds, int transID) throws BlueZException;
 
         /**
          * Stores a new Service record in the BCC.
@@ -503,8 +505,9 @@ public class BlueZ
          * @throws BlueZException
          */
         public static void searchServices(String bdaddr_jstr, byte[][] uuid, int[] attrIds, DiscoveryListener listener) throws BlueZException{
-        	 myFactory.addListener(bdaddr_jstr.toUpperCase(), listener);
-          listService(bdaddr_jstr, uuid, attrIds);
+           m_transactionId++;
+           myFactory.addListener(m_transactionId, listener);
+           listService(bdaddr_jstr, uuid, attrIds, m_transactionId);
         }
 
         /**
@@ -574,23 +577,22 @@ public class BlueZ
           return false;
         }
 
+        public static boolean cancelServiceSearch(int transID)  {
+        	  DiscoveryListener dl = myFactory.getListener(transID);
+        	  if (dl != null) dl.serviceSearchCompleted(transID, DiscoveryListener.SERVICE_SEARCH_TERMINATED);
+          myFactory.removeListener(transID);
+          return true;
+        }
+
         /**
          * Callback method, which notifies the discovering a new service.
          * @param transID SDP transaction ID
          * @param rec The service record discovered
          */
         public static void addService(int transID, ServiceRecord rec) {
-          String addr=null;
-          try {
-            addr=BTAddress.transform(rec.getHostDevice().getBluetoothAddress());
-          }catch(Exception ex) {ex.printStackTrace();}
-          if(addr==null) {
-            System.out.println("ERROR - Not a valid bluetooth Adress! " + addr);
-            return;
-          }
-          DiscoveryListener myListener=myFactory.getListener(addr);
+          DiscoveryListener myListener=myFactory.getListener(transID);
           if(myListener==null) {
-            System.out.println("ERROR - Listener not defined. Unable to add service " + addr);
+            //System.out.println("ERROR - Listener not defined. Unable to add service " + transID);
             return;
           }
           myListener.servicesDiscovered(transID, new ServiceRecord[]{rec});
@@ -602,18 +604,14 @@ public class BlueZ
          * @param respCode The responde code of the C-implementation
          * @param jBTAddr The BT address of the remote device
          */
-        public static void serviceSearchComplete(int transID, int respCode, String jBTAddr) {
-          DiscoveryListener myListener=myFactory.getListener(jBTAddr);
+        public static void serviceSearchComplete(int transID, int respCode) {
+          DiscoveryListener myListener=myFactory.getListener(transID);
           if(myListener==null) {
             //System.out.println("ERROR - Listener not defined. Unable to interpret service search completed code");
             return;
           }
           myListener.serviceSearchCompleted(transID,respCode);
-          String addr=null;
-          try {
-           addr=BTAddress.parseString(jBTAddr).toString();
-          }catch(Exception ex) {ex.printStackTrace();}
-          myFactory.removeListener(addr);
+          myFactory.removeListener(transID);
 
         }
 
@@ -625,7 +623,7 @@ public class BlueZ
           }
           return null;
         }
-        
+
         public static byte[] newByteArray (int size) {
         		return new byte[size];
         }

@@ -134,7 +134,7 @@ public abstract class SDPServiceRecord implements ServiceRecord{
     Object[] obj=m_attributes.keySet().toArray();
     for(int i=0;i<obj.length;i++) {
       DataElement dat=(DataElement)m_attributes.get(obj[i]);
-      retour+="ID="+obj[i]+" value="+dat+"\n";
+      retour+="ID=0x"+Integer.toHexString(((Integer)obj[i]).intValue())+" value="+dat+"\n";
     }
     return retour;
   }

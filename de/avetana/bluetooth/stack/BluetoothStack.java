@@ -164,7 +164,8 @@ public abstract class BluetoothStack {
    * Stops a service search.
    * @param transID The SDP transaction ID.
    */
-  public abstract void cancelServiceSearch(int transID);
+// TransactionID - changed to boolean
+  public abstract boolean cancelServiceSearch(int transID);
 
   /**
    * Updates a Service record stored in the local BCC.

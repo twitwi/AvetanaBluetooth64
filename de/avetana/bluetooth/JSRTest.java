@@ -626,7 +626,16 @@ public class JSRTest extends JFrame implements ActionListener {
     * Shows information about the remote device (name, device class, BT address ..etc..)
     */
    public void getRemoteDevInfos() {
-     showInfo("Not yet implemented","Info");
+   	 RemoteDevice rd = null;
+   	 String name = "unknown";
+   	 try {
+     	rd = RemoteDevice.getRemoteDevice(streamCon);
+		name = rd.getFriendlyName(false);
+	} catch (IOException e) {
+		showInfo (e.getMessage(), "Error");
+		return;
+	}
+     showInfo("Remote Device Address and Name\n" + rd.getBluetoothAddress() + " " + name,"Info");
    }
 
    /**

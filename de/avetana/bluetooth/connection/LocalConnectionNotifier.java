@@ -52,7 +52,7 @@ public class LocalConnectionNotifier extends ConnectionNotifier implements Strea
    * @throws Exception If the service record is not valid.
    */
   public LocalConnectionNotifier(JSR82URL url) throws BadURLFormat, Exception {
-    parsedURL=url;
+  	    parsedURL=url;
     if(parsedURL.getBTAddress()!=null) throw new BadURLFormat("This is not an sdp server URL!");
     String m_serviceName=(String)parsedURL.getParameter("name");
     m_serviceName=(m_serviceName==null?"Avetana Service":m_serviceName);

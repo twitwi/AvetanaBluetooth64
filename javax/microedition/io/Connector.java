@@ -57,14 +57,13 @@ public class Connector {
 
 
     public static Connection open(String url) throws IOException {
-    		if (stack == null) {
+    	if (stack == null) {
     			try {
     				stack = BluetoothStack.getBluetoothStack();	
     			} catch (Exception e) { throw new IOException (e.getMessage()); }
     		}
         try {
           JSR82URL myURL=new JSR82URL(url);
-                    
           if(myURL.getBTAddress()==null) {
             if(myURL.getProtocol()==JSR82URL.PROTOCOL_RFCOMM) return new LocalConnectionNotifier(myURL);
             else if(myURL.getProtocol()==JSR82URL.PROTOCOL_L2CAP) return new L2CAPConnectionNotifierImpl(myURL);

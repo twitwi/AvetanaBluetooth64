@@ -104,6 +104,14 @@ public abstract class ConnectionNotifier implements Connection {
   public JSR82URL getConnectionURL() {
     return parsedURL;
   }
+  
+  /**
+   * Return the remote connections end
+   * @return
+   */
+  public RemoteDevice getRemoteDevice() {
+  	return m_remote;
+  }
 
   /**
    * Returns the local service record

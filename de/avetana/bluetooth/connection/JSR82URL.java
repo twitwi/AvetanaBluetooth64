@@ -162,6 +162,7 @@ public class JSR82URL {
          parseURL(toWork.substring(ser+1));
        }
      }
+
   }
 
   // Help method used to analyse the URL parameters.

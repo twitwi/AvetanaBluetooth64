@@ -8,10 +8,12 @@ package de.avetana.bluetooth.obex;
 
 import java.io.*;
 
+import javax.bluetooth.RemoteDevice;
 import javax.microedition.io.*;
 import javax.obex.*;
 
 import de.avetana.bluetooth.connection.ConnectionNotifier;
+import de.avetana.bluetooth.connection.LocalConnectionNotifier;
 
 /**
  * @author gmelin
@@ -21,7 +23,7 @@ import de.avetana.bluetooth.connection.ConnectionNotifier;
  */
 public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 
-	private StreamConnectionNotifier locConNot;
+	private LocalConnectionNotifier locConNot;
 	private ServerRequestHandler myHandler;
 	private StreamConnection streamCon;
 	private InputStream is;
@@ -30,7 +32,7 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 	private Operation m_putOperation = null;
 	private Operation m_getOperation = null;
 	
-	public SessionNotifierImpl (StreamConnectionNotifier locConNot) {
+	public SessionNotifierImpl (LocalConnectionNotifier locConNot) {
 		this.locConNot = locConNot;
 		myHandler = null;
 	}
@@ -212,5 +214,8 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 		return mtu;
 	}
 
+	public RemoteDevice getRemoteDevice() {
+		return locConNot.getRemoteDevice();
+	}
 
 }

@@ -324,8 +324,7 @@ public class DiscoveryAgent {
      * will continue until they are completed. This method always returns true.
      */
     public boolean cancelServiceSearch(int transID) {
-        //TODO cancelSearchServices
-        return true;
+        return bluetoothStack.cancelServiceSearch(transID);
     }
 
     /*  End of the method cancelServiceSearch   */

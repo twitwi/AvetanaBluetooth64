@@ -169,8 +169,8 @@ public class AvetanaBTStack extends BluetoothStack {
     return de.avetana.bluetooth.l2cap.L2CAPConnectionImpl.createL2CAPConnection(url);
   }
 
-  public void cancelServiceSearch(int transID) {
-
+  public boolean cancelServiceSearch(int transID) {
+    return BlueZ.cancelServiceSearch(transID);
   }
 
   public int updateService(ServiceRecord rec, long recordHandle) throws Exception{

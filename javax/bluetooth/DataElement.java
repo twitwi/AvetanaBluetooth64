@@ -319,8 +319,8 @@ public class DataElement {
      */
     public DataElement(boolean bool) {
         this.valueType = BOOL;
-        this.headerByteSize = 0;
-        this.dataBytes = new byte[] { (byte) (bool ? 1 : 0) };
+        this.headerByteSize = 1;
+        this.dataBytes = new byte[] { BOOL, (byte) (bool ? 1 : 0) };
     }
 
     /*  End of the constructor  */
@@ -574,10 +574,10 @@ public class DataElement {
             	default:
             		throw new IllegalArgumentException();
         }
-        long v = 0;
+        long v = (valueType >= 0x10 && ((dataBytes[blen] & (byte)0x80) == (byte)0x80)) ? -1 : 0;
         for (int i = 0;i < blen;i++) {
         		v = (long)(v << 8);
-        		v += (long)(0xff & dataBytes[i + 1]);
+        		v |= (long)(0xff & dataBytes[i + 1]);
         }
         return v;
     }
@@ -591,7 +591,7 @@ public class DataElement {
      */
     public boolean getBoolean() {
         if (valueType != BOOL) throw new ClassCastException();
-        return (dataBytes[0] != 0);
+        return (dataBytes[1] != 0);
     }
 
     /*  End of the method getBoolean    */

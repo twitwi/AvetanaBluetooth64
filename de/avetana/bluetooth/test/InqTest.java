@@ -6,6 +6,9 @@
  */
 package de.avetana.bluetooth.test;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
 import javax.bluetooth.DeviceClass;
 import javax.bluetooth.DiscoveryListener;
 import javax.bluetooth.RemoteDevice;
@@ -33,7 +36,7 @@ public class InqTest implements DiscoveryListener {
 	 */
 	public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
 		// TODO Auto-generated method stub
-		System.out.println (servRecord.length + " services discovered ");
+		System.out.println (servRecord.length + " services discovered " + transID);
 		for (int i = 0;i < servRecord.length;i++) {
 			try {
 				System.out.println ("Record " + (i + 1));
@@ -48,7 +51,7 @@ public class InqTest implements DiscoveryListener {
 	 */
 	public void serviceSearchCompleted(int transID, int respCode) {
 		// TODO Auto-generated method stub
-		System.out.println ("Service search completed");
+		System.out.println ("Service search completed " + transID + " / " + respCode);
 
 	}
 
@@ -64,7 +67,13 @@ public class InqTest implements DiscoveryListener {
 		UUID uuids[];
 		if (uuid == null) uuids = new UUID[] { };
 		else uuids = new UUID[] { new UUID (uuid, false) };
-		LocalDevice.getLocalDevice().getDiscoveryAgent().searchServices(new int[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x100, 0x303 }, uuids, new RemoteDevice (addr), this);
+		DiscoveryAgent da = LocalDevice.getLocalDevice().getDiscoveryAgent();
+		int transID = da.searchServices(new int[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x100, 0x303 }, uuids, new RemoteDevice (addr), this);
+		System.out.println ("Started");
+		BufferedReader br = new BufferedReader (new InputStreamReader (System.in));
+		br.readLine();
+		da.cancelServiceSearch(transID);
+		System.out.println ("Canceled");
 	}
 	
 	public static void main(String[] args) throws Exception {

@@ -94,7 +94,7 @@ struct search_context {
 */
 int my_sdp_service_search_attr_req(JNIEnv* env, jclass jobj, sdp_session_t *session, const sdp_list_t *search,
                                    sdp_attrreq_type_t reqtype, const sdp_list_t *attrids, sdp_list_t **rsp,
-                                   sdp_list_t *attr_list, jstring addr);
+                                   sdp_list_t *attr_list, jstring addr, jint transID);
 
 int openBTConnection(const char *name, int channel, int type, int master, int auth, int encrypt);
 
@@ -120,7 +120,7 @@ int list_contains_attr(sdp_list_t *attr_list, uint16_t comp);
 /**
  * Julien Campana: Send to the java application the result of the search
  */
-void send_searchCompleteEvent(JNIEnv* env, int sentCode, int transID, jstring jaddr);
+void send_searchCompleteEvent(JNIEnv* env, int sentCode, int transID);
 
 /**
  * Julien Campana: Extract a PDU and save it as a ServiceRecord object.
@@ -786,16 +786,16 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_writeBytes
   jbyte *bytes = env->GetByteArrayElements(b, 0);
 
   int done = 0;
-	
+
   while(done < len) {
 	int count = write (fd, (char *)(bytes+off+done), len-done);
 
 	if (count <= 0) {
 	  env->ReleaseByteArrayElements(b, bytes, 0);
-	  
+
 	  env->ThrowNew(env->FindClass("java/io/IOException"), "Failed to write");
 	}
-	
+
 	done += count;
  }
 
@@ -1409,7 +1409,7 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_disposeLocalRecord
  *
  */
  JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_listService
-   (JNIEnv *env, jclass obj, jstring bdaddr_jstr, jobjectArray j_uuids, jintArray j_attrIds) {
+   (JNIEnv *env, jclass obj, jstring bdaddr_jstr, jobjectArray j_uuids, jintArray j_attrIds, jint transID) {
    sdp_list_t *attrid, *search, *seq, *next, *all_attrid;
    uint32_t range = 0x0000ffff;
    sdp_session_t *sess;
@@ -1419,6 +1419,7 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_disposeLocalRecord
    struct search_context context;
 
 
+	search = NULL;
 
    // Initialise search context
    memset(&context, '\0', sizeof(struct search_context));
@@ -1434,7 +1435,7 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_disposeLocalRecord
 
    sess = sdp_connect(&interface, &bdaddr, SDP_RETRY_IF_BUSY);
    if (!sess) {
-     send_searchCompleteEvent(env,SERVICE_SEARCH_DEVICE_NOT_REACHABLE,0, bdaddr_jstr);
+     send_searchCompleteEvent(env,SERVICE_SEARCH_DEVICE_NOT_REACHABLE,transID);
      return;
    }
    if (DEBUG == 1) printf("Connected to sdp socket:socket %d, state %d, local %d, flags %d, tid 0x%02x", sess->sock,sess->state,sess->local,sess->flags,sess->tid);
@@ -1443,6 +1444,13 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_disposeLocalRecord
 
    // Decoding list of UUIDs and saving them in a sdp_list_t structure
    jsize len = env->GetArrayLength(j_uuids);
+	 if (len == 0) {
+	   uuid_t m_uuid;
+      uint16_t m_int=(uint16_t)(0x1002);
+      sdp_uuid16_create(&m_uuid,m_int);
+		  search=sdp_list_append(0,&m_uuid);
+	 }
+
    for (i=0 ; i < len ; i++) {
      jbyteArray barr = (jbyteArray)env->GetObjectArrayElement(j_uuids, i);
 	 	 int elSize = env->GetArrayLength(barr);
@@ -1469,9 +1477,9 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_disposeLocalRecord
    }
    all_attrid=sdp_list_append(0, &range);
 //	 printf ("my_sdp_service_search_attr_req...start\n");
-   if (my_sdp_service_search_attr_req(env, obj,sess, search, SDP_ATTR_REQ_RANGE, all_attrid, &seq, attrid, bdaddr_jstr)) {
+   if (my_sdp_service_search_attr_req(env, obj,sess, search, SDP_ATTR_REQ_RANGE, all_attrid, &seq, attrid, bdaddr_jstr, transID)) {
 //	   printf ("my_sdp_service_search_attr_req...done error\n");
-     send_searchCompleteEvent(env,SERVICE_SEARCH_ERROR, sess->tid, bdaddr_jstr);
+     send_searchCompleteEvent(env,SERVICE_SEARCH_ERROR, transID);
      sdp_close(sess);
      throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_listServices: Search failed!!");
 		 return;
@@ -1479,7 +1487,7 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_disposeLocalRecord
 
 //	 printf ("my_sdp_service_search_attr_req...done ok\n");
    sdp_list_free(search,0);
-   send_searchCompleteEvent(env,SERVICE_SEARCH_COMPLETED, sess->tid, bdaddr_jstr);
+   send_searchCompleteEvent(env,SERVICE_SEARCH_COMPLETED, transID);
    sdp_close(sess);
 
    return;
@@ -1489,12 +1497,12 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_disposeLocalRecord
   * Send to the JSR82 implementation the event "the sdp search is no completed". The sentCode
   * variable represents the search result (successful, failed ..etc..)
   */
-void send_searchCompleteEvent(JNIEnv* env, int sentCode, int transID, jstring jaddr) {
+void send_searchCompleteEvent(JNIEnv* env, int sentCode, int transID) {
   jclass cls=env->FindClass("de/avetana/bluetooth/stack/BlueZ");
   jmethodID mid=env->GetStaticMethodID(cls,
                                        "serviceSearchComplete",
-                                       "(IILjava/lang/String;)V");
-  env->CallStaticVoidMethod(cls, mid, transID, sentCode, jaddr);
+                                       "(II)V");
+  env->CallStaticVoidMethod(cls, mid, transID, sentCode);
 }
 
 /**
@@ -1652,7 +1660,7 @@ jobject my_sdp_service_attr_req(JNIEnv *env, jclass jcls,
 
 int my_sdp_service_search_attr_req(JNIEnv* env, jclass jobj, sdp_session_t *session, const sdp_list_t *search,
                                    sdp_attrreq_type_t reqtype, const sdp_list_t *attrids,
-                                   sdp_list_t **rsp, sdp_list_t *attr_list, jstring addr) {
+                                   sdp_list_t **rsp, sdp_list_t *attr_list, jstring addr, jint transID) {
 	int status = 0;
 	int reqsize = 0, _reqsize;
 	int rspsize = 0;
@@ -1808,7 +1816,7 @@ int my_sdp_service_search_attr_req(JNIEnv* env, jclass jobj, sdp_session_t *sess
                       if(DEBUG==1)  printf("Unable to get method addService!!!!");
                     }
                     else {
-                      env->CallStaticVoidMethod(cls, mid, session->tid, rec);
+                      env->CallStaticVoidMethod(cls, mid, transID, rec);
                     }
                     scanned += recsize;
                     pdata += recsize;
