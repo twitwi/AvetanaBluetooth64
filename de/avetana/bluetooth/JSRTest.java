@@ -14,6 +14,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -51,6 +52,7 @@ import de.avetana.bluetooth.l2cap.L2CAPConnectionNotifierImpl;
 import de.avetana.bluetooth.util.BTAddress;
 import de.avetana.bluetooth.util.DeviceFinder;
 import de.avetana.bluetooth.util.ServiceFinderPane;
+import de.avetana.bluetooth.sdp.SDPConstants;
 
 /**
  * <b>COPYRIGHT:</b><br> (c) Copyright 2004 Avetana GmbH ALL RIGHTS RESERVED. <br><br>
@@ -419,7 +421,7 @@ public class JSRTest extends JFrame implements ActionListener {
      m_authenticateLink.setEnabled(enable);
      m_switchMaster.setEnabled(enable);
      m_remote.setEnabled(enable);
-     l2CAPBut.setEnabled(enable & (streamCon instanceof L2CAPConnection));
+     l2CAPBut.setEnabled(enable && (streamCon instanceof L2CAPConnection || streamCon instanceof ClientSession));
      if(streamCon instanceof L2CAPConnection) {
        m_authentication.setEnabled(!enable);
        m_encrypt.setEnabled(!enable);
@@ -729,8 +731,8 @@ public class JSRTest extends JFrame implements ActionListener {
            this.l2CAPBut.setEnabled(true);
          } else if (streamCon instanceof ClientSession) {
             is = null;os = null;
+            this.l2CAPBut.setEnabled(true);
             if(receiverThread!=null) {receiverThread.stopReading();receiverThread=null;}
-            this.l2CAPBut.setEnabled(false);
          }
          enableConnAttributes(true);
        }
@@ -758,13 +760,32 @@ public class JSRTest extends JFrame implements ActionListener {
          }
        } else if (e.getSource() == dataReceived) {
        } else if (e.getSource() == this.l2CAPBut) {
-         if (!((L2CAPConnection)streamCon).ready()) {
-           dataReceived.setText("No Packet");
-         } else {
-           byte b[] = new byte[((L2CAPConnection)streamCon).getReceiveMTU()];
-           int j = ((L2CAPConnection)streamCon).receive (b);
-           this.dataReceived.setText("received " + j + "(" + b.length + ")");
-         }
+        if (m_protocols.getSelectedIndex() == JSR82URL.PROTOCOL_L2CAP) { 
+        		if (!((L2CAPConnection)streamCon).ready()) {
+        			dataReceived.setText("No Packet");
+        		} else {
+        			byte b[] = new byte[((L2CAPConnection)streamCon).getReceiveMTU()];
+        			int j = ((L2CAPConnection)streamCon).receive (b);
+        			this.dataReceived.setText("received " + j + "(" + b.length + ")");
+        		}
+        } else if (m_protocols.getSelectedIndex() == JSR82URL.PROTOCOL_OBEX) {
+        		ClientSession cs = (ClientSession)streamCon;
+            HeaderSet hs = cs.createHeaderSet();
+            cs.connect(null);
+            hs.setHeader(HeaderSet.TYPE, "text/x-vcard");
+            Operation po = cs.get(hs);
+            HeaderSet respSet = po.getReceivedHeaders();
+            byte[] b = new byte[po.openInputStream().available()];
+            po.openInputStream().read(b);
+            File f = File.createTempFile("obex", ".txt");
+            FileOutputStream fos = new FileOutputStream (f);
+            fos.write(b);
+            fos.close();
+            System.out.println ("Object written to " + f.getAbsolutePath());
+            serviceStatus.setText ("Object received " + respSet.getHeader(HeaderSet.NAME) + " size " + po.getLength());
+            po.close();
+            cs.disconnect(null);
+        }
        }
      }
      catch (Exception e2) {
@@ -783,7 +804,7 @@ public class JSRTest extends JFrame implements ActionListener {
          public void run () {
            try {
              //JSR82URL url=new JSR82URL("btspp://localhost:0dad43655df111d69f6e00039353e858;name=JSRTest");
-             JSR82URL url=new JSR82URL("btspp://localhost:ce37ca6e288a409a9796191882ee44fc;name=JSRTest");
+             JSR82URL url=new JSR82URL("btspp://localhost:" + new UUID (SDPConstants.UUID_SERIAL_PORT)+ ";name=JSRTest");
              //JSR82URL url=new JSR82URL("btspp://localhost:" + new UUID (0x12345678) + ";name=JSRTest");
              url.setParameter("encrypt", new Boolean(m_encrypt.isSelected()));
              url.setParameter("authenticate", new Boolean(m_authentication.isSelected()));
@@ -826,7 +847,9 @@ public class JSRTest extends JFrame implements ActionListener {
 		r = new Runnable() {
 			public void run() {
 				try {
-		    	notify = Connector.open("btgoep://localhost:ce37ca6e288a409a9796191882ee44fc;name=OBEXTest;authenticate=false;master=false;encrypt=false");
+					//Obex must be offered with only the OBEX-ObjetPush UUID. It will not be
+					//recognised as an OBEX Service with a other UUID
+		    	notify = Connector.open("btgoep://localhost:" + new UUID (SDPConstants.UUID_OBEX_OBJECT_PUSH) + ";name=OBEXTest;authenticate=false;master=false;encrypt=false");
 				serviceStatus.setText ("ready");
 				((SessionNotifier)notify).acceptAndOpen(new ServerRequestHandler() {
 					
@@ -854,6 +877,21 @@ public class JSRTest extends JFrame implements ActionListener {
 					
 					public void onDisconnect (HeaderSet req, HeaderSet resp) {
 						obexDisconnected = true;
+					}
+					
+					public int onGet (Operation op) {
+						
+						try {
+							op.openOutputStream().write ("Test Message from avetanaBluetooth".getBytes());
+						HeaderSet set = op.getReceivedHeaders();
+						set.setHeader(HeaderSet.TYPE, "text/plain");
+						set.setHeader(HeaderSet.NAME, "msg.txt");
+						op.sendHeaders (set);
+						} catch (IOException e) {
+							e.printStackTrace();
+							return 0xc5;
+						}
+						return 0xa0;
 					}
 				});
 				

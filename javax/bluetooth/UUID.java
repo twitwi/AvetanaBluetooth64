@@ -57,6 +57,7 @@ public class UUID {
     private byte[] uuidBytes;
     private long uuidLong;
     public static final String baseUUID="0000000000001000800000805F9B34FB";
+    public static final UUID NULL_UUID = new UUID (new byte[] { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 });
     private static byte[] bUUIDBytes;
 
     public UUID() {
@@ -281,6 +282,15 @@ public class UUID {
       return true;
     }
 
+    	public boolean equals (UUID other) {
+    		try {
+    			byte[] b1 = other.toByteArray128();
+    			byte[] b2 = this.toByteArray128();
+    			for (int i = 0;i < b1.length;i++) if (b1[i] != b2[i]) return false;
+    		} catch (Exception e) { e.printStackTrace(); return false; }
+    		return true;
+    	}
+    
     /* End of the method equals */
 
     /**

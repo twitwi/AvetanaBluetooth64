@@ -68,7 +68,7 @@ public class Connector {
           if(myURL.getBTAddress()==null) {
             if(myURL.getProtocol()==JSR82URL.PROTOCOL_RFCOMM) return new LocalConnectionNotifier(myURL);
             else if(myURL.getProtocol()==JSR82URL.PROTOCOL_L2CAP) return new L2CAPConnectionNotifierImpl(myURL);
-            else if(myURL.getProtocol() == JSR82URL.PROTOCOL_OBEX)
+            else if(myURL.getProtocol() == JSR82URL.PROTOCOL_OBEX) 
             return new SessionNotifierImpl (new LocalConnectionNotifier (myURL));
           }
           else {

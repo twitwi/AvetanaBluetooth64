@@ -29,6 +29,8 @@ package javax.bluetooth;
 import javax.microedition.io.*;
 import de.avetana.bluetooth.stack.BluetoothStack;
 import de.avetana.bluetooth.stack.*;
+import de.avetana.bluetooth.obex.*;
+import javax.obex.*;
 import de.avetana.bluetooth.connection.*;
 import de.avetana.bluetooth.sdp.*;
 import java.util.*;
@@ -316,12 +318,11 @@ public class LocalDevice {
      */
     public ServiceRecord getRecord(Connection notifier) throws Exception{
       if(notifier==null) throw new NullPointerException("Notifier is null!");
+      if (notifier instanceof SessionNotifierImpl) notifier = ((SessionNotifierImpl)notifier).getConnectionNotifier();
       if(!(notifier instanceof StreamConnectionNotifier) &&
          !(notifier instanceof L2CAPConnectionNotifier)) {
         throw new IllegalArgumentException("Notifier must be an instance of StreamConnectionNotifier or an instance of L2CapConnectionNotifier");
       }
-      if(!(notifier instanceof ConnectionNotifier))
-        throw new ClassCastException("The Avetana Implementation only supports ConnectionNotifier objects");
       if(((ConnectionNotifier)notifier).isNotifierClosed())
         throw new IllegalArgumentException("The connection is already closed!");
       ServiceRecord myRecord=((ConnectionNotifier)notifier).getServiceRecord();
@@ -402,13 +403,11 @@ public class LocalDevice {
           if(!found) throw new Exception("A btspp connection requests the presence of the Serial Port UUID in the Service Class ID list!");
           DataElement protoDesList=srvRecord.getAttributeValue(SDPConstants.ATTR_PROTO_DESC_LIST);
         }
-        byte[] b=((LocalServiceRecord)srvRecord).toByteArray();
         try {
-          System.out.println("Updating record with service handle="+((LocalServiceRecord)srvRecord).getRecordHandle());
-          int retour=bluetoothManager.updateService(b, ((LocalServiceRecord)srvRecord).getRecordHandle());
+          int retour=bluetoothManager.updateService((LocalServiceRecord)srvRecord, ((LocalServiceRecord)srvRecord).getRecordHandle());
           if(retour < 0) throw new Exception();
-        }catch(Exception ex) {throw new ServiceRegistrationException("Registration of the new Service was not successful!");}
-      }catch(Exception ex) {throw new IllegalArgumentException(ex.getMessage());}
+        }catch(Exception ex) {ex.printStackTrace(); throw new ServiceRegistrationException("Registration of the new Service was not successful!");}
+      }catch(Exception ex) { ex.printStackTrace(); throw new IllegalArgumentException(ex.getMessage());}
     }
 
     /*  End of the method updateRecord  */
