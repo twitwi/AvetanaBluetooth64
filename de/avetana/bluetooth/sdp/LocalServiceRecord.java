@@ -88,7 +88,7 @@ public class LocalServiceRecord extends SDPServiceRecord {
     rec.localUUID = svcID;
     rec.m_type=protocol;
     DataElement serviceClassIDList = new DataElement(DataElement.DATSEQ);
-    serviceClassIDList.addElement(new DataElement(DataElement.UUID, new UUID(SDPConstants.UUID_SERIAL_PORT)));
+    if(protocol==JSR82URL.PROTOCOL_RFCOMM) serviceClassIDList.addElement(new DataElement(DataElement.UUID, new UUID(SDPConstants.UUID_SERIAL_PORT)));
     rec.m_attributes.put(new Integer(SDPConstants.ATTR_SERVICE_CLASS_ID_LIST), serviceClassIDList);
     DataElement protocolDescriptorList = new DataElement(DataElement.DATSEQ);
     DataElement l2capDescriptor = new DataElement(DataElement.DATSEQ);
@@ -148,16 +148,25 @@ public class LocalServiceRecord extends SDPServiceRecord {
       dict.addChild(new PElement ("key", "0001 - ServiceClassIDList"));
       dict.addChild(new PElement ("array")).addChild(new PElement ("data", new String(Base64.encode(localUUID.toByteArray()))));
 
-    if(getProtocol()==JSR82URL.PROTOCOL_RFCOMM || getProtocol()==JSR82URL.PROTOCOL_OBEX) {
+    if(getProtocol()==JSR82URL.PROTOCOL_RFCOMM || getProtocol()==JSR82URL.PROTOCOL_OBEX || getProtocol()==JSR82URL.PROTOCOL_L2CAP) {
       dict.addChild(new PElement ("key", "0004 - ProtocolDescriptorList"));
       PElement pdla = dict.addChild(new PElement ("array"));
-      pdla.addChild (new PElement ("array")).addChild(new PElement ("data", "AQA="));
-      PElement pdla1 = pdla.addChild (new PElement ("array"));
-      pdla1.addChild(new PElement ("data", "AAM="));
+
+      PElement pd1aa = pdla.addChild (new PElement ("array"));
+      pd1aa.addChild(new PElement ("data", "AQA="));
+
       DataElement de = getChannelNumberElement();
 
-      int channelNumber = de == null ? (int)de.getLong() : 1;
-      pdla1.addChild(newDataElement (1, 1, channelNumber));
+      int channelNumber = de != null ? (int)de.getLong() : 1;
+      if (getProtocol() == JSR82URL.PROTOCOL_RFCOMM ||getProtocol() == JSR82URL.PROTOCOL_OBEX) {
+        PElement pdla1 = pdla.addChild (new PElement ("array"));
+        pdla1.addChild(new PElement ("data", "AAM="));
+        pdla1.addChild(newDataElement (1, 1, channelNumber));
+      }
+      else {
+        pd1aa.addChild(newDataElement (2, 1, channelNumber));
+      }
+
     }
 
       dict.addChild(new PElement ("key", "0005 - BrowseGroupList*"));
@@ -190,11 +199,12 @@ public class LocalServiceRecord extends SDPServiceRecord {
    * @param newChannel The new Channel number
    */
   public void updateChannelNumber(int newChannel) {
+
     DataElement parent = this.getChannelNumberElementParent();
     DataElement channel = this.getChannelNumberElement();
     if (parent == null) return;
     if (channel != null) parent.removeElement(channel);
-    parent.addElement(new DataElement(DataElement.U_INT_1, newChannel));
+    parent.addElement(new DataElement(getProtocol() == JSR82URL.PROTOCOL_RFCOMM ? DataElement.U_INT_1 : DataElement.U_INT_2, newChannel));
 
   }
 
@@ -223,7 +233,6 @@ public class LocalServiceRecord extends SDPServiceRecord {
               if (protocolParameterList.hasMoreElements()) {
                 DataElement protocolPSMElement = (DataElement)protocolParameterList.nextElement();
                 if (protocolPSMElement != null) {
-                  System.out.println(protocolPSMElement.toString());
                    if((lg == 0x3 && protocolPSMElement.getDataType() == DataElement.U_INT_1) ||
                       (lg==0x100 && protocolPSMElement.getDataType() == DataElement.U_INT_2))
                       return protocolPSMElement;
@@ -256,15 +265,14 @@ public class LocalServiceRecord extends SDPServiceRecord {
           if (protocolDescriptor.getDataType() == DataElement.UUID) {
             UUID protocolDescriptorUUID = (UUID)protocolDescriptor.getValue();
             long lg=protocolDescriptorUUID.toLong();
-            if ( lg == 0x0003) { // is L2CAP
-
+            if ( lg == 0x0003 || lg == 0x0100) { // is L2CAP
               if (protocolParameterList.hasMoreElements()) {
                 DataElement protocolPSMElement = (DataElement)protocolParameterList.nextElement();
 //                System.out.println(protocolPSMElement);
                 if (protocolPSMElement != null) {
-                      if (protocolPSMElement.getDataType() == DataElement.U_INT_1) {
+                  if((lg == 0x3 && protocolPSMElement.getDataType() == DataElement.U_INT_1) ||
+                     (lg==0x100 && protocolPSMElement.getDataType() == DataElement.U_INT_2))
                       return protocolDescriptorElement;
-                    }
                   }
               }
             }

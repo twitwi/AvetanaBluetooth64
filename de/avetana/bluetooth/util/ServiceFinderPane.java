@@ -248,7 +248,10 @@ public class ServiceFinderPane extends JPanel implements ActionListener, Discove
    */
   public void doInquiry() {
 
+    m_dialog = null;
+
     Runnable r=new Runnable() {
+
       public void run() {
         if(m_owner instanceof Dialog)
           m_dialog=new ProgressDialog((Dialog)m_owner);
@@ -258,6 +261,10 @@ public class ServiceFinderPane extends JPanel implements ActionListener, Discove
       }
     };
     new Thread(r).start();
+
+    while (m_dialog == null) {
+      try { synchronized (this) { this.wait(100); } } catch (Exception e) {}
+    }
 
     nameCache=new Hashtable();
     m_remote=new Vector();

@@ -105,8 +105,8 @@ public class JSRTest2 extends JFrame implements ActionListener {
   private ConnectionNotifier notify=null;
   // Own thread for receiving and sending data for the protocols, which use connection streams.
   private DStreamThread receiverThread = null;
-  // Own thread for receiving and sending data for the L2CAP protocol
-  private DL2CAPThread l2capThread = null;
+  // L2CAP Data needs to be polled from the stream in order to clear the InputBuffer
+  private JButton l2CAPBut = new JButton ("poll");
   // Warn the user if the os specific stack does not support some security options.
   private JLabel securityNotAvailable;
 
@@ -299,6 +299,8 @@ public class JSRTest2 extends JFrame implements ActionListener {
      dataExchange.add(this.sendData,c);
      c.gridx=1;c.anchor=c.EAST;
      dataExchange.add(this.dataReceived,c);
+     c.gridx=2;c.anchor=c.EAST;
+     dataExchange.add(this.l2CAPBut,c);
 
      JPanel activeConnection=new JPanel(new GridLayout(0,2));
      activeConnection.setBorder(BorderFactory.createTitledBorder("Change the state of an active connection"));
@@ -378,6 +380,7 @@ public class JSRTest2 extends JFrame implements ActionListener {
      m_authenticateLink.setEnabled(enable);
      m_switchMaster.setEnabled(enable);
      m_remote.setEnabled(enable);
+     l2CAPBut.setEnabled(enable & (streamCon instanceof L2CAPConnection));
      if(streamCon instanceof L2CAPConnection) {
        m_authentication.setEnabled(!enable);
        m_encrypt.setEnabled(!enable);
@@ -396,6 +399,9 @@ public class JSRTest2 extends JFrame implements ActionListener {
 
      // Service Finder Panel
      this.m_servicePanel.m_select.addActionListener(this);
+
+     //L2CAP-Polling
+     this.l2CAPBut.addActionListener(this);
 
      // Connection Pane
      connectTo.addActionListener(this);
@@ -482,6 +488,7 @@ public class JSRTest2 extends JFrame implements ActionListener {
 //     System.out.println ("Closing Connection 5");
      enableConnAttributes(false);
 //     System.out.println ("Closing Connection 6");
+     l2CAPBut.setEnabled(false);
    }
 
    /**
@@ -574,7 +581,7 @@ public class JSRTest2 extends JFrame implements ActionListener {
     */
    public void setConnectionURLClient() throws Exception{
      JSR82URL url=new JSR82URL(m_servicePanel.getSelectedService().getServiceURL());
-     if(currentIndex!=url.getProtocol()) throw new Exception("");
+     if(currentIndex!=url.getProtocol()) throw new Exception(m_servicePanel.getSelectedService().getServiceURL() + "!=" + currentIndex);
      url.setParameter("encrypt", new Boolean(m_encrypt.isSelected()));
      url.setParameter("authenticate", new Boolean(m_authentication.isSelected()));
      url.setParameter("master", new Boolean(m_master.isSelected()));
@@ -683,12 +690,11 @@ public class JSRTest2 extends JFrame implements ActionListener {
            if (this.receiverThread != null) { receiverThread.stopReading(); receiverThread = null; }
            receiverThread = new DStreamThread();
            receiverThread.start();
+           this.l2CAPBut.setEnabled(false);
          } else {
            is = null;os = null;
            if(receiverThread!=null) {receiverThread.stopReading();receiverThread=null;}
-           if(this.l2capThread!=null) {l2capThread.stopReading();l2capThread=null;}
-           l2capThread=new DL2CAPThread();
-           l2capThread.start();
+           this.l2CAPBut.setEnabled(true);
          }
          enableConnAttributes(true);
          System.out.println ("Started Receiver Thread " + is + " " + os);
@@ -704,6 +710,10 @@ public class JSRTest2 extends JFrame implements ActionListener {
          else if(m_protocols.getSelectedIndex() == JSR82URL.PROTOCOL_L2CAP)
            ((L2CAPConnection)streamCon).send(b);
        } else if (e.getSource() == dataReceived) {
+       } else if (e.getSource() == this.l2CAPBut) {
+         byte b[] = new byte[((L2CAPConnection)streamCon).getReceiveMTU()];
+         int j = ((L2CAPConnection)streamCon).receive (b);
+         this.dataReceived.setText("received " + j + "(" + b.length + ")");
        }
      }
      catch (Exception e2) {
@@ -736,6 +746,7 @@ public class JSRTest2 extends JFrame implements ActionListener {
              receiverThread = new DStreamThread();
              receiverThread.start();
              enableConnAttributes(true);
+             JSRTest2.this.l2CAPBut.setEnabled(false);
              } catch (Exception e) { e.printStackTrace(); }
          }
        };
@@ -752,9 +763,7 @@ public class JSRTest2 extends JFrame implements ActionListener {
              notify = (ConnectionNotifier)Connector.open(url.toString());
              streamCon = ((L2CAPConnectionNotifierImpl)notify).acceptAndOpen();
              serviceStatus.setText("connected with fid="+((BTConnection)streamCon).getConnectionID());
-             if (l2capThread != null) l2capThread.stopReading();
-             l2capThread = new DL2CAPThread();
-             l2capThread.start();
+             JSRTest2.this.l2CAPBut.setEnabled(true);
              enableConnAttributes(true);
              } catch (Exception e) { e.printStackTrace(); }
          }
@@ -777,36 +786,6 @@ public class JSRTest2 extends JFrame implements ActionListener {
      } catch (Exception e) { e.printStackTrace();  serviceStatus.setText("error");}
    }
 
-   /**
-    * Thread used to read data from an L2CAP connection
-    */
-   private class DL2CAPThread extends Thread {
-     private boolean running;
-     private int received;
-
-     public DL2CAPThread() {
-       super();
-     }
-
-     public void run() {
-       running = true;
-       received = 0;
-       byte b[] = new byte[1000];
-       try {
-         while (running) {
-           dataReceived.setText("Received " + received);
-           int a = ((L2CAPConnection)streamCon).receive(b);
-           received += a;
-         }
-       } catch (Exception e) {
-         stopReading();
-         if (m_offerService.isSelected()) revokeService(); }
-     }
-
-     public void stopReading() {
-       running = false;
-     }
-   }
 
    /**
     * Thread used to read data from an RFCOMM connection

@@ -92,7 +92,7 @@ public class BluetoothStream extends BTConnection{
             int data = BlueZ.readBytes(fid, b, b.length);
             if (data > 0) inStream.addData(b, data);
             else if (data == -1) inStream.close();
-            this.wait(50);
+            else this.wait(50);
           } catch (Exception e) { closed = true; e.printStackTrace(); }
         }
       }
@@ -157,7 +157,7 @@ public class BluetoothStream extends BTConnection{
       while (writePos <= readPos) {
         if (closed == true) throw new IOException("Connection closed");
         try {
-          this.wait(200);
+          this.wait(50);
         }
         catch (Exception e) {
           e.printStackTrace();

@@ -144,9 +144,6 @@ public class BluezStack extends BluetoothStack {
       for(int i=0;i<uuid16Set.length;i++) {
         try {uuid16Set[i]=Short.decode("0x"+uuidSet[i].to32bitsString()).shortValue();}catch (Exception ex) {throw new IllegalArgumentException("UUID must be 16 bits length!!!!!");}
       }
-      for(int i=0;i<uuid16Set.length;i++) {
-        System.out.println("Searching for 0x"+Integer.toHexString(uuid16Set[i]));
-      }
     }
     searchServices(attrSet,uuid16Set,btDev,myListener);
   }
