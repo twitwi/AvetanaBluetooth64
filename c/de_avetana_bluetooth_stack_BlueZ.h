@@ -260,7 +260,7 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_getRssi
   (JNIEnv *, jclass, jstring);
 
 JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciLinkQuality
- (JNIEnv, jclass , jstring );
+ (JNIEnv *, jclass , jstring );
 
 #ifdef __cplusplus
 }

@@ -771,5 +771,5 @@ public native int hciGetLinkQuality(String bdaddr);
          *
          * @return An estimation of the Received Signal Strength Indicator.
          */
-		public static native int getRssi(String adr);        
+		public static native int getRssi(String adr) throws BlueZException;        
 }
