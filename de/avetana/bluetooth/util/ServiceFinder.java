@@ -85,7 +85,7 @@ public class ServiceFinder extends JDialog  implements ActionListener{
    */
   public void jbInit(UUID[] uuidList) throws Exception {
     cancel = new JButton("Close");
-    myPane=new ServiceFinderPane(this, "lastSrSearch", uuidList);
+    myPane=createServiceFinderPane (this,"lastSrSearch", uuidList);
     JPanel command=myPane.getCommandPanel();
     command.add(cancel);
     Container c=this.getContentPane();
@@ -93,6 +93,10 @@ public class ServiceFinder extends JDialog  implements ActionListener{
     c.add(myPane, BorderLayout.CENTER);
     cancel.addActionListener(this);
     myPane.m_select.addActionListener(this);
+  }
+  
+  public ServiceFinderPane createServiceFinderPane(ServiceFinder sf, String text, UUID[] list) throws Exception {
+  	return new ServiceFinderPane(sf, text, list);
   }
 
   /**

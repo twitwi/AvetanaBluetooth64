@@ -23,7 +23,7 @@
 # COPYRIGHTS, TRADEMARKS OR OTHER RIGHTS, RELATING TO USE OF THIS SOFTWARE IS
 # DISCLAIMED.
 #
-# $Id: Makefile,v 1.2 2004/07/27 08:18:20 moritzg Exp $
+# $Id: Makefile,v 1.3 2004/11/10 20:29:36 moritzg Exp $
 
 # C Compiler to use
 CC             = g++

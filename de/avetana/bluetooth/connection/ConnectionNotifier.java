@@ -145,14 +145,14 @@ public abstract class ConnectionNotifier implements Connection {
   /**
    * Closes the connection NOTIFIER (and not the connection itself) and remove the service from the BCC.
    */
-  public void close() {
+  public synchronized void close() {
+  	if (isClosed) return;
     try {
       BlueZ.myFactory.removeNotifier(this);
       m_fid = -2;
-      synchronized (this) {
-        notifyAll();
-      }
-      BlueZ.disposeLocalRecord(m_serviceHandle);
+      notifyAll();
+      if (m_serviceHandle != 0) BlueZ.disposeLocalRecord(m_serviceHandle);
+      m_serviceHandle = 0;
       isClosed=true;
     }catch(Exception ex) {}
   }

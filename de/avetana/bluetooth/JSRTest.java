@@ -804,8 +804,8 @@ public class JSRTest extends JFrame implements ActionListener {
          public void run () {
            try {
              //JSR82URL url=new JSR82URL("btspp://localhost:0dad43655df111d69f6e00039353e858;name=JSRTest");
-             JSR82URL url=new JSR82URL("btspp://localhost:" + new UUID (SDPConstants.UUID_SERIAL_PORT)+ ";name=JSRTest");
-             //JSR82URL url=new JSR82URL("btspp://localhost:" + new UUID (0x12345678) + ";name=JSRTest");
+             //JSR82URL url=new JSR82URL("btspp://localhost:" + new UUID (SDPConstants.UUID_SERIAL_PORT)+ ";name=JSRTest");
+             JSR82URL url=new JSR82URL("btspp://localhost:" + new UUID (0x12345678) + ";name=JSRTest");
              url.setParameter("encrypt", new Boolean(m_encrypt.isSelected()));
              url.setParameter("authenticate", new Boolean(m_authentication.isSelected()));
              url.setParameter("master", new Boolean(m_master.isSelected()));
@@ -849,7 +849,7 @@ public class JSRTest extends JFrame implements ActionListener {
 				try {
 					//Obex must be offered with only the OBEX-ObjetPush UUID. It will not be
 					//recognised as an OBEX Service with a other UUID
-		    	notify = Connector.open("btgoep://localhost:" + new UUID (SDPConstants.UUID_OBEX_OBJECT_PUSH) + ";name=OBEXTest;authenticate=false;master=false;encrypt=false");
+		    	notify = Connector.open("btgoep://localhost:" + new UUID (0x12345678) + ";name=OBEXTest;authenticate=false;master=false;encrypt=false");
 				serviceStatus.setText ("ready");
 				((SessionNotifier)notify).acceptAndOpen(new ServerRequestHandler() {
 					
