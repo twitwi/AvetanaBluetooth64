@@ -23,7 +23,7 @@ package de.avetana.bluetooth.stack;
    COPYRIGHTS, TRADEMARKS OR OTHER RIGHTS, RELATING TO USE OF THIS SOFTWARE IS
    DISCLAIMED.
 
-   $Id: BlueZException.java,v 1.1 2004/07/15 07:36:11 moritzg Exp $
+   $Id: BlueZException.java,v 1.2 2004/07/27 12:08:47 moritzg Exp $
 */
 
 /**

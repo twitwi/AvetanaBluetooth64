@@ -23,7 +23,7 @@ package de.avetana.bluetooth.util;
    COPYRIGHTS, TRADEMARKS OR OTHER RIGHTS, RELATING TO USE OF THIS SOFTWARE IS
    DISCLAIMED.
 
-   $Id: BTAddressFormatException.java,v 1.1 2004/07/15 07:36:07 moritzg Exp $
+   $Id: BTAddressFormatException.java,v 1.2 2004/07/27 12:08:47 moritzg Exp $
 */
 
 /**

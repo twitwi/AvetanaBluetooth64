@@ -72,7 +72,7 @@ public class BlueZ
 	 * @return A device descriptor (often named <code>dd</code>) for the HCI
 	 *     device.
 	 */
-	public static native int hciOpenDevice(int hciDevID) throws BlueZException;
+	public static native int hciOpenDevice(int hciDevID, BlueZ ref) throws BlueZException;
 
 	/* HCI Close Device */
 	/**
@@ -121,7 +121,9 @@ public class BlueZ
 	 * @return An InquiryInfo object containing the results of the inquiry.
 	 */
 	public static HCIInquiryResult hciInquiry(int hciDevID) throws BlueZException
-	{	return hciInquiry(hciDevID, 8, 10, 0);	}
+	{
+            return hciInquiry(hciDevID, 8, 10, 0);
+        }
 
 	/* HCI Device Bluetooth Address */
 	/**
@@ -608,5 +610,14 @@ public class BlueZ
           }catch(Exception ex) {ex.printStackTrace();}
           boolean b=myFactory.removeListener(addr);
           if(b) System.out.println("Listener "+jBTAddr+" removed");
+        }
+
+        public Class createClass (String name) {
+          try {
+            return Class.forName(name.replaceAll("/", "."));
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
+          return null;
         }
 }

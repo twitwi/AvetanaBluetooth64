@@ -14,7 +14,7 @@ extern "C" {
  * Signature: (I)I
  */
 JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciOpenDevice
-  (JNIEnv *, jclass, jint);
+  (JNIEnv *, jclass, jint, jobject);
 
 /*
  * Class:     de_avetana_bluetooth_stack_BlueZ

@@ -47,12 +47,12 @@ public class BluezStack extends BluetoothStack {
   private static boolean fini=false;
 
   public BluezStack() throws Exception{
-      m_bd = BlueZ.hciOpenDevice(0);
+      m_bd = BlueZ.hciOpenDevice(0, new BlueZ());
       devID = 0;
   }
 
   public BluezStack(int devID) throws Exception{
-      m_bd = BlueZ.hciOpenDevice(devID);
+      m_bd = BlueZ.hciOpenDevice(devID, new BlueZ());
       this.devID = devID;
   }
 
@@ -65,7 +65,7 @@ public class BluezStack extends BluetoothStack {
         BlueZ.hciCloseDevice(devID);
       } catch(Exception ex) {}
     }
-    BlueZ.hciOpenDevice(dev);
+    BlueZ.hciOpenDevice(dev, new BlueZ());
   }
 
   public String getRemoteName(String bd_addr) throws Exception {

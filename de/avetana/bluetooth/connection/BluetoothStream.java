@@ -166,21 +166,20 @@ public class BluetoothStream extends BTConnection{
     }
 
     public synchronized int read() throws IOException {
-      if (closed == true) return -1;
+      if (closed == true) throw new IOException("Connection closed");;
       waitForData();
       return (int)buffer[readPos++];
     }
 
     public synchronized int read (byte[] b, int off, int len) throws IOException {
       waitForData();
-      if (closed == true) return -1;
+      if (closed == true) throw new IOException("Connection closed");;
       int av = available();
       int r = av > b.length - off ? b.length - off : av;
       r = r > len ? len : r;
       System.arraycopy(buffer, readPos, b, off, r);
       readPos += r;
       return r;
-
     }
 
     public void close() {

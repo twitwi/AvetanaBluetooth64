@@ -831,7 +831,7 @@ public class JSRTest2 extends JFrame implements ActionListener {
            int a = is.read(b);
            received += a;
          }
-       } catch (Exception e) {e.printStackTrace(); if (m_offerService.isSelected()) revokeService(); }
+       } catch (Exception e) {e.printStackTrace(); if (m_offerService.isSelected()) revokeService(); if (connectTo.isSelected()) { connectTo.setSelected(false); try { closeConnection(); } catch (Exception ec) {}} }
      }
 
      public void stopReading() {

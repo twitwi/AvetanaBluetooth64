@@ -251,7 +251,7 @@ void throwException(JNIEnv *env, char *msg)
  * connected
  */
 JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciOpenDevice
-  (JNIEnv *env, jclass obj, jint hciID)
+  (JNIEnv *env, jclass obj, jint hciID, jobject bluezRef)
 {
 	/* Open the specified HCI device */
 	jint dd;
