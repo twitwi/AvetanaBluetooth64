@@ -99,17 +99,9 @@ public abstract class BluetoothStack {
    * @throws Exception If the BluetoothStack was not initialized
    */
   public static BluetoothStack getBluetoothStack() throws Exception {
-    if (m_stack == null) throw new Exception("BluetoothStack not initialized. ");
+    if (m_stack == null) m_stack = new AvetanaBTStack();
     return m_stack;
   }
-
-  /**
-   * Inits the BluetoothStack object. This method MUST be one of the first methods called by an application using
-   * this bluetooth framework.
-   * @param stack The stack created or intialized by the user (for example an instance of BlueZStack)
-   * @throws Exception
-   */
-  public static void init(BluetoothStack stack) throws Exception {m_stack=stack;}
 
   /**
    * Returns the name of the local device.
@@ -247,4 +239,16 @@ public abstract class BluetoothStack {
    * @see de.avetana.bluetooth.stack.BluetoothStack#CON_TRUSTED_POS
    */
   public abstract boolean getConnectionFlag(RemoteDevice dev, int pos) throws Exception;
+
+  /**
+   * This method is deprecated
+   * @param stack
+   * @throws Exception
+   * @deprecated
+   */
+  public static void init (BluetoothStack stack) throws Exception {
+    m_stack = stack;
+    System.err.println ("No need to call BluetoothStack.init() anymore");
+    new Throwable().printStackTrace();
+  }
 }

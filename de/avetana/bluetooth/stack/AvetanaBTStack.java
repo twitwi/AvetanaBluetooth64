@@ -45,6 +45,7 @@ public class AvetanaBTStack extends BluetoothStack {
   private int devID=-1; // bluetooth adapter
   private static RemoteServiceRecord myRecord;
   private static boolean fini=false;
+  private static boolean initialized = false;
 
   public AvetanaBTStack() throws Exception{
       m_bd = BlueZ.hciOpenDevice(0, new BlueZ());
