@@ -65,6 +65,8 @@ public class DiscoveryAgent {
     private SelectListener m_listener=null;
     private final int m_timeout=10000; //timeout from 10 seconds.
 
+    static { try { BluetoothStack.getBluetoothStack(); } catch (Exception e) {}}
+
     /** Takes the device out of discoverable mode. <P> The value of <code>NOT_DISCOVERABLE</code> is 0x00 (0). */
     public static final int NOT_DISCOVERABLE = 0;
 

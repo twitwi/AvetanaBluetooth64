@@ -42,7 +42,12 @@ public class LibLoader {
 
     if (is == null) throw new Exception ("Native Library " + libName + " not in CLASSPATH !");
 
-    File fd = File.createTempFile("lib", "");
+    File fd = null;
+    while (fd == null) {
+      try {
+        fd = File.createTempFile("lib", "");
+      } catch (Exception e) { System.err.println ("Writing of temp lib-file failed"); }
+    }
     String path = fd.getAbsolutePath();
     fd.delete();
     File f = new File(path);

@@ -48,6 +48,7 @@ public class LocalDevice {
     private String bdAddrString;
     private ConnectionNotifier m_notifier=null;
 
+    static { try { BluetoothStack.getBluetoothStack(); } catch (Exception e) {}}
     /**
      * The default constructor is hidden so that no one can create a new instance of the LocalDevice.  To get the LocalDevice
      * object for this device, use the <code>getLocalDevice()</code> static method in this class.

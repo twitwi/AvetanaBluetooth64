@@ -53,7 +53,10 @@ public class Connector {
     public static final int WRITE      = 0;
     public static final int READ_WRITE = 0;
 
+    static { try { BluetoothStack.getBluetoothStack(); } catch (Exception e) {}}
+
     public static Connection open(String url) throws IOException {
+
         try {
           JSR82URL myURL=new JSR82URL(url);
           if((myURL.isAuthenticated() || myURL.isEncrypted() || myURL.isAuthorized()) &&
