@@ -303,8 +303,9 @@ public class BlueZ
          * @param fid The integer, which uniquely identifies the connection.
          * @param b The byte array storing the bytes to be written
          * @param len The length of b
+         * @param off The offset into b at which to start
          */
-        public static  native void writeBytes (int fid, byte b[], int len);
+        public static  native void writeBytes (int fid, byte b[], int off, int len);
 
         /**
          * Lists all SDP services, which match a desired list of UUIDs. Only the attributes contained in attrIds will

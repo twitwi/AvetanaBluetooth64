@@ -234,8 +234,8 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
     if(data.length > m_transmitMTU) {
       byte[] newData=new byte[m_transmitMTU];
       System.arraycopy(data,0,newData,0,m_transmitMTU);
-      BlueZ.writeBytes(fid, newData, newData.length);
+      BlueZ.writeBytes(fid, newData, 0, newData.length);
     } else
-      BlueZ.writeBytes(fid, data, data.length);
+      BlueZ.writeBytes(fid, data, 0, data.length);
   }
 }

@@ -107,10 +107,10 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_readBytes
 /*
  * Class:     de_avetana_bluetooth_stack_BlueZ
  * Method:    writeBytes
- * Signature: (I[BI)V
+ * Signature: (I[BII)V
  */
 JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_writeBytes
-  (JNIEnv *, jclass, jint, jbyteArray, jint);
+  (JNIEnv *, jclass, jint, jbyteArray, jint, jint);
 
 /*
  * Class:     de_avetana_bluetooth_stack_BlueZ

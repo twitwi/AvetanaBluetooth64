@@ -781,16 +781,27 @@ int openBTConnection(const char *name, int channel, int type, int master, int au
  /**
   * Write bytes.
   */
- JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_writeBytes
-   (JNIEnv *env, jclass obj, jint fd, jbyteArray arr, jint len)
- {
-   int i;
-   char *data = (char *)env->GetByteArrayElements (arr, NULL);
-   printf ("Writing %d bytes of data ", len);
-   for (i = 0;i < len;i++) { printf ("%d ", (int)data[i]); }
-   printf ("\n");
-   write (fd, data, len);
+JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_writeBytes
+  (JNIEnv *env, jclass obj, jint fd, jbyteArray b, jint off, jint len)
+{
+  jbyte *bytes = env->GetByteArrayElements(b, 0);
+
+  int done = 0;
+	
+  while(done < len) {
+	int count = write (fd, (char *)(bytes+off+done), len-done);
+
+	if (count <= 0) {
+	  env->ReleaseByteArrayElements(b, bytes, 0);
+	  
+	  env->ThrowNew(env->FindClass("java/io/IOException"), "Failed to write");
+	}
+	
+	done += count;
  }
+
+  env->ReleaseByteArrayElements(b, bytes, 0);
+}
 
  /**
   * Update an existing service record. The service record is identified by its service handle. The new

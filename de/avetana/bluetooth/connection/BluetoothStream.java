@@ -199,12 +199,17 @@ public class BluetoothStream extends BTConnection{
    */
   protected class MOutputStream extends OutputStream {
     public void write (int data) throws IOException {
-      BlueZ.writeBytes (fid, new byte[] { (byte)data }, 1);
+      BlueZ.writeBytes (fid, new byte[] { (byte)data }, 0, 1);
     }
 
     public void write (byte[] b) throws IOException {
-      BlueZ.writeBytes (fid, b, b.length);
+      BlueZ.writeBytes (fid, b, 0, b.length);
     }
+
+    public void write (byte[] b, int off, int len) throws IOException {
+      BlueZ.writeBytes (fid, b, off, len);
+    }
+
   }
 
 }
