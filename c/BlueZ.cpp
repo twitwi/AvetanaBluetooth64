@@ -10,6 +10,8 @@
    Copyright (c) 2004 Avetana GmbH.
    Modified by Julien Campana <julien.campana@avetana.de>
    http://www.avetana.de
+   
+   Link quality code from Christiano di Flora diflora@unina.it
 
    This program is free software; you can redistribute it and/or modify it under
    the terms of the GNU General Public License version 2 as published by the
@@ -345,12 +347,93 @@ JNIEXPORT jobject JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciInquiry
 	return info;
 }
 
-JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_getRssi
-  (JNIEnv *env, jclass cls, jstring adr) {
-  return 0x101; //Not implemented
-  }
+   /**
+  * Send to the JSR82 implementation the linkQuality parameter. 
+  * This has not been implemented so far
+  */
+JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciLinkQuality
+ (JNIEnv *env, jclass obj, jstring bdaddr_jstr)
+
+{
+       return 10;
+
+}
+
 
   
+/* HCI Get RSSI*/
+/**
+* Provides an estimation of the strength of the signal received
+* from another specified bluetooth-device.
+*
+* See HCI_Get_RSSI in the Bluetooth Specification for further
+* details of the returned values.
+*
+* @return An estimation of the Received Signal Strength Indicator.
+*/
+JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_getRssi
+ (JNIEnv *env, jobject obj, jstring bdaddr_jstr)
+
+{
+    char *bdaddr_str;
+    struct hci_conn_info_req *cr;
+	struct hci_request rq;
+	read_rssi_rp rp;
+	bdaddr_t bdaddr;
+	int dev_id;
+	int dd;
+    jboolean fbol = 1;
+    
+    bdaddr_str = (char*) env->GetStringUTFChars(bdaddr_jstr, &fbol);
+    baswap(&bdaddr, strtoba(bdaddr_str));
+    env->ReleaseStringUTFChars(bdaddr_jstr, bdaddr_str);
+
+    //A HCI-connection should have been previously established.
+    
+	dev_id = hci_for_each_dev(HCI_UP, find_conn, (long) &bdaddr);
+	if (dev_id < 0) {
+	//No previous connection
+	return -20;
+	}
+
+	dd = hci_open_dev(dev_id);
+	if (dd < 0) {
+		return -21;
+	};
+
+    cr = (hci_conn_info_req *)malloc(sizeof(*cr) + sizeof(struct hci_conn_info));
+	
+	if (!cr)
+		return -19;
+
+	bacpy(&cr->bdaddr, &bdaddr);
+	cr->type = ACL_LINK;
+	if (ioctl(dd, HCIGETCONNINFO, (unsigned long) cr) < 0) {
+	     return -22;
+	}
+
+	memset(&rq, 0, sizeof(rq));
+	rq.ogf    = OGF_STATUS_PARAM;
+	rq.ocf    = OCF_READ_RSSI;
+	rq.cparam = &cr->conn_info->handle;
+	rq.clen   = 2;
+	rq.rparam = &rp;
+	rq.rlen   = READ_RSSI_RP_SIZE;
+
+	if (hci_send_req(dd, &rq, 100) < 0) {
+	       return -23;
+	}
+
+	if (rp.status) {
+		return 24;
+	}
+           return rp.rssi;
+
+	close(dd);
+	free(cr);
+}
+
+
 
 /**
  * Returns the BT address of a device.

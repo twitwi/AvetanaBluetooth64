@@ -53,7 +53,7 @@ import de.avetana.bluetooth.util.LibLoader;
  * stack avoids the user and the developper to repeatedly create a new instance of the
  * BlueZ class.
  *
- * @author Edward Kay, ed.kay@appliancestudio.com / Julien Campana
+ * @author Edward Kay, ed.kay@appliancestudio.com / Julien Campana, Christiano di Flora diflora@unina.it
  * @version 1.1
  */
 
@@ -83,6 +83,7 @@ public class BlueZ
 	// with the "avetanaBT" string, since this is how JNI implements platform
 	// independence.
 	static {
+		//changed the name from avetanaBT to avetanaBT_RSSI
 		try {LibLoader.loadCommLib("avetanaBT"); } catch (Exception e ) { e.printStackTrace(); System.exit(0);}
 		String version = "0";
 		String revision = "0";
@@ -124,6 +125,23 @@ public class BlueZ
 		m_version = version + "." + revision + "." + build;
 		System.out.println ("avetanaBluetooth version " + m_version);
 	}
+
+	
+        /* HCI Get Link Quality*/
+        /**
+         * Retrieves the current quality of the physical bluetooth connection
+         * to the specified device.
+         *
+         * See HCI_Link_Quality in the Bluetooth Specification for further
+         * details of the returned values.
+         *
+         *
+         * @param bdaddr Bluetooth address String in the form
+         *     <code>"00:12:34:56:78:9A"</code>.
+         *
+         * @return An estimation of the link quality.
+         */
+public native int hciGetLinkQuality(String bdaddr);
 
 	/**
 	 * Opens the HCI device.
@@ -740,9 +758,18 @@ public class BlueZ
         		return new byte[size];
         }
 
-		/**
-		 * @param adr
-		 * @return
-		 */
+        /**
+         * Provides an estimation of the strength of the signal received
+         * from another specified bluetooth-device.
+         *
+         * See HCI_Get_RSSI in the Bluetooth Specification for further
+         * details of the returned values.
+         *
+         *
+         * @param bdaddr Bluetooth address String in the form
+         *     <code>"00:12:34:56:78:9A"</code>.
+         *
+         * @return An estimation of the Received Signal Strength Indicator.
+         */
 		public static native int getRssi(String adr);        
 }

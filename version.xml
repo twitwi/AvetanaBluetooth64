@@ -1,0 +1,135 @@
+<?xml version="1.0" ?>
+<avetanaBluetooth>
+ <version value="1">
+  <revision value="0">
+   <build value="0" date="2004-12-01" time="18:00">
+       Initiation of the versioning system.
+       Last changes were made in libjbluez.jnilib to be able to deply avetanaBluetooth.jar in applets on MacOS X.
+    </build>
+    <build value="1" date="2004-12-03" time="16:00">
+      Added support for remote authentication of devices while connections are already established.
+    </build>
+    <build value="2" date="2004-12-08" time="16:52">
+ 		Fixed bug in MInputStream.read(), where the byte transferred and casted to an int needed to be & 0xff'ed.
+ 		BluetoothStream in ObexInputStream.
+    </build>
+    <build value="3" date="2004-12-10" time="23:00">
+    		DataElement Strings changed to UTF-8 to support Umlauts. MacOS X can't handle that yet.
+		Added shutdownhook to delete loaded library in linux and OSX. This does not work with Windows
+    </build>  
+    <build value="4" date="2004-12-13" time="14:30">
+		Moved Connector class to de.avetana.bluetooth.connection.Connector.
+		javax.microedition.io.Connector still exists as an empty subclass of above Connector.
+		Added com.sun.cdc.io.[btspp|btl2cap|btgoep].Protocol classes to support CrEme's mapping of Bluetooth Connection URLs.
+    </build>  
+    <build value="5" date="2004-12-16" time="00:30">
+		Added getConnectorURL() to LocalServiceRecord
+		Changed acceptAndOpen() Methods in RFComm and L2CAP Notifiers to remove the SDP Entry when the connection is established.
+		close() still tries to remove it but it won't do anything.
+		After the connection is established, acceptAndOpen() can be called again without having to close the notifier or the connection.
+		This was mainly needed to be compatible with blueCove.
+    </build> 
+    <build value="6" date="2004-12-26" time="22:30">
+       Added class de.avetana.bluetooth.hci.Rssi to get the Rssi Value for connection quality to a remote device.
+    </build>
+    <build value="7" date="2004-12-27" time="21:10">
+		Changed the Temp-Path on WinCE to \Temp if java.io.tmpdir is not set correctly.
+    </build>
+    <build value="8" date="2004-12-28" time="09:30">
+		Changed the library name from jbluez to avetanaBT.
+		Worked around CrEme bugs that prevented LibLoader from working on older WinCE versions.
+		Changes in Rssi to work around Widcomm bug.
+    </build>
+    <build value="9" date="2005-01-05" time="21:10">
+		Updated LocalServiceRecord class to add a SUPPORTED_FORMATS_LIST Attribute to each OBEX Serivice Record. This fixed the problem for the Nokia 6600
+	</build>
+    <build value="9" date="2005-01-11" time="11:10">
+		Changed the JSRTest class to send a VCard object by default. Many phones don't accept anything else. avetana.vcf is included in the JAR.
+	</build>
+    <build value="10" date="2005-01-11" time="22:10">
+      MAJOR updates in Obex command handling. ConnectionID handling now works so OBEX File transfer can be realized.
+    </build>
+    <build value="11" date="2005-01-13" time="14:59">
+		Setting the returncode of OperationImpl correctly
+    </build>
+    <build value="12" date="2005-01-17" time="10:04">
+		Update in SessionNotifierImpl not to close the connectionNotifier on DISCONNECT. An Obex server now accepts connections as long as it is not
+		explicitly closed.
+    </build>
+    <build value="13" date="2005-01-18" time="22:00">
+		Reversed the changes from build 12 because they were not compliant with the specification.
+    </build>
+    <build value="14" date="2005-01-19" time="07:30">
+		put a synchronized statement around the block in SessionNotifierImpl that calls inDisconnect and closes the stream connection. When
+		a disconnect command has been called. This is to prevent that acceptAndOpen is called before the connection is closed.
+    </build>
+    <build value="15" date="2005-01-21" time="14:16">
+    	  More updates in OBEX. 
+    	  Added support for setPath in SessionNotifierImpl.
+    	  Changed all UTF-16BE encodings to UTF-8 plus manual conversion to UTF-16BE because J2ME devices apparently do not supper 16BE encoding.
+    </build>
+    <build value="16" date="2005-01-21" time="20:51">
+    	 Added version information in BlueZ.
+    </build>
+    <build value="17" date="2005-01-22" time="17:00">
+    	 Changed method getVector() in DataElement to protected to match specification
+    </build>
+    <build value="18" date="2005-01-24" time="09:17">
+    	 Removed the Excption that was thrown on LocalDevice.setDiscoverabelMode() to match the specification. (the function is useless on Windows and MacOS X anyways)
+    </build>
+    <build value="19" date="2005-01-24" time="23:17">
+		Added support for OBEX Authentication.
+    </build>
+   <build value="20" date="2005-01-26" time="17:24">
+		Fixed a bug in loading the version.xml file that made it crash on PocketPC.
+    </build>
+   <build value="21" date="2005-01-31" time="16:00">
+		Irnoring last 0-byte on 0-terminated DataElements (Strings, URLs...).
+    </build>
+   <build value="22" date="2005-02-01" time="21:09">
+		Changed searchServices in DiscoveryAgent to add attributes 0x00 - 0x04 when they are not specified in the list of attributes to retreive.
+    </build>
+   <build value="23" date="2005-02-02" time="14:14">
+	  Fixed a threading problem in ServiceFinderPane where searchServices was called from inquiryCompleted, which did not work in Linux.
+    </build>
+   <build value="24" date="2005-02-02" time="22:16">
+		Changed BlueZ.java to synchronize read/write/close calls only within the same fid. 
+    </build>
+   <build value="25" date="2005-02-08" time="07">
+		Implemented the encrypt method in Windows and MacOS native libs. (Both just throw an exception).
+		Removed a memory leak in Linux.
+		Changed a try / catch Statement in LibLoader to work with CrEme 3.25
+    </build>
+   <build value="26" date="2005-02-14" time="13:41">
+		Changed the Linux-Native library to be able to detect closing of an L2CAP-Channel.
+    </build>
+   <build value="27" date="2005-02-18" time="23:41">
+		toString in JSR82URL changed not to show the channel number for local connections.
+    </build>
+   <build value="28" date="2005-02-23" time="07:51">
+		Set timeout on opening RFComm connections with Widcomm to 40sec. And closing Connections when a connection fails.
+    </build>
+   <build value="29" date="2005-02-25" time="10:51">
+		Updates in native libraries for Windows and MacOS X not to loose l2cap packets when the remote end closes the connection.
+    </build>
+   <build value="30" date="2005-02-28" time="13:51">
+	   Deleted close() method in L2CAPConnectionImpl that was hiding the Method implementation is superclass BTConenction
+    </build>
+   <build value="31" date="2005-02-29" time="07:21">
+		Implemented the getResponseCode() method in HeaderSetImpl.
+    </build>
+   <build value="32" date="2005-03-03" time="09:47">
+		Fixed a bug in OperationImpl, where headers from a GET command in a ServerConnection were lost.
+    </build>
+   <build value="33" date="2005-03-10" time="17:07">
+		Exchanged the UUIDs in the ServiceClassIDList to have the personal UUID fist. Widcomm did not properly handle
+		The Service record if the General UUID was first.
+    </build>
+    <build value="34" date="2005-03-18" time="15:07">
+	  Updates in inquiry error handling.
+	  Added Link Quality code from Christiano di Flora diflora@unina.it
+    </build>
+    
+   </revision>
+  </version>
+</avetanaBluetooth>
