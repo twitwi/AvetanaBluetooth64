@@ -784,6 +784,7 @@ public class JSRTest extends JFrame implements ActionListener {
            try {
              //JSR82URL url=new JSR82URL("btspp://localhost:0dad43655df111d69f6e00039353e858;name=JSRTest");
              JSR82URL url=new JSR82URL("btspp://localhost:ce37ca6e288a409a9796191882ee44fc;name=JSRTest");
+             //JSR82URL url=new JSR82URL("btspp://localhost:" + new UUID (0x12345678) + ";name=JSRTest");
              url.setParameter("encrypt", new Boolean(m_encrypt.isSelected()));
              url.setParameter("authenticate", new Boolean(m_authentication.isSelected()));
              url.setParameter("master", new Boolean(m_master.isSelected()));
