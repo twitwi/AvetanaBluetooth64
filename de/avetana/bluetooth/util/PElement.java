@@ -276,9 +276,9 @@ public class PElement implements Cloneable, Serializable {
 
     stream.write(identS); stream.write (LT); stream.write (name.getBytes("UTF-8"));
     if (attributes != null) {
-      Enumeration enum = attributes.keys();
-      while (enum.hasMoreElements()) {
-        String name = (String)enum.nextElement();
+      Enumeration en = attributes.keys();
+      while (en.hasMoreElements()) {
+        String name = (String)en.nextElement();
         String val = (String)attributes.get(name);
         stream.write((" " + name + "=\"" + val + "\"").getBytes("UTF-8"));
       }

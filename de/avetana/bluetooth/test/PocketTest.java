@@ -112,13 +112,13 @@ public class PocketTest extends Frame {
 			setLayout (new GridBagLayout());
 			GridBagConstraints gbc = new GridBagConstraints();
 			gbc.gridx = gbc.gridy = 0;
-			gbc.fill = gbc.NONE;
+			gbc.fill = GridBagConstraints.NONE;
 			startInq = new Button ("Start Inquiry");
 			startSS = new Button ("Start ServiceSearch");
 			add (startInq, gbc);
 			gbc.gridx++; add (startSS, gbc);
 			gbc.gridx = 0; gbc. gridy = 1; gbc.gridwidth = 2;
-			gbc.fill = gbc.BOTH;
+			gbc.fill = GridBagConstraints.BOTH;
 			gbc.weightx = gbc.weighty = 1;
 			add (dataList, gbc);
 			gbc.gridy++; add (serviceList, gbc);
@@ -212,7 +212,7 @@ public class PocketTest extends Frame {
 			setLayout (new GridBagLayout());
 			GridBagConstraints gbc = new GridBagConstraints();
 			gbc.gridx = gbc.gridy = 0;
-			gbc.fill = gbc.NONE;
+			gbc.fill = GridBagConstraints.NONE;
 			offerBut = new Button ("Offer Service");
 			closeBut = new Button ("Close Service");
 			sendBut = new Button ("Send Data");
@@ -220,7 +220,7 @@ public class PocketTest extends Frame {
 			gbc.gridx++; add (closeBut, gbc);
 			gbc.gridx++; add (sendBut, gbc);
 			gbc.gridx = 0; gbc. gridy = 1; gbc.gridwidth = 3;
-			gbc.fill = gbc.BOTH;
+			gbc.fill = GridBagConstraints.BOTH;
 			gbc.weightx = gbc.weighty = 1;
 			ScrollPane sp = new ScrollPane();
 			sp.add (dataList);
@@ -324,7 +324,7 @@ public class PocketTest extends Frame {
 			setLayout (new GridBagLayout());
 			GridBagConstraints gbc = new GridBagConstraints();
 			gbc.gridx = gbc.gridy = 0;
-			gbc.fill = gbc.NONE;
+			gbc.fill = GridBagConstraints.NONE;
 			offerBut = new Button ("Offer");
 			closeBut = new Button ("Close");
 			sendBut = new Button ("Send");
@@ -334,7 +334,7 @@ public class PocketTest extends Frame {
 			gbc.gridx++; add (sendBut, gbc);
 			gbc.gridx++; add (pollBut, gbc);
 			gbc.gridx = 0; gbc. gridy = 1; gbc.gridwidth = 4;
-			gbc.fill = gbc.BOTH;
+			gbc.fill = GridBagConstraints.BOTH;
 			gbc.weightx = gbc.weighty = 1;
 			ScrollPane sp = new ScrollPane();
 			sp.add (dataList);
@@ -426,7 +426,7 @@ public class PocketTest extends Frame {
 			setLayout (new GridBagLayout());
 			GridBagConstraints gbc = new GridBagConstraints();
 			gbc.gridx = gbc.gridy = 0;
-			gbc.fill = gbc.NONE;
+			gbc.fill = GridBagConstraints.NONE;
 			adrField = new TextField (60);
 			connectBut = new Button ("Connect");
 			closeBut = new Button ("Close");
@@ -435,11 +435,11 @@ public class PocketTest extends Frame {
 			gbc.gridx++; add (closeBut, gbc);
 			gbc.gridx++; add (sendBut, gbc);
 			gbc.gridx = 0; gbc. gridy = 1; gbc.gridwidth = 3;
-			gbc.fill = gbc.HORIZONTAL;
+			gbc.fill = GridBagConstraints.HORIZONTAL;
 			gbc.weightx = 1;
 			add (adrField, gbc);
 			gbc.gridy++;
-			gbc.fill = gbc.BOTH;
+			gbc.fill = GridBagConstraints.BOTH;
 			gbc.weightx = gbc.weighty = 1;
 			ScrollPane sp = new ScrollPane();
 			sp.add (dataList);
@@ -531,7 +531,7 @@ public class PocketTest extends Frame {
 			setLayout (new GridBagLayout());
 			GridBagConstraints gbc = new GridBagConstraints();
 			gbc.gridx = gbc.gridy = 0;
-			gbc.fill = gbc.NONE;
+			gbc.fill = GridBagConstraints.NONE;
 			adrField = new TextField (60);
 			connectBut = new Button ("Connect");
 			closeBut = new Button ("Close");
@@ -542,11 +542,11 @@ public class PocketTest extends Frame {
 			gbc.gridx++; add (sendBut, gbc);
 			gbc.gridx++; add (pollBut, gbc);
 			gbc.gridx = 0; gbc. gridy = 1; gbc.gridwidth = 4;
-			gbc.fill = gbc.HORIZONTAL;
+			gbc.fill = GridBagConstraints.HORIZONTAL;
 			gbc.weightx = 1;
 			add (adrField, gbc);
 			gbc.gridy++;
-			gbc.fill = gbc.BOTH;
+			gbc.fill = GridBagConstraints.BOTH;
 			gbc.weightx = gbc.weighty = 1;
 			ScrollPane sp = new ScrollPane();
 			sp.add (dataList);

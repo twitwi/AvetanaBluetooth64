@@ -3,7 +3,8 @@ package de.avetana.bluetooth.sdp;
 
 import javax.bluetooth.*;
 import java.io.IOException;
-import java.util.*;
+import java.util.Enumeration;
+
 import de.avetana.bluetooth.util.BTAddress;
 import de.avetana.bluetooth.stack.BlueZ;
 

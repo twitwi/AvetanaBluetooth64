@@ -51,11 +51,11 @@ public class HeaderSetImpl implements HeaderSet {
 	 */
 	public int[] getHeaderList() {
 		int v[] = new int[headers.size()];
-		Enumeration enum = headers.keys();
+		Enumeration en = headers.keys();
 		boolean has48 = headers.containsKey(new Integer (0x48));
 		int j = 0;
 		for (int i = 0;i < v.length;i++) { 
-			int vi = ((Integer)enum.nextElement()).intValue(); 
+			int vi = ((Integer)en.nextElement()).intValue(); 
 			if (vi != 0x48) v[j++] = vi;
 		}
 		if (has48) v[j++] = 0x48;

@@ -3,7 +3,9 @@ package de.avetana.bluetooth.sdp;
 import javax.bluetooth.*;
 
 import java.io.*;
-import java.util.*;
+import java.util.Enumeration;
+import java.util.Vector;
+
 import de.avetana.bluetooth.util.*;
 import de.avetana.bluetooth.connection.*;
 
@@ -406,9 +408,9 @@ public class LocalServiceRecord extends SDPServiceRecord {
   }
   
   public UUID[] getServiceClassIDList() {
-  		Enumeration enum = (Enumeration)getAttributeValue(SDPConstants.ATTR_SERVICE_CLASS_ID_LIST).getValue();
+  		Enumeration en = (Enumeration)getAttributeValue(SDPConstants.ATTR_SERVICE_CLASS_ID_LIST).getValue();
   		Vector v = new Vector ();
-  		while (enum.hasMoreElements()) v.add(((DataElement)enum.nextElement()).getValue());
+  		while (en.hasMoreElements()) v.add(((DataElement)en.nextElement()).getValue());
   		UUID ret[] = new UUID[v.size()];
   		v.toArray(ret);
   		return ret;

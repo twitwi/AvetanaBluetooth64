@@ -1,10 +1,11 @@
 package de.avetana.bluetooth.stack;
 
 
+import java.util.Vector;
+
 import javax.bluetooth.*;
 import de.avetana.bluetooth.connection.*;
 import javax.microedition.io.Connection;
-import java.util.*;
 
 /**
 * <b>COPYRIGHT:</b><br> (c) Copyright 2004 Avetana GmbH ALL RIGHTS RESERVED. <br><br>

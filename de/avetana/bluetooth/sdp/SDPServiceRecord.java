@@ -97,9 +97,9 @@ public abstract class SDPServiceRecord implements ServiceRecord{
     int[] returnArray;
 
     if(m_attributes==null || m_attributes.keys()==null) return new int[]{};
-    Enumeration enum = m_attributes.keys();
+    Enumeration en = m_attributes.keys();
     returnArray = new int[m_attributes.size()];
-    for (int i = 0; i < returnArray.length; i++) { returnArray[i] = ((Integer)enum.nextElement()).intValue(); }
+    for (int i = 0; i < returnArray.length; i++) { returnArray[i] = ((Integer)en.nextElement()).intValue(); }
 
     return returnArray;
   }
@@ -131,9 +131,9 @@ public abstract class SDPServiceRecord implements ServiceRecord{
    */
   public String toString() {
     String retour="";
-    Enumeration enum=m_attributes.keys();
-    while (enum.hasMoreElements()) {
-    	 Integer obj = (Integer)enum.nextElement();
+    Enumeration en=m_attributes.keys();
+    while (en.hasMoreElements()) {
+    	 Integer obj = (Integer)en.nextElement();
       DataElement dat=(DataElement)m_attributes.get(obj);
       retour+="ID=0x"+Integer.toHexString(obj.intValue())+" value="+dat+"\n";
     }
