@@ -75,4 +75,5 @@ public class DeviceFinder extends JDialog implements ActionListener{
    close.addActionListener(this);
    if(m_start) m_pane.doInquiry();
   }
+ 
 }

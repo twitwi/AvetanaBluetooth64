@@ -29,13 +29,13 @@ package de.avetana.bluetooth.stack;
 import javax.bluetooth.DiscoveryAgent;
 import javax.bluetooth.DiscoveryListener;
 import javax.bluetooth.ServiceRecord;
-import javax.swing.JOptionPane;
 
 import de.avetana.bluetooth.connection.ConnectionFactory;
 import de.avetana.bluetooth.connection.ConnectionNotifier;
 import de.avetana.bluetooth.connection.JSR82URL;
 import de.avetana.bluetooth.hci.HCIInquiryResult;
 import de.avetana.bluetooth.l2cap.L2CAPConnParam;
+import de.avetana.bluetooth.l2cap.L2CAPConnectionNotifierImpl;
 import de.avetana.bluetooth.sdp.LocalServiceRecord;
 import de.avetana.bluetooth.util.BTAddress;
 import de.avetana.bluetooth.util.LibLoader;
@@ -252,7 +252,7 @@ public class BlueZ
         public static L2CAPConnParam openL2CAP (JSR82URL url) throws BlueZException, Exception{
           if(url.getBTAddress()==null) throw new Exception("This is not a valid remote L2CAP connection url!");
           int psm=(url.getAttrNumber()==null)?10:url.getAttrNumber().intValue();
-          int receiveMTU=-1, transmitMTU=-1;
+          int receiveMTU=672, transmitMTU=672;
           try {receiveMTU=Integer.parseInt((String)url.getParameter("receivemtu"));}catch(Exception ex) {}
           try {transmitMTU=Integer.parseInt((String)url.getParameter("transmitmtu"));}catch(Exception ex) {}
           return openL2CAPNative (url.getBTAddress().toString(),
@@ -479,17 +479,6 @@ public class BlueZ
         public synchronized static native boolean[] connectionOptions(int handle, String deviceAddr) throws BlueZException;
 
 
-        /**
-         * Popup used to enter the PIN code (used by encrypted connections)
-         * @return The PIN code entered by the user
-         */
-        public synchronized static String showPinRequest() {
-          String input = JOptionPane.showInputDialog(null,"Please enter Bluetooth PIN Code","Bluetooth PIN",
-              JOptionPane.QUESTION_MESSAGE);
-          if(input.length() > 16) input=input.substring(0,15);
-          return input;
-        }
-
         // Debug method
         public synchronized static void debugPrintStr(String str)  {
           System.out.println("Function debugPrintStr called!!!!");
@@ -504,10 +493,19 @@ public class BlueZ
          * @param listener The discovery listener, which handles the callback methods.
          * @throws BlueZException
          */
-        public static void searchServices(String bdaddr_jstr, byte[][] uuid, int[] attrIds, DiscoveryListener listener) throws BlueZException{
+        public static int searchServices(final String bdaddr_jstr, final byte[][] uuid, final int[] attrIds, DiscoveryListener listener) {
            m_transactionId++;
            myFactory.addListener(m_transactionId, listener);
-           listService(bdaddr_jstr, uuid, attrIds, m_transactionId);
+           Runnable r=new Runnable() {
+            public void run() {
+              try {
+                listService(bdaddr_jstr, uuid, attrIds, m_transactionId);
+              }catch(Exception ex) {}
+            }
+          };
+          new Thread(r).start();
+
+          return m_transactionId;
         }
 
         /**
@@ -555,7 +553,12 @@ public class BlueZ
          * @param jaddr The BT address of the remote device
          * @return
          */
-        public static boolean connectionEstablished(int fid, int channel, int protocol,String jaddr) {
+        
+        public static boolean connectionEstablished (int fid, int channel, int protocol, String jaddr) {
+        		return connectionEstablished (fid, channel, protocol, jaddr, 672, 672);
+        }
+        
+        public static boolean connectionEstablished(int fid, int channel, int protocol,String jaddr, int recMTU, int transMTU) {
           for(int i=0;i<myFactory.getNotifiers().size();i++) {
             try {
               ConnectionNotifier not=(ConnectionNotifier)myFactory.getNotifiers().elementAt(i);
@@ -567,6 +570,7 @@ public class BlueZ
                       not.getConnectionURL().getAttrNumber().intValue():defaultCh;
               if(ch==channel && protocol==proto) {
                 not.setConnectionID(fid);
+                if (not instanceof L2CAPConnectionNotifierImpl) ((L2CAPConnectionNotifierImpl)not).setMTUs(transMTU, recMTU);
                 if(jaddr!=null) not.setRemoteDevice(jaddr);
                 myFactory.removeNotifier(not);
                 return true;
@@ -617,7 +621,12 @@ public class BlueZ
 
         public Class createClass (String name) {
           try {
-            return Class.forName(name.replaceAll("/", "."));
+			int pos = -1;
+			while ((pos = name.indexOf("/")) != -1 || ((pos = name.indexOf("\\")) != -1))
+				name = name.substring(0, pos) + "." + name.substring (pos + 1);
+			
+            Class c = Class.forName(name);
+            return c;
           } catch (Exception e) {
             e.printStackTrace();
           }
@@ -627,4 +636,5 @@ public class BlueZ
         public static byte[] newByteArray (int size) {
         		return new byte[size];
         }
+        
 }

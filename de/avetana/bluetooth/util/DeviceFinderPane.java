@@ -50,7 +50,7 @@ import javax.swing.JScrollPane;
  * </b><br>
  */
 
-public class DeviceFinderPane extends JPanel implements ActionListener, DiscoveryListener{
+public class DeviceFinderPane extends JPanel implements ActionListener, DiscoveryListener, Cancelable{
 
   private JList m_deviceList;
   private DiscoveryAgent m_agent;
@@ -121,6 +121,11 @@ public class DeviceFinderPane extends JPanel implements ActionListener, Discover
       m_remote.add(btDevice);
     }
   }
+  
+  public void cancel() {
+  	m_agent.cancelInquiry (this);
+  	m_dialog.setVisible (false);
+  }
 
   public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
   }
@@ -136,7 +141,7 @@ public class DeviceFinderPane extends JPanel implements ActionListener, Discover
           m_dialog=new ProgressDialog((Dialog)m_owner);
         else
           m_dialog=new ProgressDialog((Frame)m_owner);
-        m_dialog.setVisible(true);
+        m_dialog.setVisible(true, DeviceFinderPane.this);
       }
     };
     new Thread(r).start();

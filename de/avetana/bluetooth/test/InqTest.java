@@ -23,6 +23,7 @@ import javax.bluetooth.*;
  */
 public class InqTest implements DiscoveryListener {
 
+	private boolean searchCompleted = false;
 	/* (non-Javadoc)
 	 * @see javax.bluetooth.DiscoveryListener#deviceDiscovered(javax.bluetooth.RemoteDevice, javax.bluetooth.DeviceClass)
 	 */
@@ -52,7 +53,7 @@ public class InqTest implements DiscoveryListener {
 	public void serviceSearchCompleted(int transID, int respCode) {
 		// TODO Auto-generated method stub
 		System.out.println ("Service search completed " + transID + " / " + respCode);
-
+		searchCompleted = true;
 	}
 
 	/* (non-Javadoc)
@@ -65,14 +66,17 @@ public class InqTest implements DiscoveryListener {
 
 	public InqTest (String addr, String uuid) throws Exception {
 		UUID uuids[];
+		System.out.println ("Setting up uuids");
 		if (uuid == null) uuids = new UUID[] { };
 		else uuids = new UUID[] { new UUID (uuid, false) };
+		System.out.println ("Getting discoveryAgent");
 		DiscoveryAgent da = LocalDevice.getLocalDevice().getDiscoveryAgent();
+		System.out.println ("Starting search");
 		int transID = da.searchServices(new int[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x100, 0x303 }, uuids, new RemoteDevice (addr), this);
 		System.out.println ("Started");
 		BufferedReader br = new BufferedReader (new InputStreamReader (System.in));
 		br.readLine();
-		da.cancelServiceSearch(transID);
+		if (!searchCompleted) da.cancelServiceSearch(transID);
 		System.out.println ("Canceled");
 	}
 	

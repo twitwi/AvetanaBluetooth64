@@ -168,12 +168,14 @@ public class JSR82URL {
   // Help method used to analyse the URL parameters.
   private void parseURL(String analyse) throws Exception {
     if(analyse==null || analyse.trim().equals("")) return;
-    String arg[]=analyse.split(";");
-    for(int i=0;i<arg.length;i++) {
+	StringTokenizer st = new StringTokenizer (analyse, ";");
+
+    while (st.hasMoreTokens()) {
+	 String arg = st.nextToken();
       try {
-        int index=arg[i].indexOf('=');
-        String param=arg[i].substring(0,index).toLowerCase();
-        String value=arg[i].substring(index+1);
+        int index=arg.indexOf('=');
+        String param=arg.substring(0,index).toLowerCase();
+        String value=arg.substring(index+1);
         if(param.equals("name") || param.toLowerCase().equals("receivemtu") ||
            param.toLowerCase().equals("transmitmtu"))
           m_parameters.put(param.toLowerCase(), value);
@@ -266,9 +268,9 @@ public class JSR82URL {
    * @return The array representation of all connection options.
    */
   public String[] getParameterKeys() {
-    Set obj=m_parameters.keySet();
-    String[] retour=new String[obj.size()];
-    obj.toArray(retour);
+    Enumeration obj=m_parameters.keys();
+    String[] retour=new String[m_parameters.size()];
+    for (int i = 0;i < retour.length;i++) retour[i] = (String)obj.nextElement();
     return retour;
   }
 

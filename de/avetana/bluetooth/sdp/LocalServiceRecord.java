@@ -1,11 +1,10 @@
 package de.avetana.bluetooth.sdp;
 
 import javax.bluetooth.*;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 import de.avetana.bluetooth.util.*;
 import de.avetana.bluetooth.connection.*;
-import java.io.*;
 
 /**
  * The class used to manage local service records.
@@ -136,94 +135,14 @@ public class LocalServiceRecord extends SDPServiceRecord {
    * of this XML element. Useful for the Mac implementation
    * @return The XML-based string representation of the service record
    */
-  /*
-   public String getSDPRecordXML() {
-    try {
-      File f = File.createTempFile ("serviceRecord", ".xml");
-      f.deleteOnExit();
-
-      PElement plist = new PElement ("plist");
-      plist.setAttribute("version", "0.9");
-      PElement dict = new PElement ("dict");
-      plist.addChild(dict);
-      dict.addChild(new PElement ("key", "0000 - ServiceRecordHandle*"));
-      dict.addChild(new PElement ("integer", "65540"));
-      dict.addChild(new PElement ("key", "0001 - ServiceClassIDList"));
-      Vector scIDs = this.getAttributeValue(SDPConstants.ATTR_SERVICE_CLASS_ID_LIST).getVector();
-      UUID srvUUID = (UUID)((DataElement)scIDs.elementAt(0)).getValue();
-      PElement serviceClassIDs = dict.addChild(new PElement ("array"));
-      for (int i = 0;i < scIDs.size();i++)
-        serviceClassIDs.addChild(new PElement ("data", new String(Base64.encode(((UUID)((DataElement)scIDs.elementAt(i)).getValue()).toByteArray()))));
-
-    if(getProtocol()==JSR82URL.PROTOCOL_RFCOMM || getProtocol()==JSR82URL.PROTOCOL_OBEX || getProtocol()==JSR82URL.PROTOCOL_L2CAP) {
-      dict.addChild(new PElement ("key", "0004 - ProtocolDescriptorList"));
-      PElement pdla = dict.addChild(new PElement ("array"));
-
-      PElement pd1aa = pdla.addChild (new PElement ("array"));
-      pd1aa.addChild(new PElement ("data", "AQA="));
-
-      DataElement de = getChannelNumberElement();
-
-      int channelNumber = de != null ? (int)de.getLong() : -1;
-      if (getProtocol() == JSR82URL.PROTOCOL_RFCOMM ||getProtocol() == JSR82URL.PROTOCOL_OBEX) {
-        PElement pdla1 = pdla.addChild (new PElement ("array"));
-        pdla1.addChild(new PElement ("data", "AAM="));
-        pdla1.addChild(newDataElement (1, 1, channelNumber == -1 ? 1 : channelNumber));
-      }
-      else {
-        pd1aa.addChild(newDataElement (2, 1, channelNumber == -1 ? 11 : channelNumber));
-      }
-      
-      if (getProtocol() == JSR82URL.PROTOCOL_OBEX) {
-        PElement pdla1 = pdla.addChild (new PElement ("array"));
-        pdla1.addChild(new PElement ("data", "AAg="));      	
-      }
-
-    }
     
-    if (getProtocol() == JSR82URL.PROTOCOL_OBEX) {
-    		dict.addChild(new PElement ("key", "0303 - Supported Formats List"));	
-        PElement arr = dict.addChild(new PElement ("array"));
-        arr.addChild(newDataElement (4,1, 1));
-        arr.addChild(newDataElement (4,1, 2));
-        arr.addChild(newDataElement (4,1, 4));
-        arr.addChild(newDataElement (4,1, 5));
-        arr.addChild(newDataElement (4,1, 6));
-    }
-
-
-      dict.addChild(new PElement ("key", "0005 - BrowseGroupList*"));
-      dict.addChild(new PElement ("array")).addChild(new PElement ("data", "EAI="));
-
-//      dict.addChild(new PElement ("key", "0006 - LanguageBaseAttributeIDList*"));
-
-      dict.addChild(new PElement ("key", "0009 - BluetoothProfileDescriptorList"));
-      PElement bpda = dict.addChild(new PElement ("array")).addChild(new PElement ("array"));
-      bpda.addChild(new PElement ("data", new String (Base64.encode(srvUUID.toByteArray()))));
-      bpda.addChild(newDataElement (2, 1, 256));
-
-      dict.addChild(new PElement ("key", "0100 - ServiceName*"));
-      dict.addChild(new PElement ("string", ((String)this.getAttributeValue(256).getValue())));
-
-      
-      
-//      dict.addChild(new PElement ("key", "0303 - Supported Formats List"));
-
-      FileOutputStream fos = new FileOutputStream (f);
-      plist.writeXML(fos);
-
-      return f.getAbsolutePath();
-    } catch (Exception e) {
-      e.printStackTrace();
-      return null;
-    }
-  }
-*/
-  
   public String getSDPRecordXML() {
     try {
-      File f = File.createTempFile ("serviceRecord", ".xml");
-      f.deleteOnExit();
+      File f = null;
+      do {
+      	int counter = (int)(1000f * Math.random());
+      	f = new File (System.getProperty("java.io.tmpdir") + File.separator + "serviceRecord" + counter + ".xml");
+      } while (f.exists());
 
       PElement plist = new PElement ("plist");
       plist.setAttribute("version", "0.9");
@@ -234,10 +153,12 @@ public class LocalServiceRecord extends SDPServiceRecord {
       for (int i = 1;i < 65535;i++) {
       	DataElement de = this.getAttributeValue(i);
       	if (de == null) continue;
+      	PElement depe = makePElement (de);
+      	if (depe == null) continue;
       	String attId = "" + Integer.toHexString(i);
       	while (attId.length() < 4) attId = "0" + attId;
         dict.addChild(new PElement ("key", attId));
-      	dict.addChild (makePElement (de));
+      	dict.addChild (depe);
       }
 
       FileOutputStream fos = new FileOutputStream (f);
@@ -249,7 +170,7 @@ public class LocalServiceRecord extends SDPServiceRecord {
       return null;
     }
   }
-
+  
   private PElement makePElement (DataElement e) {
   	PElement ret = null;
   	switch (e.getDataType()) {

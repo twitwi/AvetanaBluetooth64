@@ -158,7 +158,7 @@ public abstract class BluetoothStack {
    * @param btDev The remote device
    * @param myListener The discovery listener for callback methods.
    */
-  public abstract void searchServices(int[] attrSet, UUID[] uuidSet, RemoteDevice btDev, DiscoveryListener myListener);
+  public abstract int searchServices(int[] attrSet, UUID[] uuidSet, RemoteDevice btDev, DiscoveryListener myListener);
 
   /**
    * Stops a service search.

@@ -41,12 +41,14 @@ public class HeaderSetImpl implements javax.obex.HeaderSet {
 	 * @see javax.obex.HeaderSet#getHeaderList()
 	 */
 	public int[] getHeaderList() {
-		Integer vi[] = new Integer[headers.size()];
-		int v[] = new int[vi.length];
-		headers.keySet().toArray(vi);
+		int v[] = new int[headers.size()];
+		Enumeration enum = headers.keys();
 		boolean has48 = headers.containsKey(new Integer (0x48));
 		int j = 0;
-		for (int i = 0;i < v.length;i++) if (vi[i].intValue() != 0x48) v[j++] = vi[i].intValue();
+		for (int i = 0;i < v.length;i++) { 
+			int vi = ((Integer)enum.nextElement()).intValue(); 
+			if (vi != 0x48) v[j++] = vi;
+		}
 		if (has48) v[j++] = 0x48;
 		return v;
 	}

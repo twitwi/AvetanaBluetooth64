@@ -103,7 +103,7 @@ public class RemoteDevice {
         } else tmp=address;
         //System.out.println("address="+tmp);
         this.bdAddrString=tmp;
-        this.bdAddrLong=Long.decode("0x"+tmp).longValue();
+        this.bdAddrLong=Long.parseLong(tmp, 16);
       }
       catch(Exception ex) {throw new IllegalArgumentException("Not a valid bluetooth address");}
     }

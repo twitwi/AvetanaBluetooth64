@@ -96,10 +96,10 @@ public abstract class SDPServiceRecord implements ServiceRecord{
   public int[] getAttributeIDs() {
     int[] returnArray;
 
-    if(m_attributes==null || m_attributes.keySet()==null) return new int[]{};
-    Object keys[] = m_attributes.keySet().toArray();
-    returnArray = new int[keys.length];
-    for (int i = 0; i < returnArray.length; i++) { returnArray[i] = ((Integer)keys[i]).intValue(); }
+    if(m_attributes==null || m_attributes.keys()==null) return new int[]{};
+    Enumeration enum = m_attributes.keys();
+    returnArray = new int[m_attributes.size()];
+    for (int i = 0; i < returnArray.length; i++) { returnArray[i] = ((Integer)enum.nextElement()).intValue(); }
 
     return returnArray;
   }
@@ -131,10 +131,11 @@ public abstract class SDPServiceRecord implements ServiceRecord{
    */
   public String toString() {
     String retour="";
-    Object[] obj=m_attributes.keySet().toArray();
-    for(int i=0;i<obj.length;i++) {
-      DataElement dat=(DataElement)m_attributes.get(obj[i]);
-      retour+="ID=0x"+Integer.toHexString(((Integer)obj[i]).intValue())+" value="+dat+"\n";
+    Enumeration enum=m_attributes.keys();
+    while (enum.hasMoreElements()) {
+    	 Integer obj = (Integer)enum.nextElement();
+      DataElement dat=(DataElement)m_attributes.get(obj);
+      retour+="ID=0x"+Integer.toHexString(obj.intValue())+" value="+dat+"\n";
     }
     return retour;
   }
@@ -147,12 +148,10 @@ public abstract class SDPServiceRecord implements ServiceRecord{
   DataElement resultAttributes = new DataElement(DataElement.DATSEQ);
   // Use of a Tree Set to sort the attribute IDs.
   // Some stacks do not store all keys if they are not sorted.
-  TreeSet mySet=new TreeSet(m_attributes.keySet());
-  Object[] keys=mySet.toArray();
-  for(int i=0;i<keys.length;i++) {
-      Integer key = (Integer)keys[i];
-      DataElement value = (DataElement)m_attributes.get(key);
-      resultAttributes.addElement(new DataElement(DataElement.U_INT_2, key.intValue()));
+  for(int i=0;i<=0xffff;i++) {
+      DataElement value = (DataElement)m_attributes.get(new Integer(i));
+      if (value == null) continue;
+      resultAttributes.addElement(new DataElement(DataElement.U_INT_2, i));
       resultAttributes.addElement(value);
   }
   return resultAttributes.toByteArray();

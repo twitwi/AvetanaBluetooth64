@@ -158,7 +158,7 @@ public class UUID {
     public UUID(String uuidValue, boolean shortUUID) throws NullPointerException, IllegalArgumentException{
         if (uuidValue == null) throw new NullPointerException("uuidValue is null.");
         if (shortUUID) {
-            uuidLong = Long.decode("0x" + uuidValue).longValue(); //also throws a number format exception
+            uuidLong = Long.parseLong(uuidValue, 16); //also throws a number format exception
             uuidBytes = new byte[4];
             uuidBytes[0] = (byte)((uuidLong >> 24) & 0xff);
             uuidBytes[1] = (byte)((uuidLong >> 16) & 0xff);

@@ -39,8 +39,8 @@ import javax.bluetooth.*;
 
 public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection{
 
-  private int m_transmitMTU=672;
-  private int m_receiveMTU=672;
+  protected int m_transmitMTU=672;
+  protected int m_receiveMTU=672;
   //This buffer is used to store data when ready was called and data is available
   private byte[] m_buffer = null;
   private JSR82URL m_connectionURL;

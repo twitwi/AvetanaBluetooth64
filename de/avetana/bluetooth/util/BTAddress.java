@@ -78,7 +78,10 @@ public class BTAddress implements java.io.Serializable
                 // Parse the given string into a BTAddress object
                 // Valid string format is "00:12:34:56:78:AB"
                 // i.e. 6, colon separated pairs of hex digits.
-          addr_str = addr_str.replaceAll("-", ":");
+				int pos = -1;
+				while ((pos = addr_str.indexOf("-")) != -1) {
+					addr_str = addr_str.substring(0, pos) + ":" + addr_str.substring (pos + 1);
+				}
                 StringTokenizer st = new StringTokenizer(addr_str, ":");
 
                 if (st.countTokens() != 6)

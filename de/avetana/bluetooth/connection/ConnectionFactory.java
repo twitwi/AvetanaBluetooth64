@@ -78,7 +78,7 @@ public class ConnectionFactory {
    * @param desc The unregistered connection
    */
   public void addConnection(BTConnection desc) {
-    m_connections.add(desc);
+    m_connections.addElement(desc);
   }
 
   /**
@@ -100,7 +100,7 @@ public class ConnectionFactory {
    *         <code>false</code> - Otherwise.
    */
   public boolean removeConnection(BTConnection desc) {
-    return m_connections.remove(desc);
+    return m_connections.removeElement(desc);
   }
 
   /**
@@ -108,7 +108,7 @@ public class ConnectionFactory {
    * @param desc A new and unregistered connection notifier
    */
   public void addNotifier(ConnectionNotifier desc) {
-    m_notifiers.add(desc);
+    m_notifiers.addElement(desc);
   }
 
   /**
@@ -118,7 +118,7 @@ public class ConnectionFactory {
    *         <code>false</code> - Otherwise.
    */
   public boolean removeNotifier(ConnectionNotifier desc) {
-    return m_notifiers.remove(desc);
+    return m_notifiers.removeElement(desc);
   }
 
   /**

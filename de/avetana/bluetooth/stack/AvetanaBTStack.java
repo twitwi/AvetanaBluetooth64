@@ -118,22 +118,15 @@ public class AvetanaBTStack extends BluetoothStack {
   public String getLocalDeviceName() throws java.lang.Exception {
     return BlueZ.hciLocalName(m_bd);
   }
-
-  private void searchServices(final int[] attrSet, final byte[][] uuidSet, RemoteDevice btDev, final DiscoveryListener myListener) {
-    String addr=btDev.getBluetoothAddress();
+  
+  private synchronized int searchServices(int[] attrSet, byte[][] uuidSet, RemoteDevice btDev, DiscoveryListener myListener) {
+  	String addr=btDev.getBluetoothAddress();
     try {addr=BTAddress.transform(addr);}catch(Exception ex) {}
-    final String addr2=addr;
-    Runnable r=new Runnable() {
-      public void run() {
-        try {
-          BlueZ.searchServices(addr2,uuidSet,attrSet,myListener);
-        }catch(Exception ex) {}
-      }
-    };
-    new Thread(r).start();
+    	return BlueZ.searchServices(addr,uuidSet,attrSet,myListener);
+   
   }
 
-  public void searchServices(final int[] attrSet, UUID[] uuidSet, RemoteDevice btDev, final DiscoveryListener myListener) {
+  public int searchServices(final int[] attrSet, UUID[] uuidSet, RemoteDevice btDev, final DiscoveryListener myListener) {
     byte[][] uuidSetB;
     if(uuidSet==null || uuidSet.length==0) { uuidSetB=new byte[0][0]; }
     else {
@@ -142,7 +135,7 @@ public class AvetanaBTStack extends BluetoothStack {
         try {uuidSetB[i]= uuidSet[i].toByteArray128(); } catch (Exception ex) {throw new IllegalArgumentException("UUID must be 16 bits length!!!!!");}
       }
     }
-    searchServices(attrSet,uuidSetB,btDev,myListener);
+    return searchServices(attrSet,uuidSetB,btDev,myListener);
   }
 
   public int getClassOfDevice() throws java.lang.Exception {

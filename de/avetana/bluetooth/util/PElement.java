@@ -35,7 +35,7 @@ public class PElement implements Cloneable, Serializable {
 
   private int id = 0;
   protected PElement parent;
-  protected TreeMap children;
+  protected HashMap children;
   protected EVector fastChildren; //Enth"alt auch alle Kinder ungeordnet
   protected Hashtable attributes;
   private String content;
@@ -106,7 +106,7 @@ public class PElement implements Cloneable, Serializable {
    */
 
   public PElement addChild (PElement c) {
-    if (children == null) children = new TreeMap();
+    if (children == null) children = new HashMap();
     if (fastChildren == null) fastChildren = new EVector();
     fastChildren.add(c);
 

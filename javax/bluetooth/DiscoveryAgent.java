@@ -205,10 +205,11 @@ public class DiscoveryAgent {
               //bluetoothStack.registerDiscoveryAgent(DiscoveryAgent.this);
               try {
                 DiscoveryListener[] discList = new DiscoveryListener[listeners.size()];
-                listeners.toArray(discList);
+                listeners.copyInto(discList);
                   foundRemoteDevices = bluetoothStack.Inquire(DiscoveryAgent.this);
-                  cachedRemoteDevices=new Vector(foundRemoteDevices);
+                  cachedRemoteDevices=new Vector();
                   for(int i=0;i<foundRemoteDevices.size();i++) {
+                  	cachedRemoteDevices.addElement(foundRemoteDevices.elementAt(i));
                     RemoteDevice remote=(RemoteDevice)foundRemoteDevices.elementAt(i);
                     remoteDevices.put(remote.getBluetoothAddress(),remote);
                     for(int u=0;u<listeners.size();u++)
@@ -260,7 +261,7 @@ public class DiscoveryAgent {
      */
 
     public void deviceDiscovered (RemoteDevice d) {
-      this.foundRemoteDevices.add(d);
+      this.foundRemoteDevices.addElement(d);
       for (int i = 0;i < listeners.size();i++) {
         ((DiscoveryListener)listeners.elementAt(i)).deviceDiscovered(d, d.getDeviceClass());
       }
@@ -302,9 +303,7 @@ public class DiscoveryAgent {
         attrSet=new int[]{0x0000, 0x0001, 0x0002, 0x0004, 0x100};
       }
       if(bluetoothStack==null) throw new IllegalArgumentException("Stack is not defined!!");
-      bluetoothStack.searchServices(attrSet,uuidSet,btDev,myListener);
-      //TODO Must be changed!
-      return 1;
+      return bluetoothStack.searchServices(attrSet,uuidSet,btDev,myListener);
 
     }
 
@@ -422,7 +421,7 @@ public class DiscoveryAgent {
       public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
         for(int i=0;i<servRecord.length;i++) {
           RemoteServiceRecord myRec=(RemoteServiceRecord)servRecord[i];
-          m_remoteServ.add(myRec);
+          m_remoteServ.addElement(myRec);
         }
       }
 

@@ -37,10 +37,6 @@ public class EVector {
     v = new Vector();
   }
 
-  public Collection all() {
-    return v;
-  }
-
   public Object clone() {
     EVector v2 = new EVector();
     v2.v = (Vector)v.clone();
@@ -52,7 +48,7 @@ public class EVector {
   }
 
   public void add(PElement el) {
-    v.add(el);
+    v.addElement(el);
   }
 
   public PElement elementAt (int i) {
@@ -60,15 +56,11 @@ public class EVector {
   }
 
   public void remove (PElement p) {
-    v.remove(p);
+    v.removeElement(p);
   }
 
   public int size() {
     return v.size();
-  }
-
-  public void addAll (EVector v2) {
-    v.addAll(v2.v);
   }
 
 

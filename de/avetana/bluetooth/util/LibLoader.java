@@ -1,10 +1,6 @@
 package de.avetana.bluetooth.util;
 
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-
 /**
  * <b>COPYRIGHT:</b><br> (c) Copyright 2004 Avetana GmbH ALL RIGHTS RESERVED. <br><br>
  *
@@ -33,39 +29,79 @@ import java.io.InputStream;
  * archive, copies it as a temporary system file and uses this temporary system file to perform function-calls.
  *
  */
+
+import java.io.*;
+
 public class LibLoader {
 
-  public static void loadCommLib (String name) throws Exception {
+	public static void loadCommLib (String name) throws Exception {
 
-    String libName = System.mapLibraryName(name);
+	    String libName = name;
+	    String sysName = System.getProperty("os.name");
+	    
+	    if (sysName.toLowerCase().indexOf("windows") != -1) libName = libName + ".dll";
+	    else if (sysName.toLowerCase().indexOf("linux") != -1) libName = "lib" + libName + ".so";
+	    else if (sysName.toLowerCase().indexOf("mac os x") != -1) libName = "lib" + libName + ".jnilib";
+	    else throw new Exception ("Unsupported operating system" + sysName);
+	    
+	    InputStream is = null;
+	    
+	    try {
+	    		Class cl = new LibLoader().getClass();
+	    		ClassLoader clo = cl.getClassLoader();
+	    		if (clo == null) {
+	    			System.out.println ("Trying to use SystemClassLoader...");
+	    			is = ClassLoader.getSystemResourceAsStream(libName);
+	    		}else is = clo.getResourceAsStream(libName);
+	 
+	    } catch (Exception e) {
+	    		e.printStackTrace();
+	    		throw new Exception ("Native Library " + libName + " is not a ressource !");
+	    }
 
-    InputStream is = new LibLoader().getClass().getClassLoader().getResourceAsStream(libName);
+		if (is == null) throw new Exception ("Native Library " + libName + " not in CLASSPATH !");
 
-    if (is == null) throw new Exception ("Native Library " + libName + " not in CLASSPATH !");
+	    File fd = null;
+	    while (fd == null) {
+	      try {
+	      	do {
+	      		int count = (int)(100000f * Math.random());
+	      		fd = new File (System.getProperty("java.io.tmpdir") + File.separator + count);
+	      	} while (fd.exists());
+	      } catch (Exception e) { e.printStackTrace(); System.err.println ("Writing of temp lib-file failed " + fd.getAbsolutePath()); }
+	    }
+	    String path = fd.getAbsolutePath();
+	    fd.delete();
+	    File f = new File(path);
+	    f.mkdirs();
+	    f = new File (f, libName);
+	    FileOutputStream fos = new FileOutputStream (f);
 
-    File fd = null;
-    while (fd == null) {
-      try {
-        fd = File.createTempFile("lib", "");
-      } catch (Exception e) { System.err.println ("Writing of temp lib-file failed"); }
+	    byte[] b = new byte[1000];
+	    int len;
+	    while ((len = is.read(b)) >= 0) {
+	      fos.write(b, 0, len);
+	    }
+	    fos.close();
+	    System.load(f.getAbsolutePath());
+
+	  }
+
+/*  public static void loadCommLib (String name) throws Exception {
+
+    String libName = "jbluez.dll";
+    
+    try {
+    		Class cl = new LibLoader().getClass();
+    		ClassLoader clo = cl.getClassLoader();
+    			System.load(System.getProperty("user.dir") + File.separatorChar + libName);
+    			return;
+    } catch (Exception e) {
+    		e.printStackTrace();
+    		throw new Exception ("Native Library " + libName + " is not a ressource !");
     }
-    String path = fd.getAbsolutePath();
-    fd.delete();
-    File f = new File(path);
-    f.deleteOnExit();
-    f.mkdirs();
-    f = new File (f, libName);
-    f.deleteOnExit();
-    FileOutputStream fos = new FileOutputStream (f);
 
-    byte[] b = new byte[1000];
-    int len;
-    while ((len = is.read(b)) >= 0) {
-      fos.write(b, 0, len);
-    }
-    fos.close();
-    System.load(f.getAbsolutePath());
-
-  }
+ 
+  }*/
 
 }

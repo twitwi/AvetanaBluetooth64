@@ -30,7 +30,6 @@ import javax.microedition.io.*;
 import de.avetana.bluetooth.stack.BluetoothStack;
 import de.avetana.bluetooth.stack.*;
 import de.avetana.bluetooth.obex.*;
-import javax.obex.*;
 import de.avetana.bluetooth.connection.*;
 import de.avetana.bluetooth.sdp.*;
 import java.util.*;

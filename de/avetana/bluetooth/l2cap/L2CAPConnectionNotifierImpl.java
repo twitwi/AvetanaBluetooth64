@@ -45,6 +45,9 @@ import de.avetana.bluetooth.stack.*;
  */
 public class L2CAPConnectionNotifierImpl extends ConnectionNotifier implements L2CAPConnectionNotifier{
 
+	private int m_transMTU = 672;
+	private int m_recMTU = 672;
+	
   /**
    * Creates a new instance of L2CAPConnectionNotifierImpl. The connection URL be of the form: btl2cap://localhost:UUID
    * @param url The connection URL
@@ -112,10 +115,22 @@ public class L2CAPConnectionNotifierImpl extends ConnectionNotifier implements L
 
     if (m_fid > 0) {
       L2CAPConnectionImpl con=new L2CAPConnectionImpl(m_fid);
+      con.m_receiveMTU = m_recMTU;
+      con.m_transmitMTU = m_transMTU;
       con.setRemoteDevice(m_remote);
       con.setConnectionURL(parsedURL);
       return con;
     } else throw new IOException ("Service Revoked");
 
   }
+  
+  /**
+   * This is used from JBlueZ to set the mtu on incoming connections
+   */
+  
+  public void setMTUs (int transMTU, int recMTU) {
+  	  m_transMTU = transMTU;
+  	  m_recMTU = recMTU;
+  }
+
 }

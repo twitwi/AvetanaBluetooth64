@@ -69,7 +69,7 @@ import de.avetana.bluetooth.sdp.ServiceDescriptor;
  */
 
 
-public class ServiceFinderPane extends JPanel implements ActionListener, DiscoveryListener, TreeSelectionListener{
+public class ServiceFinderPane extends JPanel implements Cancelable, ActionListener, DiscoveryListener, TreeSelectionListener{
 
   private JTree m_sensorList;
   private DiscoveryAgent m_agent;
@@ -85,6 +85,7 @@ public class ServiceFinderPane extends JPanel implements ActionListener, Discove
   public JButton m_refresh, m_select;
   private JPanel m_commandPanel;
   private String m_localPrefName;
+  private int serviceSearchTransID = -1;
 
   /**
    * Constructs a new ServiceFinderPane object
@@ -162,6 +163,17 @@ public class ServiceFinderPane extends JPanel implements ActionListener, Discove
     return m_commandPanel;
   }
 
+  /**
+   * Called, when the cancel button is hit on the ProgressDialog
+   */
+  
+  public void cancel() {
+  	if (serviceSearchTransID == -1) m_agent.cancelInquiry(this);
+  	else {
+  		m_agent.cancelServiceSearch(serviceSearchTransID);
+  	}
+  	m_dialog.setVisible (false);
+  }
   /**
    * Inits the local BT stack
    * @throws Exception
@@ -271,7 +283,8 @@ public class ServiceFinderPane extends JPanel implements ActionListener, Discove
   public void doInquiry() {
 
     m_dialog = null;
-
+    serviceSearchTransID = -1;
+    
     Runnable r=new Runnable() {
 
       public void run() {
@@ -279,7 +292,7 @@ public class ServiceFinderPane extends JPanel implements ActionListener, Discove
           m_dialog=new ProgressDialog((Dialog)m_owner);
         else
           m_dialog=new ProgressDialog((Frame)m_owner);
-        m_dialog.setVisible(true);
+        m_dialog.setVisible(true, ServiceFinderPane.this);
       }
     };
     new Thread(r).start();
@@ -304,7 +317,7 @@ public class ServiceFinderPane extends JPanel implements ActionListener, Discove
       for(int i=0;i<m_remote.size();i++) {
         RemoteDevice dev=(RemoteDevice)m_remote.elementAt(i);
         try {
-          m_agent.searchServices(attrids, m_search, dev, this);
+          serviceSearchTransID = m_agent.searchServices(attrids, m_search, dev, this);
           synchronized(this) {
             nbOfServiceSearch++;
             if(nbOfServiceSearch==maxServiceSearch) {
@@ -312,6 +325,7 @@ public class ServiceFinderPane extends JPanel implements ActionListener, Discove
                 this.wait();
               }
               catch(Exception ex) {}
+              if (serviceSearchTransID == -2) return;
             }
           }
         }catch(BluetoothStateException e) {e.printStackTrace();}
@@ -324,6 +338,7 @@ public class ServiceFinderPane extends JPanel implements ActionListener, Discove
               this.wait();
             }
             catch(Exception ex) {ex.printStackTrace();}
+            if (serviceSearchTransID == -2) return;
           }
         }
       }
@@ -424,11 +439,12 @@ public class ServiceFinderPane extends JPanel implements ActionListener, Discove
   }
 
   public void inquiryCompleted(int discType) {
-    serviceSearch();
+  	if (discType == DiscoveryListener.INQUIRY_COMPLETED) serviceSearch();
   }
 
   public void serviceSearchCompleted(int transID, int respCode) {
     nbOfServiceSearch--;
+    serviceSearchTransID = respCode == DiscoveryListener.SERVICE_SEARCH_TERMINATED ? -2 : -1;
     synchronized(this) {
       this.notifyAll();
     }

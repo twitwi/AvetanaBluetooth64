@@ -2,6 +2,7 @@ package de.avetana.bluetooth.util;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.*;
 
 /**
 * <b>COPYRIGHT:</b><br> (c) Copyright 2004 Avetana GmbH ALL RIGHTS RESERVED. <br><br>
@@ -37,6 +38,7 @@ public class ProgressDialog extends JDialog {
    private JLabel label;
    private JButton cancel=new JButton("Cancel");
    private Window m_owner;
+   private Cancelable cListener = null;
 
    public ProgressDialog (Frame owner) {
      super(owner, "Status", true);
@@ -57,7 +59,11 @@ public class ProgressDialog extends JDialog {
      label=new JLabel("Searching ...");
      cont.add(label, BorderLayout.NORTH);
      cont.add(jpb, BorderLayout.CENTER);
-     cancel.setEnabled(false);
+     cancel.addActionListener(new ActionListener () {
+     	public void actionPerformed (ActionEvent e) {
+     		if (cListener != null) cListener.cancel();
+     	}
+     });
      cont.add(cancel, BorderLayout.SOUTH);
      pack();
      int height=(int)this.getPreferredSize().getHeight();
@@ -67,5 +73,10 @@ public class ProgressDialog extends JDialog {
 
    public void setString(String message) {
      label.setText(message);
+   }
+   
+   public void setVisible (boolean stat, Cancelable cListener) {
+   	this.cListener = cListener;
+   	super.setVisible (stat);
    }
 }
