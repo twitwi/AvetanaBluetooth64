@@ -57,7 +57,7 @@ public class ServiceDescriptor implements java.io.Serializable{
    * @throws Exception If the BT address of this device could not be parsed.
    */
   public ServiceDescriptor(RemoteDevice dev) throws Exception{
-    m_addr=BTAddress.parseString(dev.bdAddrString);
+    m_addr=BTAddress.parseString(dev.getBluetoothAddress());
   }
 
   /**

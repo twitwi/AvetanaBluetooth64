@@ -122,7 +122,7 @@ public class RemoteServiceRecord extends SDPServiceRecord {
     m_internListener=new InternListener();
     Runnable r=new Runnable() {
       public void run() {
-        String addr=m_remote.bdAddrString;
+        String addr=m_remote.getBluetoothAddress();
         try {addr=BTAddress.transform(addr);}catch(Exception ex) {}
         try {
           BlueZ.searchServices(addr,m_uuid,attrs,m_internListener);

@@ -249,8 +249,9 @@ public class UUID {
     /*  End of the method toString  */
 
     /** Christian Lorenz: Added this for use with DataElement implementation. */
-    public byte[] toByteArray128() { //TODO handle uuids constructed from strings
-      if (uuidBytes.length != 16) return convert32to128 (this).toByteArray();
+    public byte[] toByteArray128() throws Exception { //TODO handle uuids constructed from strings
+      if (uuidBytes.length == 2) return convert32to128 (convert16to32 (this)).toByteArray();
+      else if (uuidBytes.length == 4) return convert32to128(this).toByteArray();
       else return uuidBytes;
     }
 

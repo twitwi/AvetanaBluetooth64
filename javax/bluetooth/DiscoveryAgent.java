@@ -192,7 +192,7 @@ public class DiscoveryAgent {
             while (remoteDevices.hasMoreElements()) {
                 RemoteDevice remoteDevice = (RemoteDevice)remoteDevices.nextElement();
                 if ((remoteDevice != null) && (listener != null))
-                    listener.deviceDiscovered(remoteDevice, remoteDevice.deviceClass);
+                    listener.deviceDiscovered(remoteDevice, remoteDevice.getDeviceClass());
             }
             return true;
         }
@@ -212,7 +212,7 @@ public class DiscoveryAgent {
                     RemoteDevice remote=(RemoteDevice)foundRemoteDevices.elementAt(i);
                     remoteDevices.put(remote.getBluetoothAddress(),remote);
                     for(int u=0;u<listeners.size();u++)
-                      ((DiscoveryListener)listeners.elementAt(u)).deviceDiscovered(remote,remote.deviceClass);
+                      ((DiscoveryListener)listeners.elementAt(u)).deviceDiscovered(remote,remote.getDeviceClass());
                   }
                   isInquiring=false;
                   for(int u=0;u<listeners.size();u++)
@@ -262,7 +262,7 @@ public class DiscoveryAgent {
     public void deviceDiscovered (RemoteDevice d) {
       this.foundRemoteDevices.add(d);
       for (int i = 0;i < listeners.size();i++) {
-        ((DiscoveryListener)listeners.elementAt(i)).deviceDiscovered(d, d.deviceClass);
+        ((DiscoveryListener)listeners.elementAt(i)).deviceDiscovered(d, d.getDeviceClass());
       }
     }
 
@@ -299,11 +299,11 @@ public class DiscoveryAgent {
         throws BluetoothStateException, IllegalArgumentException {
       if (myListener == null) throw new NullPointerException("DiscoveryAgent.searchServices: DiscoveryListener is null.");
       if(attrSet==null || attrSet.length==0) {
-        attrSet=new int[]{0x0000, 0x0001, 0x0002, 0x0004};
+        attrSet=new int[]{0x0000, 0x0001, 0x0002, 0x0004, 0x100};
       }
       if(bluetoothStack==null) throw new IllegalArgumentException("Stack is not defined!!");
       bluetoothStack.searchServices(attrSet,uuidSet,btDev,myListener);
-      // Must be changed!
+      //TODO Must be changed!
       return 1;
 
     }

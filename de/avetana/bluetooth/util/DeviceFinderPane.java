@@ -111,15 +111,14 @@ public class DeviceFinderPane extends JPanel implements ActionListener, Discover
   public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
     String addr=null, name=null;
     try {
-      addr=btDevice.bdAddrString;
-    }
+      addr=btDevice.getBluetoothAddress();
+      name=btDevice.getFriendlyName(false);
+      inform("Device: "+btDevice.getFriendlyName(false)+" found!!");
+     }
     catch(Exception ex) {ex.printStackTrace();}
     if(addr!=null) {
       nameCache.put(addr, (name==null?"Not Found":name));
-      RemoteDevice rem=new RemoteDevice(addr);
-      rem.friendlyName=name;
-      m_remote.add(rem);
-      inform("Device: "+name+" found!!");
+      m_remote.add(btDevice);
     }
   }
 

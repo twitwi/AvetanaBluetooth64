@@ -120,7 +120,7 @@ public class AvetanaBTStack extends BluetoothStack {
   }
 
   private void searchServices(final int[] attrSet, final byte[][] uuidSet, RemoteDevice btDev, final DiscoveryListener myListener) {
-    String addr=btDev.bdAddrString;
+    String addr=btDev.getBluetoothAddress();
     try {addr=BTAddress.transform(addr);}catch(Exception ex) {}
     final String addr2=addr;
     Runnable r=new Runnable() {
@@ -135,11 +135,11 @@ public class AvetanaBTStack extends BluetoothStack {
 
   public void searchServices(final int[] attrSet, UUID[] uuidSet, RemoteDevice btDev, final DiscoveryListener myListener) {
     byte[][] uuidSetB;
-    if(uuidSet==null || uuidSet.length==0) { uuidSetB=new byte[1][2]; uuidSetB[0][0] = 0x10; uuidSetB[0][1] = 0x02; }
+    if(uuidSet==null || uuidSet.length==0) { uuidSetB=new byte[1][2]; try { uuidSetB[0] = new UUID (0x1002).toByteArray128(); } catch (Exception e) { e.printStackTrace(); } }
     else {
       uuidSetB=new byte[uuidSet.length][];
       for(int i=0;i<uuidSetB.length;i++) {
-        try {uuidSetB[i]= uuidSet[i].toByteArray(); } catch (Exception ex) {throw new IllegalArgumentException("UUID must be 16 bits length!!!!!");}
+        try {uuidSetB[i]= uuidSet[i].toByteArray128(); } catch (Exception ex) {throw new IllegalArgumentException("UUID must be 16 bits length!!!!!");}
       }
     }
     searchServices(attrSet,uuidSetB,btDev,myListener);

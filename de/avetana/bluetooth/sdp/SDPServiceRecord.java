@@ -111,7 +111,7 @@ public abstract class SDPServiceRecord implements ServiceRecord{
    * @return
    */
   public boolean setAttributeValue(int attrID, DataElement attrDesc) {
-    if(attrID==0x0000) {
+  	if(attrID==0x0000) {
       m_recordHandle=attrDesc.getLong();
     }
     Integer i=new Integer(attrID);

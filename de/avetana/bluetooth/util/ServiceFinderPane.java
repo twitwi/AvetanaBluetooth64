@@ -227,15 +227,13 @@ public class ServiceFinderPane extends JPanel implements ActionListener, Discove
   public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
     String addr=null, name=null;
     try {
-      addr=btDevice.bdAddrString;
+      addr=btDevice.getBluetoothAddress();
       name=btDevice.getFriendlyName(true);
     }
     catch(Exception ex) {ex.printStackTrace();}
     if(addr!=null) {
       nameCache.put(addr, (name==null?"Not Found":name));
-      RemoteDevice rem=new RemoteDevice(addr);
-      rem.friendlyName=name;
-      m_remote.add(rem);
+      m_remote.add(btDevice);
       inform("Device: "+name+" found!!");
     }
   }
@@ -245,11 +243,11 @@ public class ServiceFinderPane extends JPanel implements ActionListener, Discove
    * @param transID The SDP transaction ID
    * @param servRecord The new services discovered
    */
-  public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
+  public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {  	
     for(int i=0;i<servRecord.length;i++) {
       try {
         RemoteDevice dev=servRecord[i].getHostDevice();
-        String name=(String)nameCache.get(dev.bdAddrString);
+        String name=(String)nameCache.get(dev.getBluetoothAddress());
         ServiceDescriptor myService=new ServiceDescriptor(dev);
         myService.setRemoteName(name);
         myService.parseServiceRecord(servRecord[i], ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
@@ -339,7 +337,7 @@ public class ServiceFinderPane extends JPanel implements ActionListener, Discove
         oos.close();
         try {
           prefs.putByteArray(m_localPrefName, bos.toByteArray());
-        } catch (IllegalArgumentException iae) {}
+        } catch (IllegalArgumentException iae) { }
         bos.close();
       } catch (Exception e) { e.printStackTrace( ); }
       expandAll();

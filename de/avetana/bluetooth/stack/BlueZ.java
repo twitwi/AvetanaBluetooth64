@@ -503,7 +503,7 @@ public class BlueZ
          * @throws BlueZException
          */
         public static void searchServices(String bdaddr_jstr, byte[][] uuid, int[] attrIds, DiscoveryListener listener) throws BlueZException{
-          myFactory.addListener(bdaddr_jstr.toUpperCase(), listener);
+        	 myFactory.addListener(bdaddr_jstr.toUpperCase(), listener);
           listService(bdaddr_jstr, uuid, attrIds);
         }
 
@@ -582,15 +582,15 @@ public class BlueZ
         public static void addService(int transID, ServiceRecord rec) {
           String addr=null;
           try {
-            addr=BTAddress.parseString(rec.getHostDevice().bdAddrString).toString();
+            addr=BTAddress.transform(rec.getHostDevice().getBluetoothAddress());
           }catch(Exception ex) {ex.printStackTrace();}
           if(addr==null) {
-            //System.out.println("ERROR - Not a valid bluetooth Adress! " + addr);
+            System.out.println("ERROR - Not a valid bluetooth Adress! " + addr);
             return;
           }
           DiscoveryListener myListener=myFactory.getListener(addr);
           if(myListener==null) {
-            //System.out.println("ERROR - Listener not defined. Unable to add service " + addr);
+            System.out.println("ERROR - Listener not defined. Unable to add service " + addr);
             return;
           }
           myListener.servicesDiscovered(transID, new ServiceRecord[]{rec});
@@ -624,5 +624,9 @@ public class BlueZ
             e.printStackTrace();
           }
           return null;
+        }
+        
+        public static byte[] newByteArray (int size) {
+        		return new byte[size];
         }
 }

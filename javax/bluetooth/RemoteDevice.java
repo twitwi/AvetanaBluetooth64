@@ -33,16 +33,16 @@ import de.avetana.bluetooth.stack.BluetoothStack;
 import de.avetana.bluetooth.util.BTAddress;;
 
 public class RemoteDevice {
-    public String bdAddrString;
-    public long bdAddrLong;
-    public byte pageScanRepMode;
-    public byte pageScanPeriodMode;
-    public byte pageScanMode;
-    public DeviceClass deviceClass;
-    public short clockOffset;
-    public String friendlyName;
-    public Hashtable serviceRecords;
-    public boolean isAuth=false, isEncrypt;
+    private String bdAddrString;
+    private long bdAddrLong;
+    private byte pageScanRepMode;
+    private byte pageScanPeriodMode;
+    private byte pageScanMode;
+    private DeviceClass deviceClass;
+    private short clockOffset;
+    private String friendlyName;
+    private Hashtable serviceRecords;
+    private boolean isAuth=false, isEncrypt;
 
     /**
      * Notifies the method to call <code>wait()</code> for a response from the
@@ -444,6 +444,15 @@ public class RemoteDevice {
         ex.printStackTrace();
       }
       return false;
+    }
+    
+    /**
+     * This function returns the deviceClass as it has been discovered.
+     * The function does not appear in JSR82
+     * @return
+     */
+    public DeviceClass getDeviceClass() {
+    		return this.deviceClass;
     }
 }
 
