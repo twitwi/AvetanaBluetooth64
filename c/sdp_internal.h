@@ -30,10 +30,6 @@
 	Guruprasad Krishnamurthy <guruprasad.krishnamurthy@nokia.com>
 */
 
-/*
- * $Id: sdp_internal.h,v 1.4 2004/11/02 06:58:03 moritzg Exp $
- */
-
 #ifndef SDP_INTERNAL_H
 #define SDP_INTERNAL_H
 
