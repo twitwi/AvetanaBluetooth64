@@ -319,7 +319,8 @@ public class DataElement {
      */
     public DataElement(boolean bool) {
         this.valueType = BOOL;
-        //TODO parse bool
+        this.headerByteSize = 0;
+        this.dataBytes = new byte[] { (byte) (bool ? 1 : 0) };
     }
 
     /*  End of the constructor  */
@@ -353,35 +354,27 @@ public class DataElement {
     public DataElement(int valueType, long value) {
         this.valueType = valueType;
         headerByteSize = 1;
+        int blen = 0;
         switch (valueType) {
-            case U_INT_1: {
-                    byte[] bytes = { 0x08, (byte)((value) & 0xff) };
-                    dataBytes = bytes;
-                    break;
-                }
-            case U_INT_2: {
-                    byte[] bytes = { 0x09, (byte)((value >> 8) & 0xff), (byte)((value) & 0xff) };
-                    dataBytes = bytes;
-                    break;
-                }
-            case U_INT_4: {
-                    byte[] bytes = {
-                        0x0a, (byte)((value >> 24) & 0xff), (byte)((value >> 16) & 0xff), (byte)((value >> 8) & 0xff),
-                            (byte)((value) & 0xff)
-                    };
-                    dataBytes = bytes;
-                    break;
-                }
-            case INT_1:
-                break;
-            case INT_2:
-                break;
-            case INT_4:
-                break;
-            case INT_8:
-                break;
-            default:
+            case U_INT_1: 
+            case INT_1: 
+					blen = 1;
+            			break;
+            case U_INT_2: 
+            case INT_2: 
+					blen = 2;
+            			break;
+            case U_INT_4: 
+            case INT_4: 
+					blen = 4;
+            			break;
+             default:
                 throw new IllegalArgumentException();
+        }
+        dataBytes = new byte[blen + 1];
+        dataBytes[0] = (byte)valueType;
+        for (int i = 0;i < blen;i++) {
+        		dataBytes[i + 1] = (byte)(0xff & (value >> (8 * (blen - i - 1))));
         }
         //TODO parse long
     }
@@ -415,7 +408,6 @@ public class DataElement {
     public DataElement(int valueType, Object value) {
         this.valueType = valueType;
         switch (valueType) {
-            case URL: { break; }
             case UUID: {
                     UUID uuid = (UUID)value;
                     headerByteSize = 1;
@@ -431,20 +423,27 @@ public class DataElement {
                     dataBytes = bytes;
                     break;
                 }
-            case STRING: {
+            case STRING: 
+            case URL: {
                     headerByteSize = 2;
                     String string      = (String)value;
                     byte[] stringBytes = string.getBytes();
                     byte[] bytes       = new byte[stringBytes.length + 2];
-                    bytes[0] = 0x25;
+                    bytes[0] = (byte)(valueType == URL ? URL : 0x25);
                     bytes[1] = (byte)stringBytes.length;
                     System.arraycopy(stringBytes, 0, bytes, 2, stringBytes.length);
                     dataBytes = bytes;
                     break;
                 }
-            case U_INT_8: { break; }
-            case U_INT_16: { break; }
-            case INT_16: { break; }
+            case U_INT_8: 
+            case U_INT_16:
+            case INT_8:
+            case INT_16:
+            		headerByteSize = 1;
+            		dataBytes = new byte[(valueType == U_INT_8 || valueType == INT_8) ? 9 : 17];
+            		dataBytes[0] = (byte)valueType;
+            		System.arraycopy((byte[])value, 0, dataBytes, 1, dataBytes.length - 1);
+            		break;
             default:
                 throw new IllegalArgumentException();
         }
@@ -558,24 +557,29 @@ public class DataElement {
      * <code>U_INT_4</code>, <code>INT_1</code>, <code>INT_2</code>, <code>INT_4</code>, or <code>INT_8</code>
      */
     public long getLong() {
+        int blen = 0;
         switch (valueType) {
-            case INT_1:
-            case U_INT_1:
-                return (long)(dataBytes[1] & 0xff);
-            case INT_2:
-            case U_INT_2:
-                return (long)(((long)dataBytes[1] & 0xff) << 8 | ((long)dataBytes[2] & 0xff));
-            case INT_4:
-            case U_INT_4:
-                return (long)(((long)dataBytes[1] & 0xff) << 24 | ((long)dataBytes[2] & 0xff) << 16 |
-                    ((long)dataBytes[3] & 0xff) << 8 | ((long)dataBytes[4] & 0xff));
-            case INT_8:
-                return (long)(((long)dataBytes[1] & 0xff) << 56 | ((long)dataBytes[2] & 0xff) << 48 |
-                    ((long)dataBytes[3] & 0xff) << 40 | ((long)dataBytes[4] & 0xff << 32) | ((long)dataBytes[5] & 0xff) << 24 |
-                    ((long)dataBytes[6] & 0xff) << 16 | ((long)dataBytes[7] & 0xff) << 8 | ((long)dataBytes[8] & 0xff));
-            default:
-                throw new ClassCastException();
+            case U_INT_1: 
+            case INT_1: 
+					blen = 1;
+            			break;
+            case U_INT_2: 
+            case INT_2: 
+					blen = 2;
+            			break;
+            case U_INT_4: 
+            case INT_4: 
+					blen = 4;
+            			break;
+            	default:
+            		throw new IllegalArgumentException();
         }
+        long v = 0;
+        for (int i = 0;i < blen;i++) {
+        		v = (long)(v << 8);
+        		v += (long)(0xff & dataBytes[i + 1]);
+        }
+        return v;
     }
 
     /*  End of the method getLong   */
@@ -587,7 +591,7 @@ public class DataElement {
      */
     public boolean getBoolean() {
         if (valueType != BOOL) throw new ClassCastException();
-        return (dataBytes[1] == 0);
+        return (dataBytes[0] != 0);
     }
 
     /*  End of the method getBoolean    */

@@ -378,8 +378,15 @@ public class LocalServiceRecord extends SDPServiceRecord {
    */
 
   public UUID getServiceClassID() {
-    DataElement de = getAttributeValue (SDPConstants.ATTR_SERVICE_CLASS_ID_LIST);
-    return (UUID)((DataElement)this.getAttributeValue(SDPConstants.ATTR_SERVICE_CLASS_ID_LIST).getVector().elementAt(0)).getValue();
+    Vector v = this.getAttributeValue(SDPConstants.ATTR_SERVICE_CLASS_ID_LIST).getVector();
+    return (UUID)((DataElement)v.elementAt(v.size() - 1)).getValue();
+  }
+  
+  public UUID[] getServiceClassIDList() {
+  		Vector v = this.getAttributeValue(SDPConstants.ATTR_SERVICE_CLASS_ID_LIST).getVector();
+  		UUID ret[] = new UUID[v.size()];
+  		for (int i = 0;i < ret.length;i++) ret[i] = (UUID)((DataElement)v.elementAt(i)).getValue();
+  		return ret;
   }
 
 }

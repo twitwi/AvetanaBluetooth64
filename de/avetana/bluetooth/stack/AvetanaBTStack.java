@@ -135,7 +135,7 @@ public class AvetanaBTStack extends BluetoothStack {
 
   public void searchServices(final int[] attrSet, UUID[] uuidSet, RemoteDevice btDev, final DiscoveryListener myListener) {
     byte[][] uuidSetB;
-    if(uuidSet==null || uuidSet.length==0) { uuidSetB=new byte[1][2]; try { uuidSetB[0] = new UUID (0x1002).toByteArray128(); } catch (Exception e) { e.printStackTrace(); } }
+    if(uuidSet==null || uuidSet.length==0) { uuidSetB=new byte[0][0]; }
     else {
       uuidSetB=new byte[uuidSet.length][];
       for(int i=0;i<uuidSetB.length;i++) {
