@@ -85,8 +85,9 @@ public abstract class ConnectionNotifier implements Connection {
    * Sets the connection ID
    * @param fid The connection ID
    */
-  public void setConnectionID(int fid) {
+  public synchronized void setConnectionID(int fid) {
     this.m_fid = fid;
+    notifyAll();
   }
   
   public void setFailure (IOException e) {
@@ -166,7 +167,8 @@ public abstract class ConnectionNotifier implements Connection {
    * Remove the notifier and the SDP Record
    */
   
-  protected void removeNotifier() {
+  public void removeNotifier() {
+  	//System.out.println ("Removing notifier " + isClosed + " " + m_serviceHandle);
   	if (isClosed) return;
     try {
       BlueZ.myFactory.removeNotifier(this);
@@ -180,6 +182,7 @@ public abstract class ConnectionNotifier implements Connection {
   
   
   public synchronized void close() {
+  	if (isClosed) return;
   	removeNotifier();
   	isClosed=true;
   	m_fid = 0;

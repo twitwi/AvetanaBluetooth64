@@ -68,7 +68,8 @@ public class InqTest implements DiscoveryListener {
 		UUID uuids[];
 		System.out.println ("Setting up uuids");
 		if (uuid == null) uuids = new UUID[] { };
-		else uuids = new UUID[] { new UUID (uuid, false) };
+		else if (uuid.length() == 32) uuids = new UUID[] { new UUID (uuid, false) };
+		else uuids = new UUID[] { new UUID (uuid, true) };
 		System.out.println ("Getting discoveryAgent");
 		DiscoveryAgent da = LocalDevice.getLocalDevice().getDiscoveryAgent();
 		System.out.println ("Starting search");

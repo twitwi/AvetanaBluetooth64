@@ -138,10 +138,12 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 								}
 								response.setHeader(0x49, null);
 								sendCommand (ret, OBEXConnection.hsToByteArray(response));
-								//System.out.println ("OBEX PUT ret " + ret + " got " + (int)(data[0] & 0xff) + " len " + retdata.length);
+								//System.out.println ("OBEX PUT ret " + ret + " got " + (int)(data[0] & 0xff) + " len " + data.length);
 								break;
 							}
-							case 0x83:	{
+							case 0x83:	
+							case 0x03:	
+							{
 								HeaderSet request = OBEXConnection.parseHeaders(data, 3);
 								HeaderSet response = null;
 								
@@ -157,6 +159,8 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 								
 								
 								if (ret == 0x90 || ret == 0xa0) {
+									response.setHeader(0x48, null);
+									response.setHeader(0x49, null);
 									InputStream is = m_getOperation.openInputStream();
 									int respLen = OBEXConnection.hsToByteArray(response).length;
 									byte d2[] = new byte[Math.min(is.available(), mtu - respLen - 3)];
@@ -164,12 +168,13 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 									if (is.available() == 0) {
 										response.setHeader(0x49, d2);
 										ret = 0xa0;
+										m_getOperation = null;
 									} else {
 										response.setHeader(0x48, d2);
 										ret = 0x90;
 									}
+									//System.out.println ("OBEX GET ret " + ret + " got " + (int)(data[0] & 0xff) + " len " + d2.length);
 									sendCommand (ret, OBEXConnection.hsToByteArray(response));
-									if (ret == 0xa0) m_getOperation = null;
 								}
 								break;
 							}

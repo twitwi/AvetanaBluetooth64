@@ -32,7 +32,6 @@ public class OperationImpl implements Operation {
 	private String type = null;
 	private boolean closed = false;
 	private int opCode;
-	private Thread receiverThread = null;
 	private boolean opNeedsClosing = false;
 	
 	protected OperationImpl (CommandHandler con, HeaderSet hs, int opCode) throws IOException {
@@ -79,7 +78,7 @@ public class OperationImpl implements Operation {
 			//need to start a receiver thread.
 			
 			if (opCode == OBEXConnection.GET && b[0] != (byte)0xa0) {
-				startReceiverThread();
+				receive();
 			}
 			hs = con.createHeaderSet();
 		} else { // The command must come from the SessionNotifierImpl -> Save the headers received
@@ -87,25 +86,15 @@ public class OperationImpl implements Operation {
 		}
 	}
 	
-	private void startReceiverThread() {
-		Runnable r = new Runnable() {
-			public void run() {
-				while (receiverThread != null) {
-					try {
-						con.sendCommand (OBEXConnection.GET, new byte[0]);
-						byte b[] = con.receiveCommand();
-						respCode = (int)b[0] & 0xff;
-						newData (OBEXConnection.parseHeaders(b, 3));
-						if (b[0] == (byte)0xa0) receiverThread = null;
-					} catch (Exception e) {
-						receiverThread = null;
-					}
-				}
-			}
-		};
+	private void receive() throws IOException {
+		while (true) {
+				con.sendCommand (OBEXConnection.GET, new byte[0]);
+				byte b[] = con.receiveCommand();
+				respCode = (int)(b[0] & 0xff);
+				newData (OBEXConnection.parseHeaders(b, 3));
+				if (b[0] == (byte)0xa0) break;
+		}
 		
-		receiverThread = new Thread (r);
-		receiverThread.start();
 	}
 	
 	/* (non-Javadoc)
@@ -203,7 +192,6 @@ public class OperationImpl implements Operation {
 		if (!opNeedsClosing) return;
 		try {
 			//Only relevant for Client-GET Operations
-			receiverThread = null;
 			this.con.sendCommand(OBEXConnection.CLOSE, new byte[] { 0x49, 0x00, 0x03 });
 			byte b[] = this.con.receiveCommand();
 			respCode = (int)b[0] & 0xff;
@@ -241,9 +229,15 @@ public class OperationImpl implements Operation {
 			d = new byte[len];
 			System.arraycopy(b, off, d, 0, len);
 			hs.setHeader(0x48, d);
-			con.sendCommand (OBEXConnection.PUT, OBEXConnection.hsToByteArray(hs));
+			byte[] b2 = OBEXConnection.hsToByteArray(hs);
+			con.sendCommand (OBEXConnection.PUT, b2);
 			hs = null;
+			//System.out.print ("Send put " + b2.length + " " + con.getMTU());
+			//for (int i = 0;i < b2.length && i < 30;i++) 
+			//	System.out.print (" " + Integer.toHexString((int)(b2[i] & 0xff)));
+			//System.out.println ();
 			d = con.receiveCommand();
+			//System.out.println ("Answer " + d);
 			if (d[0] != (byte)0x90) throw new IOException ("Error while sending PUT command " + Integer.toHexString(d[0] & 0xff));
 			respCode = (int)d[0] & 0xff;
 		}
@@ -307,7 +301,7 @@ public class OperationImpl implements Operation {
 
 	    public synchronized int read() throws IOException {
 	      if (closed == true) throw new IOException("Connection closed");
-	      if (opCode == OBEXConnection.GET && receiverThread == null && available() == 0) return -1;
+	      if (opCode == OBEXConnection.GET && available() == 0) return -1;
 	      if (opCode == OBEXConnection.PUT && available() == 0) return -1;
 	      waitForData();
 	      return (int)(buffer[readPos++] & 0xff);
@@ -315,7 +309,7 @@ public class OperationImpl implements Operation {
 
 	    public synchronized int read (byte[] b, int off, int len) throws IOException {
 	      if (closed == true) throw new IOException("Connection closed");;
-	      if (opCode == OBEXConnection.GET && receiverThread == null && available() == 0) return -1;
+	      if (opCode == OBEXConnection.GET && available() == 0) return -1;
 	      if (opCode == OBEXConnection.PUT && available() == 0) return -1;
 	      waitForData();
 	      int av = available();

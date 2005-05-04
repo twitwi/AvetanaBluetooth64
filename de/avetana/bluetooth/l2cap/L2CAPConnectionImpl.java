@@ -41,9 +41,6 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
 
   protected int m_transmitMTU=672;
   protected int m_receiveMTU=672;
-  //This buffer is used to store data when ready was called and data is available
-  private byte[] m_buffer = null;
-  private byte[] bint = null;
   private JSR82URL m_connectionURL;
 
   /**
@@ -52,7 +49,6 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
    */
   public L2CAPConnectionImpl(int fid) {
     super(fid);
-    m_buffer=null;
   }
 
   /**
@@ -63,7 +59,6 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
    */
   public L2CAPConnectionImpl(int fid, String addr) {
     super(fid,addr);
-    m_buffer=null;
   }
 
   /**
@@ -86,7 +81,6 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
     super(fid, addr);
     this.m_transmitMTU=transmit;
     this.m_receiveMTU=receive;
-    m_buffer=null;
   }
 
   /**
@@ -129,7 +123,6 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
    * @exception IOException if the connection is closed
      */
   public int getTransmitMTU() throws IOException{
-    if(closed) throw new IOException("The connection is closed!");
     return this.m_transmitMTU;
   }
 
@@ -142,7 +135,6 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
    * @exception IOException if the connection is closed
      */
   public int getReceiveMTU() throws IOException {
-    if(closed) throw new IOException("The connection is closed!");
     return this.m_receiveMTU;
   }
 
@@ -165,17 +157,12 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
    * @exception NullPointerException if <code>inBuf</code> is <code>null</code>
    */
   public synchronized int receive(byte[] inBuf) throws IOException, NullPointerException {
-    if(inBuf==null) throw new NullPointerException("The buffer is null!");
 
-    while (!ready()) {
-      if(closed) throw new IOException("Connection does not exists or was previously closed");
-      synchronized (this) { try { wait (50); } catch (Exception e) {} }
-    }
-
-    int rlen = m_buffer.length;
+  	byte[] b = read(0);
+  	
+    int rlen = b.length;
     if (rlen > inBuf.length) rlen = inBuf.length;
-    System.arraycopy(m_buffer, 0, inBuf, 0, rlen);
-    m_buffer = null;
+    System.arraycopy(b, 0, inBuf, 0, rlen);
     return rlen;
   }
 
@@ -187,16 +174,7 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
    * @exception IOException if the connection is closed
    */
   public synchronized boolean ready() throws IOException {
-    if(closed) throw new IOException("Connection does not exists or was previously closed");
-    if (m_buffer != null) return true;
-    if (bint == null || bint.length != m_receiveMTU) bint = new byte[m_receiveMTU];
-    int r = -1;
-    try { r = BlueZ.readBytesS(fid, bint, m_receiveMTU); } catch (Exception e) { throw new IOException (e.getMessage()); }
-    if (r >= 0) {
-      m_buffer = new byte[r];
-      System.arraycopy(bint, 0, m_buffer, 0, r);
-    } else if (r == -1) { close(); throw new IOException  ("Connection closed"); }
-    return (r >= 0);
+    return available() > 0;
   }
 
   /**

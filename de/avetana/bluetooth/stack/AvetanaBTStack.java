@@ -2,11 +2,9 @@ package de.avetana.bluetooth.stack;
 
 import de.avetana.bluetooth.connection.*;
 import de.avetana.bluetooth.sdp.*;
-import de.avetana.bluetooth.hci.HCIInquiryResult;
 import javax.bluetooth.*;
 import de.avetana.bluetooth.util.BTAddress;
 import javax.microedition.io.*;
-import java.util.Vector;
 
 /**
 * <b>COPYRIGHT:</b><br> (c) Copyright 2004 Avetana GmbH ALL RIGHTS RESERVED. <br><br>
@@ -103,11 +101,6 @@ public class AvetanaBTStack extends BluetoothStack {
     return BlueZ.encrypt(((BTConnection)conn).getConnectionID(), dev.getBTAddress().toString(), encrypt);
   }
 
-  public Vector Inquire(DiscoveryAgent agent) throws Exception{
-    HCIInquiryResult di = BlueZ.hciInquiry(devID, agent);
-    return di.getDevices();
-  }
-
   public BTConnection isConnected(RemoteDevice dev) {
     return BlueZ.myFactory.isConnected(dev);
   }
@@ -155,7 +148,7 @@ public class AvetanaBTStack extends BluetoothStack {
   }
 
   public Connection openRFCommConnection(JSR82URL url) throws Exception {
-    return de.avetana.bluetooth.rfcomm.RFCommConnection.createRFCommConnection(url);
+    return de.avetana.bluetooth.rfcomm.RFCommConnectionImpl.createRFCommConnection(url);
   }
 
   public Connection openL2CAPConnection(JSR82URL url) throws Exception {

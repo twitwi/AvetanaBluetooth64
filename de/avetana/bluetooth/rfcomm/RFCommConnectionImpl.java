@@ -1,6 +1,9 @@
-package de.avetana.bluetooth.connection;
+package de.avetana.bluetooth.rfcomm;
 
 import java.io.*;
+
+import de.avetana.bluetooth.connection.BTConnection;
+import de.avetana.bluetooth.connection.JSR82URL;
 import de.avetana.bluetooth.stack.BlueZ;
 import javax.microedition.io.*;
 
@@ -36,78 +39,46 @@ import javax.microedition.io.*;
  *
  * @author Julien Campana
  */
-public class BluetoothStream extends BTConnection implements StreamConnection {
+public class RFCommConnectionImpl extends BTConnection implements StreamConnection {
 
-  /**
-   * The buffer used to store received data
-   */
-  protected byte[] buffer;
 
-  /**
+/**
    * The own defined and implemented input stream.
    */
-  protected MInputStream inStream = null;
+  protected MInputStream inStream = new MInputStream();
 
   /**
    * The own defined and implemented output stream.
    */
-  protected MOutputStream outStream;
+  protected MOutputStream outStream = new MOutputStream();
 
-  /**
-   * If <code>true</code>, the connection was opened and the reading thread was started.
-   */
-  protected boolean isReading = false;
-
-  /**
-   * Constructs a new instance of BluetoothStream. Initializes the Input and OutputStream.
-   * @param fid An integer, which uniquely identifies the connection.
-   */
-  protected BluetoothStream(int fid) {
-    super(fid);
-    outStream = new MOutputStream();
+  protected RFCommConnectionImpl(int a_fid) {
+	super(a_fid);
   }
+	
+	  /**
+	 * @param fid
+	 * @param string
+	 */
+	public RFCommConnectionImpl(int fid, String string) {
+		super (fid, string);
+	}
 
-  /**
-   * Constructs a new instance of BluetoothStream. Initializes the InputStream, OutputStream.
-   * @param fid An integer, which uniquely identifies the connection.
-   * @param addr The address of the remote BT device
+/**
+   * Creates a new RFCOMM connection with a remote BT device.
+   * @param url The connection URL encapsulating all connection options
+   * @return An instance of RFCommConnection with manages the Output and InputStream connections streams
+   * @throws Exception
    */
-  protected BluetoothStream(int fid, String addr) {
-    super(fid, addr);
-    outStream = new MOutputStream();
-  }
+  public static RFCommConnectionImpl createRFCommConnection (JSR82URL url) throws Exception{
+    int fid = -1;
 
-  /**
-   * Starts to read the data received from the remote device
-   */
-  protected void startReading() {
-    inStream = new MInputStream();
-    Runnable r = new Runnable() {
-      public synchronized void run() {
-        byte[] b = new byte[1000];
-        isReading=true;
-        while (!closed) {
-          try {
-            int data = BlueZ.readBytesS(fid, b, b.length);
-            if (data > 0) inStream.addData(b, data);
-            else if (data == -1) inStream.close();
-            else this.wait(50);
-          } catch (Exception e) { closed = true; isReading = false; }
-        }
-      }
-    };
-    new Thread (r).start();
-  }
+    fid=BlueZ.openRFComm (url);
+    if(fid < 0) throw new Exception("Connection could not be created with remote device!");
 
-  /**
-   * Adds new data to the inputstream.<br>
-   * This method allows the user to directly access the nested MInputStream class. This can be useful
-   * if someone wants to offer a C-function which directly writes in the nested InputStream. But until then, this
-   * method is not used by the AvetanaBluetooth implementation.
-   * @param b A byte array representing the data.
-   */
-  public void newData (byte[] b) {
-    inStream.addData(b, b.length);
+    RFCommConnectionImpl conn =  null;
+    conn=new RFCommConnectionImpl (fid, url.getBTAddress().toString());
+    return conn;
   }
 
   /**
@@ -143,7 +114,6 @@ public class BluetoothStream extends BTConnection implements StreamConnection {
    * @return The inputstream used by this connection
    */
   public InputStream openInputStream() throws IOException  {
-    if(inStream == null) this.startReading();
     return inStream;
   }
 
@@ -153,54 +123,19 @@ public class BluetoothStream extends BTConnection implements StreamConnection {
    */
   protected class MInputStream extends InputStream {
 
-    byte[] buffer = new byte[100];
-    private int readPos = 0, writePos = 0;
-
-    public synchronized int available () {
-      return Math.max (0, writePos - readPos);
-    }
-
-    public synchronized void addData(byte[] b, int len) {
-      while (writePos + len > buffer.length) {
-        byte[] b2 = new byte[buffer.length * 2];
-        System.arraycopy(buffer, readPos, b2, 0, writePos - readPos);
-        buffer = b2;
-        writePos -= readPos;
-        readPos = 0;
-      }
-      System.arraycopy(b, 0, buffer, writePos, len);
-      writePos += len;
-      this.notify();
-    }
-
-    private synchronized void waitForData() throws IOException {
-      while (writePos <= readPos) {
-        if (closed == true) throw new IOException("Connection closed");
-        try {
-          this.wait(50);
-        }
-        catch (Exception e) {
-        }
-      }
+    public synchronized int available () throws IOException {
+      return RFCommConnectionImpl.this.available();
     }
 
     public synchronized int read() throws IOException {
-      waitForData();
-      return (int)(buffer[readPos++] & 0xff);
+    		byte b[] = RFCommConnectionImpl.this.read(1);
+    		return (int)b[0];
     }
 
     public synchronized int read (byte[] b, int off, int len) throws IOException {
-      waitForData();
-      int av = available();
-      int r = av > b.length - off ? b.length - off : av;
-      r = r > len ? len : r;
-      System.arraycopy(buffer, readPos, b, off, r);
-      readPos += r;
-      return r;
-    }
-
-    public synchronized void close() {
-      closed = true;
+  	  byte b2[] = RFCommConnectionImpl.this.read(len);
+  	  System.arraycopy(b2, 0, b, off, b2.length);
+      return b2.length;
     }
 
   }

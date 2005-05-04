@@ -1,8 +1,6 @@
 package de.avetana.bluetooth.stack;
 
 
-import java.util.Vector;
-
 import javax.bluetooth.*;
 import de.avetana.bluetooth.connection.*;
 import javax.microedition.io.Connection;
@@ -85,13 +83,6 @@ public abstract class BluetoothStack {
    * for a specified connection and its related remote device.
    */
   public final static int CON_TRUSTED_POS=4;
-
-  /**
-   * Performs an HCI Inquiry and stores the list of available remote devices.
-   * @return A vector of RemoteDEvice objects, containing all remote devices available in the device environment.
-   * @throws Exception If an error occured
-   */
-  public abstract Vector Inquire(DiscoveryAgent agent) throws Exception;
 
   /**
    * Returns the instance of BluetoothStack currently used. The BluetoothStack object must

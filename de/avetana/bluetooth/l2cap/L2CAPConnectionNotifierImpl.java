@@ -95,6 +95,7 @@ public class L2CAPConnectionNotifierImpl extends ConnectionNotifier implements L
     if (m_fid == -2) throw  new IOException ("Already waiting to be connected or connected");
   	m_fid = -2;
   	failEx = null;
+  	isClosed = false;
   	try {
       m_serviceHandle=BlueZ.createService((LocalServiceRecord)myRecord);
       if(m_serviceHandle < 0) throw new Exception();
@@ -125,7 +126,7 @@ public class L2CAPConnectionNotifierImpl extends ConnectionNotifier implements L
       m_fid = 0;
       return con;
     } else {
-    		m_fid = 0;
+    		close();
     		if (failEx != null) throw failEx;
     		throw new IOException ("Service Revoked");
     }

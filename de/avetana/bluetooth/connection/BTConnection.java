@@ -1,5 +1,8 @@
 package de.avetana.bluetooth.connection;
 
+import java.io.IOException;
+import java.util.Vector;
+
 import javax.bluetooth.*;
 import de.avetana.bluetooth.stack.*;
 
@@ -64,11 +67,18 @@ public class BTConnection {
   protected RemoteDevice m_remote;
 
   /**
+   * This is where incoming data is buffered
+   */
+  
+  protected Vector dataBuffer;
+  
+  /**
    * Creates a new instance of BTConnection and set the value of the connection ID
    * @param a_fid The connection ID
    */
   protected BTConnection(int a_fid) {
     fid=a_fid;
+    dataBuffer = new Vector();
     BlueZ.myFactory.addConnection(this);
   }
 
@@ -112,11 +122,73 @@ public class BTConnection {
    * Closes the current connection
    */
   public synchronized void close() {
+    closed=true;
     if  (fid > 0) {
       BlueZ.closeConnectionS(fid);
       BlueZ.myFactory.removeConnection(this);
     }
-    closed=true;
     fid = 0;
+    notifyAll();
   }
+	
+	/**
+	 * 
+	 * Called from BlueZ when new data has arrived for that connection
+	 * @param data
+	 */
+	public synchronized void newData(byte[] data) {
+		dataBuffer.add (data);
+		notifyAll();
+	}
+	
+	/**
+	 * Read the most recent packet of data (L2CAP) or all data available < len for RFComm
+	 * 
+	 * @param len 0 for L2CAP reading of one packet or > 0 for RFComm to specify the maximum number of bytes requested
+	 * @return array with data.
+	 * @throws IOException if the connection is closed.
+	 */
+	
+	protected synchronized byte[] read(int len) throws IOException {
+		while (dataBuffer.size() == 0) {
+			try { wait (100); } catch (Exception e) {}
+			if (closed) throw new IOException ("Connection closed");
+		}
+		
+		if (len == 0) { //L2CAP return uppermost packet
+			byte[] b = (byte[])dataBuffer.elementAt(0);
+			dataBuffer.removeElementAt(0);
+			return b;
+		}
+		
+		byte[] bret = new byte[Math.min (available(), len)];
+		int pos = 0;
+		
+		while (pos < bret.length) {
+			byte[] b = (byte[])dataBuffer.elementAt(0);
+		
+			if (b.length + pos > len) { // RFComm and the uppermost packet is longer than what is requested
+				int remain = len - pos;
+				byte b3[] = new byte[b.length - remain];
+				System.arraycopy (b, 0, bret, pos, remain);
+				System.arraycopy (b, remain, b3, 0, b3.length);
+				dataBuffer.setElementAt(b3, 0);
+				pos += remain;
+			} else { // RFComm and len is longer than or equal the data available
+				System.arraycopy(b, 0, bret, pos, b.length);
+				dataBuffer.removeElementAt(0);
+				pos += b.length;
+			}
+		}
+		return bret;
+	}
+	
+	protected synchronized int available() throws IOException {
+		if (closed && dataBuffer.size() == 0)  throw new IOException ("Connection closed");
+		int size = 0;
+		for (int i = 0;i < dataBuffer.size();i++)
+			size += ((byte[])dataBuffer.elementAt(i)).length;
+		return size;
+	}
+	
 }

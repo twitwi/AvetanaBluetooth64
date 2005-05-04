@@ -132,7 +132,28 @@
     <build value="35" date="2005-03-18" time="15:07">
 	 Added patches to compile in Java5
     </build>
-    
+   <build value="36" date="2005-03-18" time="15:07">
+	 Update in OBEX-GET Client and Server to handle large files.
+	 Updates in Windows native code to prevent Threading issues when sending and receiveing small packets.
+    </build>    
+   <build value="37" date="2005-04-11" time="23:07">
+	  Fixed a Bug in windows that somtimes caused UUID mismatches in service searches.
+	  InqTest now supports short UUIDs
+    </build>    
+   <build value="38" date="2005-04-12" time="09:47">
+	  Added support for Stack down events in Windows. All notifiers and connections will get closed.
+    </build>    
+   <build value="39" date="2005-04-12" time="09:47">
+	 Fixed a problem in Windows native L2CAP code where a threading issue could cause the wrong packet to be read.
+    </build>    
+   </revision>
+   <revision value="1">
+    <build value="0" date="2005-04-27">
+     Moved all RFComm classes to de.avetana.bluetooth.rfcomm and deleted LocalConnection and LocalConnectionNotifier.
+     Changed the data-receiving model from polling Java->JNI to having JNI notify Java of new incoming data. This data is stored
+     in a Vector in the BTConnection class from where it is used in either RFCommConenction ot L2CAPConenction.
+     Added support for native inquiries in MacOS X 10.4. Many native changes for OS X.
+    </build>
    </revision>
   </version>
 </avetanaBluetooth>

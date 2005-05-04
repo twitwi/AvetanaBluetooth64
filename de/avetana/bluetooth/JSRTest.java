@@ -13,6 +13,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -1005,7 +1006,14 @@ public class JSRTest extends JFrame implements ActionListener {
 							for (int i = 0;i < hl.length;i++) {
 								System.out.println ("Received header " + hl[i] + " : " + hs.getHeader(hl[i]));
 							}
-							op.openOutputStream().write ("Test Message from avetanaBluetooth".getBytes());
+						op.openOutputStream().write ("Test Message from avetanaBluetooth".getBytes());
+						/*InputStream is = new FileInputStream ("/Users/gmelin/eclipse-workspace/avetanaBluetooth/avetanabt/de/avetana/bluetooth/JSRTest.java");
+						byte b[] = new byte[1000];
+						int len = 0;
+						while ((len = is.read (b)) > 0) {
+							op.openOutputStream().write(b, 0, len);
+							System.out.println ("Added " + len + " bytes to OK");
+						}*/
 						HeaderSet set = op.getReceivedHeaders();
 						set.setHeader(HeaderSet.TYPE, "text/plain");
 						set.setHeader(HeaderSet.NAME, "msg.txt");

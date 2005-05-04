@@ -1,7 +1,11 @@
-package de.avetana.bluetooth.connection;
+package de.avetana.bluetooth.rfcomm;
 
 
 import javax.microedition.io.*;
+
+import de.avetana.bluetooth.connection.BadURLFormat;
+import de.avetana.bluetooth.connection.ConnectionNotifier;
+import de.avetana.bluetooth.connection.JSR82URL;
 import de.avetana.bluetooth.stack.BlueZ;
 import de.avetana.bluetooth.sdp.*;
 import javax.bluetooth.*;
@@ -42,7 +46,7 @@ import java.io.IOException;
  */
 
 
-public class LocalConnectionNotifier extends ConnectionNotifier implements StreamConnectionNotifier{
+public class RFCommConnectionNotifierImpl extends ConnectionNotifier implements StreamConnectionNotifier{
 
 
   /**
@@ -51,7 +55,7 @@ public class LocalConnectionNotifier extends ConnectionNotifier implements Strea
    * @throws BadURLFormat If the format of the URL is no correct
    * @throws Exception If the service record is not valid.
    */
-  public LocalConnectionNotifier(JSR82URL url) throws BadURLFormat, Exception {
+  public RFCommConnectionNotifierImpl(JSR82URL url) throws BadURLFormat, Exception {
   	    parsedURL=url;
     if(parsedURL.getBTAddress()!=null) throw new BadURLFormat("This is not an sdp server URL!");
     String m_serviceName=(String)parsedURL.getParameter("name");
@@ -74,6 +78,7 @@ public class LocalConnectionNotifier extends ConnectionNotifier implements Strea
     if (m_fid == -2) throw  new IOException ("Already waiting to be connected");
   	m_fid = -2;
   	failEx = null;
+  	isClosed = false;
   	
       try {
         m_serviceHandle=BlueZ.createService((LocalServiceRecord)myRecord);
@@ -97,13 +102,12 @@ public class LocalConnectionNotifier extends ConnectionNotifier implements Strea
       
       if (m_fid > 0) {
       	removeNotifier();
-        LocalConnection con=new LocalConnection(m_fid);
+        RFCommConnectionImpl con=new RFCommConnectionImpl(m_fid);
         con.setRemoteDevice(m_remote);
-        con.setConnectionURL(parsedURL);
         m_fid = 0;
         return con;
       } else {
-        m_fid = 0;
+      	close();
         if (failEx != null) throw failEx;
         throw new IOException ("Service Revoked");
       }

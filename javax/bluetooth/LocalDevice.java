@@ -38,7 +38,7 @@ import java.util.*;
  * The <code>LocalDevice</code> class defines the basic functions of the Bluetooth manager.  The
  * Bluetooth manager provides the lowest level of interface possible
  * into the Bluetooth stack.  It provides access to and control of the local Bluetooth device. <P>
- * @see de.avetana.bluetooth.connection.LocalConnectionNotifier
+ * @see de.avetana.bluetooth.rfcomm.RFCommConnectionNotifierImpl
  * @see de.avetana.bluetooth.sdp.LocalServiceRecord
  * @author Julien Campana
  */

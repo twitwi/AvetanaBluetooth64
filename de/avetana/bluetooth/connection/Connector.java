@@ -37,7 +37,8 @@ import javax.bluetooth.BluetoothStateException;
 import de.avetana.bluetooth.l2cap.*;
 import de.avetana.bluetooth.obex.*;
 
-import de.avetana.bluetooth.rfcomm.RFCommConnection;
+import de.avetana.bluetooth.rfcomm.RFCommConnectionImpl;
+import de.avetana.bluetooth.rfcomm.RFCommConnectionNotifierImpl;
 import de.avetana.bluetooth.stack.*;
 import javax.microedition.io.*;
 
@@ -71,10 +72,10 @@ public class Connector {
         try {
           JSR82URL myURL=new JSR82URL(url);
           if(myURL.getBTAddress()==null) {
-            if(myURL.getProtocol()==JSR82URL.PROTOCOL_RFCOMM) return new LocalConnectionNotifier(myURL);
+            if(myURL.getProtocol()==JSR82URL.PROTOCOL_RFCOMM) return new RFCommConnectionNotifierImpl(myURL);
             else if(myURL.getProtocol()==JSR82URL.PROTOCOL_L2CAP) return new L2CAPConnectionNotifierImpl(myURL);
             else if(myURL.getProtocol() == JSR82URL.PROTOCOL_OBEX) 
-            return new SessionNotifierImpl (new LocalConnectionNotifier (myURL));
+            return new SessionNotifierImpl (new RFCommConnectionNotifierImpl (myURL));
           }
           else {
             if(myURL.getProtocol() == JSR82URL.PROTOCOL_RFCOMM)
@@ -82,7 +83,7 @@ public class Connector {
             else if(myURL.getProtocol() == JSR82URL.PROTOCOL_L2CAP)
               return stack.openL2CAPConnection(myURL);
             if(myURL.getProtocol() == JSR82URL.PROTOCOL_OBEX)
-                return new OBEXConnection ((RFCommConnection)stack.openRFCommConnection(myURL));
+                return new OBEXConnection ((RFCommConnectionImpl)stack.openRFCommConnection(myURL));
           }
         }
         catch (BluetoothStateException e) { throw new IOException("" + e); }

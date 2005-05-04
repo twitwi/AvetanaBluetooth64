@@ -88,6 +88,21 @@ public class ConnectionFactory {
   public Vector getConnections() {return m_connections;}
 
   /**
+   * Returns the connection for a given fid
+   * 
+   * @param fid
+   * @return
+   */
+  public BTConnection getConnectionForFID(int fid) {
+  	for (int i = 0;i < m_connections.size();i++) {
+  		if (((BTConnection)m_connections.elementAt(i)).getConnectionID() == fid) return (BTConnection)m_connections.elementAt(i);
+  		
+  	}
+  		
+  	return null;
+  }
+  
+  /**
    * Returns the list of all registered notifiers.
    * @return A vector storing all registered notifiers
    */

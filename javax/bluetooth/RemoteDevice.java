@@ -29,6 +29,7 @@ import java.io.*;
 import java.util.*;
 import javax.microedition.io.*;
 import de.avetana.bluetooth.connection.*;
+import de.avetana.bluetooth.rfcomm.RFCommConnectionNotifierImpl;
 import de.avetana.bluetooth.stack.BluetoothStack;
 import de.avetana.bluetooth.util.BTAddress;
 import de.avetana.bluetooth.obex.*;
@@ -244,7 +245,7 @@ public class RemoteDevice {
         RemoteDevice dev=null;
 		if (conn instanceof BTConnection) dev = ((BTConnection)conn).getRemoteDevice();
 		else if (conn instanceof OBEXConnection) dev = ((OBEXConnection)conn).getRemoteDevice();
-		else if (conn instanceof SessionNotifierImpl) dev = ((LocalConnectionNotifier)((SessionNotifierImpl)conn).getConnectionNotifier()).getRemoteDevice();
+		else if (conn instanceof SessionNotifierImpl) dev = ((RFCommConnectionNotifierImpl)((SessionNotifierImpl)conn).getConnectionNotifier()).getRemoteDevice();
 		else if (conn instanceof ConnectionNotifier) dev = ((ConnectionNotifier)conn).getRemoteDevice();
 		else throw new ClassCastException ("Connection type not supported");
         if(dev==null) throw new IOException("The remote device could not be determined!");

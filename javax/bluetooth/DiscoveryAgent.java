@@ -110,10 +110,7 @@ public class DiscoveryAgent {
     private BluetoothStack bluetoothStack;
     private Vector listeners;
     private Vector cachedRemoteDevices;
-    private Vector foundRemoteDevices;
-    private Hashtable remoteDevices;
     private boolean isInquiring;
-    private Exception inquiringException=null;
     private int transactionID = 0;
     /**
      * Creates a <code>DiscoveryAgent</code> object.
@@ -124,7 +121,6 @@ public class DiscoveryAgent {
         this.bluetoothStack = bluetoothStack;
         this.listeners = new Vector();
         this.cachedRemoteDevices = new Vector();
-        this.remoteDevices = new Hashtable();
         this.isInquiring = false;
     }
 
@@ -191,7 +187,7 @@ public class DiscoveryAgent {
     		if (listener != null) { if (!listeners.contains(listener)) listeners.addElement(listener); }
     		
         if (isInquiring) {
-            Enumeration remoteDevices = foundRemoteDevices.elements();
+            Enumeration remoteDevices = cachedRemoteDevices.elements();
             while (remoteDevices.hasMoreElements()) {
                 RemoteDevice remoteDevice = (RemoteDevice)remoteDevices.nextElement();
                 if ((remoteDevice != null) && (listener != null))
@@ -200,28 +196,18 @@ public class DiscoveryAgent {
             return true;
         }
         else {
-          inquiringException=null;
           Runnable r=new Runnable() {
             public void run() {
               isInquiring = true;
-              foundRemoteDevices = new Vector();
+              cachedRemoteDevices = new Vector();
               //bluetoothStack.registerDiscoveryAgent(DiscoveryAgent.this);
               try {
-                  foundRemoteDevices = bluetoothStack.Inquire(DiscoveryAgent.this);
-                  cachedRemoteDevices=new Vector();
-                  for(int i=0;i<foundRemoteDevices.size();i++) {
-                  	cachedRemoteDevices.addElement(foundRemoteDevices.elementAt(i));
-                    RemoteDevice remote=(RemoteDevice)foundRemoteDevices.elementAt(i);
-                    remoteDevices.put(remote.getBluetoothAddress(),remote);
-                    for(int u=0;u<listeners.size();u++)
-                      ((DiscoveryListener)listeners.elementAt(u)).deviceDiscovered(remote,remote.getDeviceClass());
-                  }
+                  boolean ret = BlueZ.hciInquiry(0, DiscoveryAgent.this);
                   isInquiring=false;
                   for(int u=0;u<listeners.size();u++)
-                      ((DiscoveryListener)listeners.elementAt(u)).inquiryCompleted(DiscoveryListener.INQUIRY_COMPLETED);
+                      ((DiscoveryListener)listeners.elementAt(u)).inquiryCompleted(ret == true ? DiscoveryListener.INQUIRY_COMPLETED : DiscoveryListener.INQUIRY_ERROR);
               }
               catch (Exception e) {
-              	inquiringException=e;
               	isInquiring = false;
                 for(int u=0;u<listeners.size();u++)
                     ((DiscoveryListener)listeners.elementAt(u)).inquiryCompleted(DiscoveryListener.INQUIRY_ERROR);
@@ -229,11 +215,7 @@ public class DiscoveryAgent {
             }
           };
           new Thread(r).start();
-          if(inquiringException!=null) {
-             String exc="Exception: DiscoveryAgent.startInquiry(): " + inquiringException;
-             inquiringException=null;
-             throw new BluetoothStateException(exc);
-          }
+          
           return true;
         }
     }
@@ -266,14 +248,12 @@ public class DiscoveryAgent {
      *
      */
 
-    public void deviceDiscovered (RemoteDevice d) {
-      this.foundRemoteDevices.addElement(d);
+    public synchronized void deviceDiscovered (RemoteDevice d) {
+      cachedRemoteDevices.addElement(d);
       for (int i = 0;i < listeners.size();i++) {
         ((DiscoveryListener)listeners.elementAt(i)).deviceDiscovered(d, d.getDeviceClass());
       }
     }
-
-    /*  End of the method cancelInquiry */
 
     /**
      * Searches for services on a remote Bluetooth device that have all the
@@ -390,11 +370,13 @@ public class DiscoveryAgent {
             m_listener.setResponse(0);
           for(int i=0;i<cachedRemoteDevices.size();i++) {
             RemoteDevice d=(RemoteDevice)cachedRemoteDevices.elementAt(i);
-            String addr=d.getBluetoothAddress();
-            try {addr=BTAddress.transform(addr);}catch(Exception ex) {}
             try {
-              BlueZ.searchServices(addr,new byte[][] { uuid.toByteArray() },null,m_listener);
-            }catch(Exception ex) {
+            	  m_listener.searchFinished = false; 
+              searchServices(null, new UUID[] { uuid }, d, m_listener);
+              while (!m_listener.searchFinished) {
+              	synchronized (this) { wait (100); }
+              }
+            }catch(Exception ex) {     	
               ex.printStackTrace();
               m_listener.setResponse(0);
             }
@@ -403,15 +385,15 @@ public class DiscoveryAgent {
         }
       };
       new Thread(r).start();
-      int timeout=0;
-      while(m_listener.resp==-1 && timeout<m_timeout) {
+      while(m_listener.resp==-1) {
         try {
           Thread.sleep(100);
-          timeout+=100;
         }catch(Exception ex) { return null;}
       }
-      if(timeout>m_timeout) throw new TimeOutException();
-      if(m_remoteServ.size()!=1) throw new ServiceFoundException(m_remoteServ.size());
+      //if(timeout>m_timeout) throw new TimeOutException();
+      if(m_remoteServ.size()!=1) {
+      	throw new ServiceFoundException(m_remoteServ.size());
+      }
 
       RemoteServiceRecord serv=(RemoteServiceRecord)m_remoteServ.elementAt(0);
       String back=null;
@@ -421,26 +403,24 @@ public class DiscoveryAgent {
       return back;
     }
 
-
-
-    public RemoteDevice getRemoteDevice(String remoteAddress)
-        { return (RemoteDevice)remoteDevices.get(remoteAddress); }
-
-
     private class SelectListener implements DiscoveryListener {
-      private int resp=-1;
+      protected boolean searchFinished;
+	private int resp=-1;
 
       public SelectListener() {}
 
       public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {}
       public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
+      	System.out.println ("Adding service found " + servRecord.length);
         for(int i=0;i<servRecord.length;i++) {
           RemoteServiceRecord myRec=(RemoteServiceRecord)servRecord[i];
           m_remoteServ.addElement(myRec);
         }
       }
 
-      public void serviceSearchCompleted(int transID, int respCode) {}
+      public void serviceSearchCompleted(int transID, int respCode) {
+      	searchFinished = true;
+      }
 
       public void setResponse(int i) {resp=i;}
 

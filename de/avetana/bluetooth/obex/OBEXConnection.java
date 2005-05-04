@@ -284,8 +284,7 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 		}
 /*		for (int i = 0;i < data.length;i++)
 			System.out.print (" " + Integer.toHexString(0xff & data[i] ));
-		System.out.println();
-		System.out.print ("Data received ");*/
+		System.out.println(); */
 		return data;
 	}
 	
