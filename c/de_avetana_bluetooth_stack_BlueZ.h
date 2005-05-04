@@ -39,7 +39,7 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciCloseDevice
  * Method:    hciInquiry
  * Signature: (IIIJLjavax/bluetooth/DiscoveryAgent;)Lde/avetana/bluetooth/hci/HCIInquiryResult;
  */
-JNIEXPORT jobject JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciInquiry
+JNIEXPORT jboolean JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciInquiry
   (JNIEnv *, jclass, jint, jint, jint, jlong, jobject);
 
 /*
@@ -103,15 +103,15 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_closeConnection
  * Method:    readBytes
  * Signature: (I[BI)I
  */
-JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_readBytes
-  (JNIEnv *, jclass, jint, jbyteArray, jint);
+JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_readBytes
+  (JNIEnv *, jclass, jint, jint);
 
 /*
  * Class:     de_avetana_bluetooth_stack_BlueZ
  * Method:    writeBytes
  * Signature: (I[BII)V
  */
-JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_writeBytes
+JNIEXPORT int JNICALL Java_de_avetana_bluetooth_stack_BlueZ_writeBytes
   (JNIEnv *, jclass, jint, jbyteArray, jint, jint);
 
 /*

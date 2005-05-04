@@ -101,7 +101,7 @@ int my_sdp_service_search_attr_req(JNIEnv* env, jclass jobj, sdp_session_t *sess
                                    sdp_attrreq_type_t reqtype, const sdp_list_t *attrids, sdp_list_t **rsp,
                                    sdp_list_t *attr_list, jstring addr, jint transID);
 
-int openBTConnection(const char *name, int channel, int type, int master, int auth, int encrypt);
+int openBTConnection(JNIEnv *env, const char *name, int channel, int type, int master, int auth, int encrypt);
 
 /**
  * Julien Campana: These functions aim to extract the lenght of an attribute (without retrieving
@@ -288,7 +288,7 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciCloseDevice
  * available devices and saves the result into a specific Java-Object. Then and only then, the Listener
  * becomes a notification message.
  */
-JNIEXPORT jobject JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciInquiry
+JNIEXPORT jboolean JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciInquiry
   (JNIEnv *env, jclass obj, jint dd, jint length, jint max_num_rsp, jlong flags, jobject agent)
 {
 	/* Perform an HCI inquiry - result is returned as a */
@@ -296,7 +296,7 @@ JNIEXPORT jobject JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciInquiry
 
 	jclass ii_cls, iid_cls, ba_cls;
 	jmethodID ii_con_id, ii_add_id, iid_con_id, ba_con_id;
-	jobject info, info_dev, bdaddr;
+	jobject info_dev, bdaddr;
 	jvalue iid_args[5];
 
 	int num_rsp, i;
@@ -311,22 +311,18 @@ JNIEXPORT jobject JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciInquiry
 	if (num_rsp < 0)
 	{
 		throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_hciInquiry: Inquiry failed");
-		return 0;
+		return false;
 	}
 
 	inquiry_info *inq_info_bak = inq_info;
 
-	/* Create a new instance of InquiryInfo */
-	ii_cls = env->FindClass("de/avetana/bluetooth/hci/HCIInquiryResult");
-	ii_con_id = env->GetMethodID(ii_cls, "<init>", "(B)V");
-	ii_add_id = env->GetMethodID(ii_cls, "addDevice", "(Ljavax/bluetooth/RemoteDevice;)V");
-	info = env->NewObject(ii_cls, ii_con_id, num_rsp);
+	ii_cls = env->FindClass("javax/bluetooth/DiscoveryAgent");
+	ii_add_id = env->GetMethodID(ii_cls, "deviceDiscovered", "(Ljavax/bluetooth/RemoteDevice;)V");
 
-	/* For each of the responses, create a new InquiryInfoDevice object */
-	/* and add it to the InquiryInfo class.                             */
+	/* For each of the responses, create a new RemoteDevice object */
+	/* and add it to the DiscoveryAgent instance.                 */
 	iid_cls = env->FindClass("javax/bluetooth/RemoteDevice");
 	iid_con_id = env->GetMethodID(iid_cls, "<init>", "(Ljava/lang/String;BBBSI)V");
-//	ba_cls = env->FindClass("com/appliancestudio/jbluez/BTAddress");
 
 	for (i=0; i<num_rsp; i++)
 	{
@@ -344,11 +340,11 @@ JNIEXPORT jobject JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciInquiry
 //		iid_args[5].i = (jint)((inq_info->dev_class[0] & 0xfc) | ((inq_info->dev_class[1] & 0x1f) << 8) | ((inq_info->dev_class[2] & 0x3ff) << 13));
 		iid_args[5].i = (jint)((inq_info->dev_class[0] & 0xff) | ((inq_info->dev_class[1] & 0xff) << 8) | ((inq_info->dev_class[2] & 0xff) << 16));
 		info_dev = env->NewObjectA(iid_cls, iid_con_id, iid_args);
-		env->CallVoidMethod(info, ii_add_id, info_dev);
+		env->CallVoidMethod(agent, ii_add_id, info_dev);
 		inq_info++;
 	}
 	free(inq_info_bak);
-	return info;
+	return true;
 }
 
 /**
@@ -709,7 +705,7 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_openRFCommNative
    (JNIEnv *env, jclass obj, jstring bdaddr_jstr, jint channel, jboolean master, jboolean auth, jboolean encrypt) {
   jboolean fbol = 1;
   const char *name = env->GetStringUTFChars(bdaddr_jstr, &fbol);
-  return (jint)openBTConnection(name, channel, BTPROTO_RFCOMM, (int)master,(int)auth, (int)encrypt);
+  return (jint)openBTConnection(env, name, channel, BTPROTO_RFCOMM, (int)master,(int)auth, (int)encrypt);
  }
 
  /**
@@ -816,7 +812,11 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_openRFCommNative
      return 0;
 	 }
    // R
-	 
+
+   jclass blueZ = env->FindClass("de/avetana/bluetooth/stack/BlueZ");
+   jmethodID ssmeth = env->GetStaticMethodID(blueZ, "startReaderThread", "(II)V");
+	 env->CallStaticVoidMethod(blueZ, ssmeth, (jint)s, (jint)opts.imtu);
+
    jobject rec = env->NewObject(service_cls, service_constructor, s, (jint)opts.imtu, (jint)opts.omtu);
    return rec;
  }
@@ -827,7 +827,7 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_openRFCommNative
   * open RFCOMM connections
   * @return The file ID for this connection
   */
-int openBTConnection(const char *name, int channel, int type, int master, int auth, int encrypt) {
+int openBTConnection(JNIEnv *env, const char *name, int channel, int type, int master, int auth, int encrypt) {
    char *bdaddr_str;
    bdaddr_t bdaddr;
    int fd;
@@ -887,6 +887,10 @@ int openBTConnection(const char *name, int channel, int type, int master, int au
      return err;
    }
 
+   jclass blueZ = env->FindClass("de/avetana/bluetooth/stack/BlueZ");
+   jmethodID ssmeth = env->GetStaticMethodID(blueZ, "startReaderThread", "(II)V");
+	 env->CallStaticVoidMethod(blueZ, ssmeth, (jint)fd, (jint)1000);
+
    /* Return the handle */
    return fd;
  }
@@ -906,40 +910,51 @@ int openBTConnection(const char *name, int channel, int type, int master, int au
   * With L2CAP connections, the value of "len" is typically 672. The BluetoothStream class try to read 1000
   * bytes each 200 milliseconds.
   */
- JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_readBytes
-   (JNIEnv *env, jclass obj, jint fd, jbyteArray arr, jint len) {
+ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_readBytes
+   (JNIEnv *env, jclass obj, jint fd, jint mtu) {
 
    fd_set fds;
    int rlen = 0;
-   jbyte *c = (jbyte *)malloc (len);
+   jbyte *c = (jbyte *)malloc (mtu);
    int sel;
 	 struct pollfd pfd;
-	 
 	 pfd.fd = fd;
 	 pfd.events = POLLIN | POLLERR | POLLHUP | POLLNVAL;
 
-   sel = poll(&pfd, 1, 20);
-   if (sel == -1 || (sel == 1 && ((pfd.revents & 0x10) == 0x10))) { // Error case
-     free (c);
-		 return -1;
-   } else if(sel > 0) { //Data is available (inc. 0-length packets)
-//	    printf ("Poll returned %X\n", pfd.revents);
-     rlen = read (fd, c, len);
-//		 printf ("Returning data from packet with size %d %d\n", rlen, sel);
-   } else rlen = -2; //No data available
+	 jclass cls=env->FindClass("de/avetana/bluetooth/stack/BlueZ");
+   jmethodID cclosed=env->GetStaticMethodID(cls,
+                                         "connectionClosed",
+                                         "(I)V");
+   jmethodID newData=env->GetStaticMethodID(cls,
+                                         "newData",
+                                         "([BI)I");
+
 	 
-   if (rlen > 0) {
-     env->SetByteArrayRegion(arr, 0, rlen, c);
-   }
-	 free (c);
-   return rlen;
+	 while (true) {
+
+	   sel = poll(&pfd, 1, 20);
+   	 if (sel == -1 || (sel == 1 && ((pfd.revents & 0x30) != 0))) { // Error case
+				break;
+     } else if(sel > 0) { //Data is available (inc. 0-length packets)
+	     //printf ("Poll returned %X\n", pfd.revents);
+       rlen = read (fd, c, mtu);
+		   jbyteArray arr = env->NewByteArray(rlen);
+			 //printf ("Read %d %d\n", rlen, arr);
+			 env->SetByteArrayRegion(arr, 0, rlen, (jbyte *)c);
+	     jint ret = env->CallStaticIntMethod(cls, newData, arr, (int)fd);
+			 if (ret != 1) break;
+   	} 
+	 }
+
+   	free (c);
+    env->CallStaticVoidMethod(cls, cclosed, (int)fd);
 
  }
 
  /**
   * Write bytes.
   */
-JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_writeBytes
+JNIEXPORT int JNICALL Java_de_avetana_bluetooth_stack_BlueZ_writeBytes
   (JNIEnv *env, jclass obj, jint fd, jbyteArray b, jint off, jint len)
 {
   jbyte *bytes = env->GetByteArrayElements(b, 0);
@@ -949,11 +964,11 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_writeBytes
   while(done < len) {
 	int count = write (fd, (char *)(bytes+off+done), len-done);
 
-	if (count <= 0) {
+	if (count < 0) {
 	  env->ReleaseByteArrayElements(b, bytes, 0);
 
 	  env->ThrowNew(env->FindClass("java/io/IOException"), "Failed to write");
-		return;
+		return 0;
 	}
 
 	done += count;
@@ -962,9 +977,14 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_writeBytes
   if (len == 0) { 
 	  int ret = write (fd, "foo", 0);
 	  printf ("Wrote 0-length packet %d\n", ret);
+	  if (ret < 0) {
+	  	env->ThrowNew(env->FindClass("java/io/IOException"), "Failed to write");
+		return 0;
+	  }
   }
 
   env->ReleaseByteArrayElements(b, bytes, 0);
+  return 1;
 }
 
  /**
@@ -1473,8 +1493,14 @@ int listenL2CAP(JNIEnv *env, int psm, int master, int auth, int encrypt, int omt
                                          "connectionEstablished",
                                          "(IIILjava/lang/String;)Z");
   jboolean jb = env->CallStaticBooleanMethod(cls, mid, (int)nfd, psm, 0,jBTAddr);
-  if (jb != 0) return nfd;
-  else {
+  if (jb != 0) {
+   jclass blueZ = env->FindClass("de/avetana/bluetooth/stack/BlueZ");
+   jmethodID ssmeth = env->GetStaticMethodID(blueZ, "startReaderThread", "(II)V");
+	 env->CallStaticVoidMethod(blueZ, ssmeth, (jint)nfd, (jint)opts.imtu);
+
+		return nfd;
+  }
+	else {
     close (nfd);
   }
   return -1;
@@ -1525,8 +1551,15 @@ int listenRFCOMM(JNIEnv *env, int channel, int master, int auth, int encrypt) {
                                          "(IIILjava/lang/String;)Z");
   jboolean jb = env->CallStaticBooleanMethod(cls, mid, (int)nfd, channel,1, jBTAddr);
   close(fd);
-  if (jb != 0) return nfd;
-  else close (nfd);
+  if (jb != 0) {
+   jclass blueZ = env->FindClass("de/avetana/bluetooth/stack/BlueZ");
+   jmethodID ssmeth = env->GetStaticMethodID(blueZ, "startReaderThread", "(II)V");
+	 env->CallStaticVoidMethod(blueZ, ssmeth, (jint)nfd, (jint)1000);
+
+		return nfd;
+  }
+	else close (nfd);
+
   return -1;
 }
 
