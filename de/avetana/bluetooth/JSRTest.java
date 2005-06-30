@@ -50,6 +50,7 @@ import de.avetana.bluetooth.connection.BTConnection;
 import de.avetana.bluetooth.connection.ConnectionNotifier;
 import de.avetana.bluetooth.connection.JSR82URL;
 import de.avetana.bluetooth.hci.Rssi;
+import de.avetana.bluetooth.hci.LinkQuality;
 import de.avetana.bluetooth.l2cap.L2CAPConnectionNotifierImpl;
 import de.avetana.bluetooth.sdp.SDPConstants;
 import de.avetana.bluetooth.util.BTAddress;
@@ -633,15 +634,17 @@ public class JSRTest extends JFrame implements ActionListener {
    	 RemoteDevice rd = null;
    	 String name = "unknown";
    	 int rssi = 0;
+	 int lq = 0;
    	 try {
      	rd = RemoteDevice.getRemoteDevice(streamCon);
 		name = rd.getFriendlyName(false);
 		rssi = Rssi.getRssi(rd.getBTAddress());
+		lq = LinkQuality.getLinkQuality(rd.getBTAddress());
 	} catch (Exception e) {
 		showInfo (e.getMessage(), "Error");
 		return;
 	}
-     showInfo("Remote Device Address, Name and Rssi\n" + rd.getBluetoothAddress() + " " + name + " " + rssi,"Info");
+     showInfo("Remote Device Address, Name, Rssi und Quality\n" + rd.getBluetoothAddress() + " " + name + " " + rssi + " " + lq,"Info");
    }
 
    /**
