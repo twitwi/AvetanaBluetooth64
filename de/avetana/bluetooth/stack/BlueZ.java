@@ -142,7 +142,7 @@ public class BlueZ
          *
          * @return An estimation of the link quality.
          */
-public native int hciGetLinkQuality(String bdaddr);
+	public static native int getLinkQuality(String bdaddr) throws BlueZException;
 
 	/**
 	 * Opens the HCI device.
