@@ -489,11 +489,21 @@ public class BlueZ
         /**
          * Gets the device class of the local device number "dev_id"
          * @param dev_id The number which identifies the local device
-         * @return
+         * @return The current device class
          * @throws BlueZException
          */
         public synchronized static native int getDeviceClass(int dev_id) throws BlueZException;
 
+        /**
+         * sets the device class to "cls" of the local device number "dev_id"
+	 * @see <A href="https://www.bluetooth.org/foundry/assignnumb/document/baseband">Assigned Numbers - Bluetooth Baseband</A>  for the correct format of cls
+         * @param dev_id The number which identifies the local device
+	 * @param cls The new device class of the device
+         * @return true/false
+         * @throws BlueZException
+         */
+        public synchronized static native boolean setDeviceClass(int dev_id, int cls) throws BlueZException;
+	
         /**
          * Is master/slave switch allowed?
          * @return <code>true</code> If master/slave switch is allowed<br>
