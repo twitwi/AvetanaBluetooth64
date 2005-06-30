@@ -21,7 +21,7 @@ public class Rssi {
 	public static final int NOT_CONNECTED = 0x100;
 	public static final int NOT_IMPLEMENTED = 0x101;
 		/**
-		 * Return the connection quality of a device currently connected.
+		 * Return the signal strength of a device currently connected.
 		 * 
 		 * @param adr
 		 * @return -13 < n <  13 for the connection quality ( 0 is best), NOT_CONNECTED if the device is not connected or NOT_IMPLEMENTED if no rssi value is available.  
