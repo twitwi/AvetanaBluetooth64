@@ -1,79 +1,141 @@
+/*
+ * Created on 05.05.2005
+ *
+ * TODO To change the template for this generated file go to
+ * Window - Preferences - Java - Code Style - Code Templates
+ */
 package de.avetana.bluetooth.util;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Frame;
-import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.util.Vector;
 
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
+import javax.bluetooth.BluetoothStateException;
+import javax.bluetooth.DeviceClass;
+import javax.bluetooth.DiscoveryAgent;
+import javax.bluetooth.DiscoveryListener;
+import javax.bluetooth.LocalDevice;
+import javax.bluetooth.RemoteDevice;
+import javax.bluetooth.ServiceRecord;
+import javax.swing.*;
 
-/**
- * <b>COPYRIGHT:</b><br> (c) Copyright 2004 Avetana GmbH ALL RIGHTS RESERVED. <br><br>
- *
- * This file is part of the Avetana bluetooth API for Linux.<br><br>
- *
- * The Avetana bluetooth API for Linux is free software; you can redistribute it
- * and/or modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version. <br><br>
- *
- * The Avetana bluetooth API is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.<br><br>
- *
- * The development of the Avetana bluetooth API is based on the work of
- * Christian Lorenz (see the Javabluetooth Stack at http://www.javabluetooth.org) for some classes,
- * on the work of the jbluez team (see http://jbluez.sourceforge.net/) and
- * on the work of the bluez team (see the BlueZ linux Stack at http://www.bluez.org) for the C code.
- * Classes, part of classes, C functions or part of C functions programmed by these teams and/or persons
- * are explicitly mentioned.<br><br><br><br>
- *
- *
- * <b>Description: </b><br>A Dialog performing an HCI inquiry and storing the result of this inquire in a
- * a JList swing component.
- * </b><br>
- */
 
-public class DeviceFinder extends JDialog implements ActionListener{
+public class DeviceFinder extends JDialog implements ActionListener {
+  	
+  	JList jl = new JList();
+  	JButton okBut = new JButton ("Select");
+  	JButton cancelBut = new JButton ("Cancel");
+  	JButton inqBut = new JButton ("Inquiring...");
+  	RemoteDevice selectedDevice = null;
+  	DefaultListModel lm = new DefaultListModel();
+  	private boolean inquiryDone = false;
+  	Vector remoteDevices;
+  	DiscoveryListener discList;
+  	
+ 	public DeviceFinder (Frame frame) {
+ 		this (frame, -1, -1);
+ 	}
+ 	
+  	public DeviceFinder (Frame frame, final int min, final int maj) {
+  		super (frame, true);
+  		Container cont = getContentPane();
+  		cont.setLayout(new BorderLayout());
+  		cont.add (new JScrollPane (jl), BorderLayout.CENTER);
+  		JPanel bp = new JPanel();
+  		bp.add(okBut);
+  		bp.add(cancelBut);
+  		bp.add (inqBut);
+  		cont.add(bp, BorderLayout.SOUTH);
+  		pack();
+  		
+  		jl.setModel(lm);
+  		
+  		okBut.addActionListener(this);
+  		cancelBut.addActionListener(this);
+  		inqBut.addActionListener (this);
+  		
+  		discList = new DiscoveryListener() {
+    		  public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
+    		  	if ((maj != -1 && cod.getMajorDeviceClass() != maj) || (min != -1 && cod.getMinorDeviceClass() != min)) return;
+    		  	try {
+//    	 		  	System.out.println (btDevice.getFriendlyName(false) + " " + cod.getMajorDeviceClass() + " " + cod.getMinorDeviceClass());
+    	 		 	lm.addElement(btDevice.getFriendlyName(false));
+  				remoteDevices.add(btDevice);
+  			} catch (IOException e) {
+  				// TODO Auto-generated catch block
+  				e.printStackTrace();
+  			}
+    		  }
+    		  public void inquiryCompleted(int discType) {
+    		    okBut.setEnabled (true);
+    		    inqBut.setEnabled (true);
+    		    inqBut.setText ("Inquiry");
+    		  }
 
-  private DeviceFinderPane m_pane;
-  private boolean m_start=false;
-  private JButton close;
+    		  public void serviceSearchCompleted(int transID, int respCode) {
+    		  }
 
-  public DeviceFinder(Frame owner, boolean start) throws HeadlessException, Exception {
-    super(owner, "Device Finder",true);
-    try {
-      m_start=start;
-      jbInit();
-      pack();
-      setLocationRelativeTo(null);
-    }catch(Exception ex) {
-      JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-      ex.printStackTrace();
-      setVisible(false);
-   }
- }
+    		  public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
+    		  }
 
- public void actionPerformed(ActionEvent e) {
-   if (e.getSource() == close) setVisible(false);
-  }
-
- public void jbInit() throws Exception {
-   close = new JButton("Close");
-   m_pane=new DeviceFinderPane(this);
-   JPanel command=m_pane.getCommandPanel();
-   command.add(close);
-   Container c=this.getContentPane();
-   c.setLayout(new BorderLayout());
-   c.add(m_pane, BorderLayout.CENTER);
-   close.addActionListener(this);
-   if(m_start) m_pane.doInquiry();
-  }
+    		};
+ 		doInquiry();
+  		
+ 		super.setLocationRelativeTo(frame);
+		
+  		setVisible (true);
+  	}
+  	
+  	public void actionPerformed (ActionEvent e) {
+  		if (e.getSource() == okBut && jl.getSelectedIndex() != -1) {
+  			selectedDevice = (RemoteDevice)remoteDevices.elementAt(jl.getSelectedIndex());
+  			setVisible(false);
+  		} else if (e.getSource() == cancelBut) {
+  			if (inqBut.isEnabled() == false) { 
+  			 try {
+				LocalDevice.getLocalDevice().getDiscoveryAgent().cancelInquiry(discList);
+			 } catch (BluetoothStateException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			 } return; }
+  			
+  			selectedDevice = null;
+  			setVisible (false);
+  		} else if (e.getSource() == inqBut) {
+  			doInquiry();
+  		}
+  	}
+  	
+  	private void doInquiry() {
  
-}
+  		inquiryDone = false;
+  		remoteDevices = new Vector();
+  		lm.removeAllElements();
+  		okBut.setEnabled (false);
+  		inqBut.setText ("Inquiring...");
+		inqBut.setEnabled (false);
+  		
+  		
+ 		Runnable r = new Runnable() {
+  			public void run ()  {
+  			  try {
+				LocalDevice.getLocalDevice().getDiscoveryAgent().startInquiry(DiscoveryAgent.GIAC, discList);
+  			  } catch (BluetoothStateException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+ 			}
+  		};
+  		
+  		new Thread (r).start();
+ 
+  	}
+  	
+  	public RemoteDevice getSelectedDevice() {
+  		return selectedDevice;
+  	}
+  }

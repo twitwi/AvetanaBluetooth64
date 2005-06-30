@@ -158,9 +158,10 @@ public class DiscoveryAgent {
         else throw new IllegalArgumentException("DiscoveryAgent.retrieveDevices: Only CACHED and PREKNOWN are vaild values. ");
     }
 
+    /**
+     * @deprecated
+     */
     public boolean isInquiring() {return isInquiring;}
-
-    /*  End of the method retrieveDevices   */
 
     /**
      * Places the device into inquiry mode.  The length of the inquiry is
@@ -411,7 +412,6 @@ public class DiscoveryAgent {
 
       public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {}
       public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
-      	System.out.println ("Adding service found " + servRecord.length);
         for(int i=0;i<servRecord.length;i++) {
           RemoteServiceRecord myRec=(RemoteServiceRecord)servRecord[i];
           m_remoteServ.addElement(myRec);

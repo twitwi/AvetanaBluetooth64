@@ -9,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseListener;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Enumeration;
@@ -237,16 +238,15 @@ public class ServiceFinderPane extends JPanel implements Cancelable, ActionListe
    * @param cod The device class
    */
   public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
-  	inform ("Device discovered " + btDevice.getBluetoothAddress());
-    String addr=null, name=null;
+    String adr = btDevice.getBluetoothAddress();
+    String name=null;
     try {
-      addr=btDevice.getBluetoothAddress();
-      name=btDevice.getFriendlyName(true);
+      name=btDevice.getFriendlyName(false);
     }
     catch(Exception ex) {ex.printStackTrace();}
-    if(addr!=null) {
-      nameCache.put(addr, (name==null?"Not Found":name));
-      m_remote.add(btDevice);
+    if(adr!=null) {
+      nameCache.put(adr, (name==null?"Not Found":name));
+      m_remote.addElement(btDevice);
       inform("Device: "+name+" found!!");
     }
   }
@@ -382,7 +382,7 @@ public class ServiceFinderPane extends JPanel implements Cancelable, ActionListe
             DefaultMutableTreeNode service=(DefaultMutableTreeNode)device.getChildAt(u);
             if(service==null) continue;
             ServiceDescriptor desc=(ServiceDescriptor)service.getUserObject();
-            if(desc!=null) v.add(desc);
+            if(desc!=null) v.addElement(desc);
           }
           }catch(Exception ex) { ex.printStackTrace(); continue; }
       }

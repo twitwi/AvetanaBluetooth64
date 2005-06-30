@@ -154,6 +154,37 @@
      in a Vector in the BTConnection class from where it is used in either RFCommConenction ot L2CAPConenction.
      Added support for native inquiries in MacOS X 10.4. Many native changes for OS X.
     </build>
+    <build value="1" date="2005-05-04">
+    	 replaced all Vector.add() calls by addElement() calls to fit in CrEme java 1.1
+    </build>
+        <build value="2" date="2005-05-04">
+    	 replaced all Vector.remove() calls by removeElement() calls to fit in CrEme java 1.1
+    </build>
+    <build value="3" date="2005-05-10">
+ 		MacOS X.4 fixes for inquiries.
+		OBEX fix for wrong TypeIDs
+    </build>
+    <build value="4" date="2005-05-30">
+	  L2CAP PSM Numbers are now interpreted as Hexadecimal numbers.
+    </build>
+    <build value="5" date="2005-06-03">
+	  Fixed a native bug in OS X that could cause inquiries to crash.
+    </build>
+    <build value="6" date="2005-06-10">
+	  Fixed a bug in RFCommStream read() where & 0xff was missing on single byte reads.
+    </build>
+    <build value="7" date="2005-06-11">
+	  Changed Windows native code to always try to reuse PSM 4097 when offering new L2CAP Connections. This makes the PSMs toggle between 4097 and 4099.
+    </build>
+    <build value="8" date="2005-06-13">
+	  Fixed a bug that prevented ConnectionNotifier instances to retreive their RemoteDevice.
+    </build>
+    <build value="9" date="2005-06-14">
+	  Fixed a bug in OperationImpl that could cause a Negative Array Size Exception when sending large packets through OBEX.
+    </build>
+    <build value="10" date="2005-06-17">
+	  Fixed a severe bug in Windows where data could be lost when sending large packets via RFComm.
+    </build>    
    </revision>
   </version>
 </avetanaBluetooth>

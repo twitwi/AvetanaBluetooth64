@@ -118,7 +118,7 @@ public class DeviceFinderPane extends JPanel implements ActionListener, Discover
     catch(Exception ex) {ex.printStackTrace();}
     if(addr!=null) {
       nameCache.put(addr, (name==null?"Not Found":name));
-      m_remote.add(btDevice);
+      m_remote.addElement(btDevice);
     }
   }
   

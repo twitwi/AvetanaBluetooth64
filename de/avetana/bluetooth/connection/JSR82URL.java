@@ -74,7 +74,7 @@ public class JSR82URL {
   /**
    *   PSM or channel number, depending on the protocol used.
    */
-  private Integer m_attrNumber;
+  private int m_attrNumber;
 
   /**
    * The BT address of the remote device.<br>
@@ -138,8 +138,8 @@ public class JSR82URL {
           parseURL(toWork.substring(ser+1));
         }catch(Exception ex) {}
       }
-      if(m_protocol!=PROTOCOL_L2CAP) this.m_attrNumber=new Integer(1);
-      else m_attrNumber=new Integer(11);
+      if(m_protocol!=PROTOCOL_L2CAP) this.m_attrNumber=1;
+      else m_attrNumber=11;
       if(m_address==null && (m_localUUID.length()!=32 && m_localUUID.length()!=8))
         throw new BadURLFormat("The Service Class ID must be a 32 or 128-bits UUID! " +m_localUUID + " " + m_localUUID.length());
     }
@@ -147,7 +147,7 @@ public class JSR82URL {
        if(m_address==null) m_localUUID=toWork.substring(0,channel);
        if(ser==-1) {
          try {
-           m_attrNumber=new Integer(toWork.substring(channel+1).trim());
+           m_attrNumber=Integer.parseInt(toWork.substring(channel+1).trim(), m_protocol == PROTOCOL_L2CAP ? 16 : 10);
          }
          catch(Exception ex) {
            throw new BadURLFormat("Bad channel Number!");
@@ -155,7 +155,7 @@ public class JSR82URL {
        }
        else {
          try {
-           m_attrNumber=new Integer(toWork.substring(channel+1, ser).trim());
+	        m_attrNumber=Integer.parseInt(toWork.substring(channel+1, ser).trim(), m_protocol == PROTOCOL_L2CAP ? 16 : 10);
          }catch(Exception ex) {
            throw new BadURLFormat("Bad channel Number! " + toWork);
          }
@@ -233,7 +233,7 @@ public class JSR82URL {
    * @param num The new PSM or channel number.
    */
   public void setAttrNumber (int num) {
-    this.m_attrNumber = new Integer (num);
+    this.m_attrNumber = num;
   }
 
   /**
@@ -252,7 +252,7 @@ public class JSR82URL {
     }
     if(m_address==null) retour+="localhost:"+m_localUUID;
     else retour+=m_address.toStringSep(false);
-    if(m_attrNumber!=null && m_address != null) retour+=":"+m_attrNumber.intValue();
+    if(m_address != null) retour+=":"+ (m_protocol == PROTOCOL_L2CAP ? Integer.toHexString(m_attrNumber) : "" + m_attrNumber);
     String[] paramKey=getParameterKeys();
     for(int i=0;i<paramKey.length;i++) {
       try {
@@ -369,7 +369,7 @@ public class JSR82URL {
    * Returns the value of the PSM or of the channel number.
    * @return The value of the PSM or of the channel number.
    */
-  public Integer getAttrNumber() {return m_attrNumber;}
+  public int getAttrNumber() {return m_attrNumber;}
 
   /**
    * Returns the integer code of protocol used by this connection URL.

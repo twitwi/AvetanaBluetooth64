@@ -383,8 +383,12 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 				break;
 			case HeaderSetImpl.TYPE:
 				try {
-					if (data[offset + len - 1] != 0) len++; //Fix for implementations that do not end the TYPE Header with a 0-byte
-					String typeObj = new String (data, offset + 3, len - 1 - 3, "iso-8859-1");
+					String typeObj = null;
+//					 Fix for implementations that do not end the TYPE Header with a 0-byte
+					if (data[offset + len - 1] != 0) 
+						typeObj = new String (data, offset + 3, len - 3,	"iso-8859-1");
+					else
+						typeObj = new String (data, offset + 3, len - 1 - 3, "iso-8859-1");
 					hs.setHeader(id, typeObj);
 					break;
 				} catch (Exception e) { e.printStackTrace(); }

@@ -137,7 +137,7 @@ public class BTConnection {
 	 * @param data
 	 */
 	public synchronized void newData(byte[] data) {
-		dataBuffer.add (data);
+		dataBuffer.addElement (data);
 		notifyAll();
 	}
 	

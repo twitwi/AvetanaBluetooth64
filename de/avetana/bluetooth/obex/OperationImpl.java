@@ -219,8 +219,8 @@ public class OperationImpl implements Operation {
 			
 			while (len + 6 + hsba.length > con.getMTU()) {
 				write (b, off, con.getMTU() - 6 - hsba.length);
-				off += con.getMTU();
-				len -= con.getMTU();
+				off += con.getMTU() - 6 - hsba.length;
+				len -= con.getMTU() - 6 - hsba.length;
 			}
 			
 			byte[] d;

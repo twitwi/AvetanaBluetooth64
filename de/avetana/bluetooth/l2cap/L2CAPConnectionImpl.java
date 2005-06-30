@@ -98,7 +98,7 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
     if(param==null || param.m_fid==-1) throw new Exception("Connection could not be established!");
 
     int fid=param.m_fid;
-    int psm=url.getAttrNumber()==null?1:url.getAttrNumber().intValue();
+    int psm=url.getAttrNumber();
     L2CAPConnectionImpl conn =  null;
     try {
       conn=new L2CAPConnectionImpl (fid,

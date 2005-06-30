@@ -208,7 +208,7 @@ public class RemoteServiceRecord extends SDPServiceRecord {
     }
     if (isObex && rfcommChannel != -1) url += "btgoep://"+m_remote.getBluetoothAddress()+":"+rfcommChannel;
     else if (rfcommChannel!=-1) url+="btspp://"+m_remote.getBluetoothAddress()+":"+rfcommChannel;
-    else if (l2capPSM!=-1) url+="btl2cap://"+m_remote.getBluetoothAddress()+":"+l2capPSM;
+    else if (l2capPSM!=-1) url+="btl2cap://"+m_remote.getBluetoothAddress()+":"+Long.toHexString(l2capPSM);
     if(url.equals("")) return null;
     url+=";";
 

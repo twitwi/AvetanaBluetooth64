@@ -129,7 +129,7 @@ public class RFCommConnectionImpl extends BTConnection implements StreamConnecti
 
     public synchronized int read() throws IOException {
     		byte b[] = RFCommConnectionImpl.this.read(1);
-    		return (int)b[0];
+    		return (int)(b[0] & 0xff);
     }
 
     public synchronized int read (byte[] b, int off, int len) throws IOException {

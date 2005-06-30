@@ -33,10 +33,10 @@ import javax.bluetooth.DiscoveryAgent;
 import javax.bluetooth.DiscoveryListener;
 import javax.bluetooth.ServiceRecord;
 
+import de.avetana.bluetooth.connection.BTConnection;
 import de.avetana.bluetooth.connection.ConnectionFactory;
 import de.avetana.bluetooth.connection.ConnectionNotifier;
 import de.avetana.bluetooth.connection.JSR82URL;
-import de.avetana.bluetooth.hci.HCIInquiryResult;
 import de.avetana.bluetooth.l2cap.L2CAPConnParam;
 import de.avetana.bluetooth.l2cap.L2CAPConnectionNotifierImpl;
 import de.avetana.bluetooth.sdp.LocalServiceRecord;
@@ -55,6 +55,8 @@ import de.avetana.bluetooth.util.LibLoader;
  *
  * @author Edward Kay, ed.kay@appliancestudio.com / Julien Campana, Christiano di Flora diflora@unina.it
  * @version 1.1
+ * 
+ * @todo Stop BTThread on MacOS X in a shutdown hook.
  */
 
 public class BlueZ
@@ -181,7 +183,7 @@ public native int hciGetLinkQuality(String bdaddr);
 	 * @return An InquiryInfo object containing the results of the inquiry.
 	 * @see #hciInquiry(int hciDevID)
 	 */
-	public static native HCIInquiryResult hciInquiry(int hciDevID, int len, int max_num_rsp, long flags, DiscoveryAgent agent) throws BlueZException;
+	public static native boolean hciInquiry(int hciDevID, int len, int max_num_rsp, long flags, DiscoveryAgent agent) throws BlueZException;
 	/**
 	 * Performs an HCI inquiry to discover remote Bluetooth devices. This is the
 	 * same as <code>hciInquiry(int hciDevID, int len, int max_num_rsp, long
@@ -194,7 +196,7 @@ public native int hciGetLinkQuality(String bdaddr);
 	 *     by BlueZ for further information)
 	 * @return An InquiryInfo object containing the results of the inquiry.
 	 */
-	public static HCIInquiryResult hciInquiry(int hciDevID, DiscoveryAgent agent) throws BlueZException
+	public static boolean hciInquiry(int hciDevID, DiscoveryAgent agent) throws BlueZException
 	{
             return hciInquiry(hciDevID, 8, 10, 0, agent);
         }
@@ -327,7 +329,7 @@ public native int hciGetLinkQuality(String bdaddr);
          */
         public static L2CAPConnParam openL2CAP (JSR82URL url) throws BlueZException, Exception{
           if(url.getBTAddress()==null) throw new Exception("This is not a valid remote L2CAP connection url!");
-          int psm=(url.getAttrNumber()==null)?10:url.getAttrNumber().intValue();
+          int psm=url.getAttrNumber();
           int receiveMTU=672, transmitMTU=672;
           try {receiveMTU=Integer.parseInt((String)url.getParameter("receivemtu"));}catch(Exception ex) {}
           try {transmitMTU=Integer.parseInt((String)url.getParameter("transmitmtu"));}catch(Exception ex) {}
@@ -350,7 +352,7 @@ public native int hciGetLinkQuality(String bdaddr);
          */
         public static int openRFComm (JSR82URL url) throws BlueZException, Exception{
           if(url.getBTAddress()==null) throw new Exception("This is not a valid remote RFComm connection url!");
-          int channel=(url.getAttrNumber()==null)?1:url.getAttrNumber().intValue();
+          int channel=url.getAttrNumber();
           return openRFCommNative (url.getBTAddress().toString(),
                                    channel,
                                    url.isLocalMaster(),
@@ -366,28 +368,11 @@ public native int hciGetLinkQuality(String bdaddr);
         public static void closeConnectionS (int fid) {
       	  synchronized (getMutex (fid)) {
       	  	closeConnection (fid);
-      	  	mutexes.remove(new Mutex (fid));
-      	  }        	
+      	  	mutexes.removeElement(new Mutex (fid));
+      	  }
         }
         
         private static native void closeConnection (int fid) ;
-
-        /**
-         * Reads bytes from an existing connection (RFCOMM, L2CAP or another type of connection)
-         * @param fid The integer, which uniquely identifies the connection.
-         * @param b The byte array used to store the read bytes
-         * @param len The length of b
-         * @return THe number of bytes read of -1 if an error occured
-         * @throws BlueZException
-         */
-        public static int readBytesS (int fid, byte[] b, int len) throws BlueZException {
-        	  synchronized (getMutex (fid)) {
-        	  	int rlen = readBytes (fid, b, len);
-        	  	return rlen;
-        	  }
-        }
-
-        private static native int readBytes (int fid, byte[] b, int len) throws BlueZException;
 
         /**
          * Writes byte to an existing connection
@@ -397,14 +382,14 @@ public native int hciGetLinkQuality(String bdaddr);
          * @param off The offset into b at which to start
          */
         
-        public static void writeBytesS (int fid, byte b[], int off, int len) {
+        public static void writeBytesS (int fid, byte b[], int off, int len) throws IOException {
         		synchronized (getMutex (fid)) {
-        			writeBytes (fid, b, off, len);
+        			if (writeBytes (fid, b, off, len) == 0) throw new IOException ("Connection closed");
         		}
        	
         }
         
-        private static native void writeBytes (int fid, byte b[], int off, int len);
+        private static native int writeBytes (int fid, byte b[], int off, int len);
 
         
     		private static Object getMutex (int num) {
@@ -412,7 +397,7 @@ public native int hciGetLinkQuality(String bdaddr);
     				Mutex m = new Mutex (num);
     				int i = mutexes.indexOf(m);
     				if (i != -1) return mutexes.elementAt(i);
-    				else {  mutexes.add (m); return m; }
+    				else {  mutexes.addElement (m); return m; }
     			}
     		}
 
@@ -561,10 +546,11 @@ public native int hciGetLinkQuality(String bdaddr);
         public static native boolean pageAndConnAllowed() throws BlueZException;
 
         /**
-         * Authenticates the remote device (an connection between the local and the remote device MUST exists)
-         * @param handle The number, which uniquely identifies the connection
+         * Authenticates the remote device
+         * @param hci number (0)
          * @param deviceAddr The BT address of the remote device
-         * @return
+         * @param pin in Windows, one can specify a given PIN number to use
+         * @return 1 if successful 0 if not
          * @throws BlueZException
          */
         public synchronized static native int authenticate(int handle, String deviceAddr, String pin) throws BlueZException;
@@ -627,9 +613,7 @@ public native int hciGetLinkQuality(String bdaddr);
         	  if(a_notifier.getConnectionURL()==null) throw new Exception("No connection URL previously defined!");
           myFactory.addNotifier(a_notifier);
           final short proto=(a_notifier.getConnectionURL()==null?JSR82URL.PROTOCOL_RFCOMM:a_notifier.getConnectionURL().getProtocol());
-          int defaultCh=(proto==JSR82URL.PROTOCOL_RFCOMM?1:10);
-          final int channel=(a_notifier.getConnectionURL().getAttrNumber()!=null?
-                      a_notifier.getConnectionURL().getAttrNumber().intValue():defaultCh);
+          final int channel=a_notifier.getConnectionURL().getAttrNumber();
           //System.out.println ("Registered notifier at channel " + channel)
           Runnable r = new Runnable() {
           	public void run() {
@@ -657,7 +641,7 @@ public native int hciGetLinkQuality(String bdaddr);
         }
 
         /**
-         * Remove the Notifier when creating a service hass failed
+         * Remove the Notifier when creating a service has failed
          */
 
         public static void removeNotifier(ConnectionNotifier a_notifier) {
@@ -685,13 +669,11 @@ public native int hciGetLinkQuality(String bdaddr);
               // Nur eine Verbindung pro Kanal!
               short proto=(not.getConnectionURL()==null?JSR82URL.PROTOCOL_RFCOMM:not.getConnectionURL().getProtocol());
               if (proto == JSR82URL.PROTOCOL_OBEX) proto = JSR82URL.PROTOCOL_RFCOMM;
-              int defaultCh=(proto==JSR82URL.PROTOCOL_RFCOMM?1:10);
-              int ch=(not.getConnectionURL()!=null && not.getConnectionURL().getAttrNumber()!=null)?
-                      not.getConnectionURL().getAttrNumber().intValue():defaultCh;
+              int ch = not.getConnectionURL().getAttrNumber();
               if(ch==channel && protocol==proto) {
-                not.setConnectionID(fid);
-                if (not instanceof L2CAPConnectionNotifierImpl) ((L2CAPConnectionNotifierImpl)not).setMTUs(transMTU, recMTU);
-                if(jaddr!=null) not.setRemoteDevice(jaddr);
+                  not.setRemoteDevice(jaddr);
+                  if (not instanceof L2CAPConnectionNotifierImpl) ((L2CAPConnectionNotifierImpl)not).setMTUs(transMTU, recMTU);
+                  not.setConnectionID(fid);
                 myFactory.removeNotifier(not);
                 return true;
               }
@@ -753,8 +735,37 @@ public native int hciGetLinkQuality(String bdaddr);
           return null;
         }
 
+        /**
+         * Method called from the Windows native library to reserve storage space.
+         * This is used because of some JNI troubles.
+         * 
+         * @param size
+         * @return
+         */
+        
         public static byte[] newByteArray (int size) {
         		return new byte[size];
+        }
+        
+        /**
+         * Method called from the Windows native DLL when the stack has gone down. This is used
+         * to remove all Notifiers and close all connections. 
+         *
+         */
+        
+        public static void stackDown() {
+        		Vector v = myFactory.getNotifiers();
+        		for (int i = 0;i < v.size();i++) {
+        			ConnectionNotifier conNot = (ConnectionNotifier)v.elementAt(i);
+        			conNot.setFailure(new IOException ("Stack gone down"));
+        			conNot.setConnectionID(-1);
+        		}
+        		v = myFactory.getConnections();
+        		for (int i = 0;i < v.size();i++) {
+        			BTConnection conNot = (BTConnection)v.elementAt(i);
+        			conNot.close();
+        		}
+        	
         }
 
         /**
@@ -770,5 +781,60 @@ public native int hciGetLinkQuality(String bdaddr);
          *
          * @return An estimation of the Received Signal Strength Indicator.
          */
-		public static native int getRssi(String adr) throws BlueZException;        
+		public static native int getRssi(String adr) throws BlueZException;
+		
+		/**
+		 * Method is called from native implementations when new Data has arrived for a connection listening for data.
+		 * 
+		 * @param data
+		 * @param fid
+		 * @return 0 if connection is not known on java side else 1
+		 */
+		
+		public static int newData (byte[] data, int fid) {
+			BTConnection con = myFactory.getConnectionForFID(fid);
+			if (con == null) return 0;
+			
+			con.newData (data);
+			
+			return 1;
+		}
+		
+		/**
+		 * Called from the native side, when the connection is beeing closed
+		 * 
+		 * @param fid
+		 */
+		
+		public static void connectionClosed (int fid) {
+			try {
+				BTConnection con = myFactory.getConnectionForFID(fid);
+				if (con != null && !con.isClosed())
+					con.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		}
+		
+		/**
+		 * 
+		 * @param fid
+		 * @param mtu
+		 */
+		
+		public static void startReaderThread(final int fid, final int mtu) {
+			Runnable r = new Runnable() {
+				public void run() {
+					readBytes(fid, mtu);
+				}
+			};
+			new Thread(r).start();
+		}
+		/**
+		 * This function is used in Linux to endlessly read new Data from an opened connection
+		 * @param fid
+		 * @param mtu
+		 */
+		private static native void readBytes (int fid, int mtu);
 }

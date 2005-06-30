@@ -61,7 +61,7 @@ public class RFCommConnectionNotifierImpl extends ConnectionNotifier implements 
     String m_serviceName=(String)parsedURL.getParameter("name");
     m_serviceName=(m_serviceName==null?"Avetana Service":m_serviceName);
     myRecord=LocalServiceRecord.createSerialSvcRecord(new UUID(url.getLocalServiceUUID(), false), m_serviceName,
-        parsedURL.getAttrNumber().intValue(), parsedURL.getProtocol());
+        parsedURL.getAttrNumber(), parsedURL.getProtocol());
     if(myRecord==null) throw new Exception("Not a valid Service Record!!!!!");
   }
 

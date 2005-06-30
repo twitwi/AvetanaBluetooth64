@@ -53,7 +53,7 @@ import de.avetana.bluetooth.hci.Rssi;
 import de.avetana.bluetooth.l2cap.L2CAPConnectionNotifierImpl;
 import de.avetana.bluetooth.sdp.SDPConstants;
 import de.avetana.bluetooth.util.BTAddress;
-import de.avetana.bluetooth.util.DeviceFinder;
+import de.avetana.bluetooth.util.IntDeviceFinder;
 import de.avetana.bluetooth.util.ServiceFinderPane;
 
 /**
@@ -168,6 +168,8 @@ public class JSRTest extends JFrame implements ActionListener {
   private final int WINDOWS=0x1;
   private final int MACOSX=0x2;
 
+  private static final int rfcommPackLen = 300;
+  
   /*
    * Matrix of possibilites:
    * propertes[0][] -> L2CAP
@@ -647,7 +649,7 @@ public class JSRTest extends JFrame implements ActionListener {
     */
    public void startInquiry() {
      try {
-       DeviceFinder myFinder=new DeviceFinder(this,true);
+       IntDeviceFinder myFinder=new IntDeviceFinder(this,true);
        myFinder.setVisible(true);
      }catch(Exception ex) {ex.printStackTrace();}
    }
@@ -755,8 +757,18 @@ public class JSRTest extends JFrame implements ActionListener {
        }
        else if (e.getSource() == sendData) {
          if(m_protocols.getSelectedIndex() == JSR82URL.PROTOCOL_RFCOMM) {
-            byte b[] = new byte[300];
-            for (int i = 0; i < b.length; i++) b[i] = (byte) (0x100 * Math.random());
+            byte b[] = new byte[JSRTest.rfcommPackLen];
+            for (int i = 0; i < b.length; i++) {	
+				b[i] = (byte) (0x100 * Math.random());
+			}
+            /*byte b[] = new byte[] { (byte) 0x00, 0x00,
+                    0x07, 0x0, (byte)0xfd};   
+        	    int csum = 0;
+			for (int i = 0; i < b.length; i++) {	
+				//b[i] = (byte) (0x100 * Math.random());
+				csum += (int)(b[i] & 0xff);
+			}
+			System.out.println ("Checksum of burst " + (csum % 1024));*/
          	os.write(b);
          	//System.out.println ("Wrote " + (int)(b[0] & 0xff) + " " + (int)(b[1] & 0xff));
          }
@@ -1070,14 +1082,25 @@ public class JSRTest extends JFrame implements ActionListener {
      public void run() {
        running = true;
        received = 0;
-       byte b[] = new byte[300];
+       byte b[] = new byte[rfcommPackLen];
        try {
+		   int csum = 0, csumc = 0;
          while (running) {
            //int v1 = is.read();
            //int v2 = is.read();
            //System.out.println (v1 + " " + v2);
            dataReceived.setText("Received " + received);
            int a = is.read(b);
+		   /*for (int i = 0;i < a;i++) {
+			   System.out.print (" " + Integer.toHexString((int)(b[i] & 0xff)));
+			   csum += (int)(b[i] & 0xff);
+		   }
+		   System.out.println ();
+		   csumc += a;
+		   if (csumc >= rfcommPackLen) {
+			   System.out.println ("Checksum after " + csumc + " is " + (csum % 1024));
+			   csumc = csum = 0;
+		   }*/
            received += a;
          }
        } catch (Exception e) {e.printStackTrace(); if (m_offerService.isSelected()) revokeService(); if (connectTo.isSelected()) { connectTo.setSelected(false); try { closeConnection(); } catch (Exception ec) {}} }
