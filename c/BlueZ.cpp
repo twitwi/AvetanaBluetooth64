@@ -356,38 +356,48 @@ JNIEXPORT jboolean JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciInquiry
 *
 * @return An estimation of the Link Quality parameter.
 */
-JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciLinkQuality
+JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_getLinkQuality
  (JNIEnv *env, jclass obj, jstring bdaddr_jstr)
 
 {
-       char *bdaddr_str;
-    struct hci_conn_info_req *cr;
+	char *bdaddr_str;
+	struct hci_conn_info_req *cr;
 	struct hci_request rq;
 	read_link_quality_rp rp;
 	bdaddr_t bdaddr;
 	int dev_id;
 	int dd;
-    	jboolean fbol = 1;
-   	bdaddr_str = (char*) env->GetStringUTFChars(bdaddr_jstr, &fbol);
-    	baswap(&bdaddr, strtoba(bdaddr_str));
-    	env->ReleaseStringUTFChars(bdaddr_jstr, bdaddr_str);
+	jboolean fbol = 1;
+	
+	bdaddr_str = (char*) env->GetStringUTFChars(bdaddr_jstr, &fbol);
+	baswap(&bdaddr, strtoba(bdaddr_str));
+	env->ReleaseStringUTFChars(bdaddr_jstr, bdaddr_str);
+	
 	dev_id = hci_for_each_dev(HCI_UP, find_conn, (long) &bdaddr);
 	if (dev_id < 0) {
-	//No previous connection
+		//No previous connection
+		printf( " linkQuaility err: no connection available \n");
 		return 0x100;
 	}
+	
 	dd = hci_open_dev(dev_id);
 	if (dd < 0) {
+		printf( " linkQuaility err: cannot open device hci%d\n", dev_id);
 		return 0x100;
-	};
-    	cr = (hci_conn_info_req *)malloc(sizeof(*cr) + sizeof(struct hci_conn_info));
+	}
+	
+	cr = (hci_conn_info_req *)malloc(sizeof(*cr) + sizeof(struct hci_conn_info));
 	if (!cr)
+	{
+		printf( " linkQuaility err: memory allocation \n");
 		return 0x100;
-
+	}
+	
 	bacpy(&cr->bdaddr, &bdaddr);
 	cr->type = ACL_LINK;
 	if (ioctl(dd, HCIGETCONNINFO, (unsigned long) cr) < 0) {
-	     return 0x100;
+		printf( " linkQuaility err: get connection info \n");
+		return 0x100;
 	}
 
 	memset(&rq, 0, sizeof(rq));
@@ -399,17 +409,19 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciLinkQuality
 	rq.rlen   = READ_LINK_QUALITY_RP_SIZE;
 
 	if (hci_send_req(dd, &rq, 100) < 0) {
-	       return 0x100;
+		printf( " linkQuaility err: sending reuquest \n");
+		return 0x100;
 	}
 
 	if (rp.status) {
+		printf( " linkQuaility err: invalid status returned \n");
 		return 0x100;
 	}
         
 	close(dd);
 	free(cr);
+	/* printf( " linkQuaility: %d \n", rp.link_quality ); */
 	return rp.link_quality;
-
 }
 
 
@@ -428,41 +440,47 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_getRssi
  (JNIEnv *env, jclass cls, jstring bdaddr_jstr)
 
 {
-    char *bdaddr_str;
-    struct hci_conn_info_req *cr;
+	char *bdaddr_str;
+	struct hci_conn_info_req *cr;
 	struct hci_request rq;
 	read_rssi_rp rp;
 	bdaddr_t bdaddr;
 	int dev_id;
 	int dd;
-    jboolean fbol = 1;
+	jboolean fbol = 1;
     
-    bdaddr_str = (char*) env->GetStringUTFChars(bdaddr_jstr, &fbol);
-    baswap(&bdaddr, strtoba(bdaddr_str));
-    env->ReleaseStringUTFChars(bdaddr_jstr, bdaddr_str);
+	bdaddr_str = (char*) env->GetStringUTFChars(bdaddr_jstr, &fbol);
+	baswap(&bdaddr, strtoba(bdaddr_str));
+	env->ReleaseStringUTFChars(bdaddr_jstr, bdaddr_str);
 
-    //A HCI-connection should have been previously established.
+	//A HCI-connection should have been previously established.
     
 	dev_id = hci_for_each_dev(HCI_UP, find_conn, (long) &bdaddr);
 	if (dev_id < 0) {
-	//No previous connection
-	return 0x100;
+		//No previous connection
+		printf(" rssi err: No connection available\n");
+		return 0x100;
 	}
 
 	dd = hci_open_dev(dev_id);
 	if (dd < 0) {
+		printf(" rssi err: cannot open hci%d\n",dev_id);
 		return 0x100;
 	};
 
-    cr = (hci_conn_info_req *)malloc(sizeof(*cr) + sizeof(struct hci_conn_info));
+	cr = (hci_conn_info_req *)malloc(sizeof(*cr) + sizeof(struct hci_conn_info));
 	
 	if (!cr)
+	{
+		printf(" rssi err: mem allocation\n");
 		return 0x100;
+	}
 
 	bacpy(&cr->bdaddr, &bdaddr);
 	cr->type = ACL_LINK;
 	if (ioctl(dd, HCIGETCONNINFO, (unsigned long) cr) < 0) {
-	     return 0x100;
+		printf( " rssi err: get connection info\n");
+		return 0x100;
 	}
 
 	memset(&rq, 0, sizeof(rq));
@@ -474,14 +492,17 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_getRssi
 	rq.rlen   = READ_RSSI_RP_SIZE;
 
 	if (hci_send_req(dd, &rq, 100) < 0) {
-	       return 0x100;
+		printf( " rssi err: send request\n");
+		return 0x100;
 	}
 
 	if (rp.status) {
+		printf( " rssi err: invalid status\n");
 		return 0x100;
 	}
 	close(dd);
 	free(cr);
+	/* printf( " rssi: strength= %d\n", rp.rssi ); */
         return rp.rssi;
 }
 
