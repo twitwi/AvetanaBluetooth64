@@ -17,7 +17,7 @@ if [ "$JDK_PLATFORM" = "" ] ; then
 	echo JDK_PLATFORM variable not set! Using default JDK_PLATFOM = $JDK_PLATFORM
 fi
 
-if ["$BIN_DIR" = ""] ; then
+if [ "$BIN_DIR" = "" ] ; then
 	#Put here the path of the directory to which you want the
 	#installation process to put the produced binaries.
 	export BIN_DIR="/home/myuser/avetanabt/binaries"
