@@ -599,22 +599,43 @@ JNIEXPORT jstring JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciLocalName
 /**
  * Read the device class of the local device identified by its device number.
  * Under linux, this method requires root priviliges!
+ * See description on https://www.bluetooth.org/foundry/assignnumb/document/baseband for correct values
  */
 JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_getDeviceClass
   (JNIEnv *env, jclass obj, jint dd) {
+	uint8_t cls[3];
+	//  cls[2]: service classes (bits 13 to 23)
+	//  cls[1]: major class device (bits 12 to 8)
+	//  cls[0]: minor class device (bits 7 to 2)
+	uint32_t retour;
 
-  uint8_t cls[3];
-//  cls[2]: service classes (bits 13 to 23)
-//  cls[1]: major class device (bits 12 to 8)
-//  cls[0]: minor class device (bits 7 to 2)
-  uint32_t retour;
-
-  if (0 > hci_read_class_of_dev(dd, cls, 1000)) {
-    throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_hciLocalName: Unable to read local device class. Have you the requested permissions?");
-    return -1;
+	if( 0 > hci_read_class_of_dev(dd, cls, 1000) ) {
+		throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_getDeviceClass: Unable to read local device class. Have you the requested permissions?");
+		return -1;
 	}
-  retour=(cls[0] & 0xfc ) + ((cls[1] & 0x1f )<< 8) + ((cls[2] & 0xffe000) << 13);
-  return (jint)retour;
+	
+	//printf ("Hex: Service: %x  Major: %x  Minor: %x\n", cls[2], cls[1], cls[0] );
+	// BUG:
+	// This value is correct respecting the specifiactions
+	//retour=(cls[0] & 0xfc ) + ((cls[1] & 0x1f )<< 8) + ((cls[2] & 0xffe000) << 13);
+	// But this value must be used to get the correct informations 
+	retour = ((cls[2] << 16) & 0xffe000) + ((cls[1] << 8) & 0x001f00) + (cls[0] & 0xfc);
+	printf( "Return: %x\n", retour);
+	return (jint)retour;
+}
+/**
+ * Set the device class of the local device identified by its device number.
+ * Under linux, this method requires root priviliegs
+ * See description on https://www.bluetooth.org/foundry/assignnumb/document/baseband for correct values 
+ */
+JNIEXPORT jboolean JNICALL Java_de_avetana_bluetooth_stack_BlueZ_setDeviceClass
+  (JNIEnv *env, jclass obj, jint dd, jint cls) {
+
+	if( 0 > hci_write_class_of_dev(dd, cls, 1000) ) {
+		throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_setDeviceClass: Unable to write local device class. Have you the requested permissions?");
+		return false;
+	}
+	return true;
 }
 
 /**
