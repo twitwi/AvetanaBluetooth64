@@ -624,7 +624,7 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_getDeviceClass
 	printf ("Raw: 23_16  : %x  15_8 : %x  7_0  : %x\n", cls[2], cls[1], cls[0] );
 	
 	// The following values are correct:
-	uint16_t service = ((cls[2] & 0x0f) << 3) | ((cls[1] & 0xe0) >>5);
+	uint16_t service = ((cls[2] & 0xff) << 3) + ((cls[1] & 0xe0) >>5);
 	uint8_t  major   = (cls[1] & 0x1f);
 	uint8_t  minor   = (cls[0] & 0xfc);
 	printf ("     Service: 0x%.4x  Major: 0x%.2x  Minor: 0x%.2x\n", service, major, minor);
