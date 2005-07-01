@@ -604,22 +604,33 @@ JNIEXPORT jstring JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciLocalName
 JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_getDeviceClass
   (JNIEnv *env, jclass obj, jint dd) {
 	uint8_t cls[3];
-	//  cls[2]: service classes (bits 13 to 23)
-	//  cls[1]: major class device (bits 12 to 8)
-	//  cls[0]: minor class device (bits 7 to 2)
+	//  cls[2]: bits 23 to 16
+	//  cls[1]: bits 15 to  8
+	//  cls[0]: bits 7  to  0
+	// See as
+	//  Service: bits 23 to 13
+	//  Major:   bits 12 to  8
+	//  Minor:   bits  7 to  2
+	//  format:  bits  1 and 0
 	uint32_t retour;
 
 	if( 0 > hci_read_class_of_dev(dd, cls, 1000) ) {
 		throwException(env, "Java_de_avetana_bluetooth_stack_BlueZ_getDeviceClass: Unable to read local device class. Have you the requested permissions?");
 		return -1;
 	}
-	
-	//printf ("Hex: Service: %x  Major: %x  Minor: %x\n", cls[2], cls[1], cls[0] );
-	// BUG:
-	// This value is correct respecting the specifiactions
+	// Wrong:
 	//retour=(cls[0] & 0xfc ) + ((cls[1] & 0x1f )<< 8) + ((cls[2] & 0xffe000) << 13);
-	// But this value must be used to get the correct informations 
-	retour = ((cls[2] << 16) & 0xffe000) + ((cls[1] << 8) & 0x001f00) + (cls[0] & 0xfc);
+	// the value read from hci_read_class_of_dev is unformated
+	printf ("Raw: 23_16  : %x  15_8 : %x  7_0  : %x\n", cls[2], cls[1], cls[0] );
+	
+	// The following values are correct:
+	uint16_t service = ((cls[2] & 0x0f) << 3) | ((cls[1] & 0xe0) >>5);
+	uint8_t  major   = (cls[1] & 0x1f);
+	uint8_t  minor   = (cls[0] & 0xfc);
+	printf ("     Service: 0x%.4x  Major: 0x%.2x  Minor: 0x%.2x\n", service, major, minor);
+	
+	// This value must be used to get the correct informations 
+	retour = (service << 13) | (major << 8) | minor;
 	printf( "Return: %x\n", retour);
 	return (jint)retour;
 }
