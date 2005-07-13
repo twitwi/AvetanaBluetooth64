@@ -24,24 +24,12 @@ public class SDPUpdateTest {
 	
 	public SDPUpdateTest() throws Exception {
 		System.out.println ("Registering Service");
-		streamConNot = null;
-		Runnable r = new Runnable() {
-			public void run() {
-				try {
-					streamConNot = (StreamConnectionNotifier)Connector.open("btspp://localhost:" + new UUID (0x456) + ";name=Testname");
-					accepting = true;
-					System.out.println ("acceptAndOpen...");
-					streamConNot.acceptAndOpen();
+		streamConNot = (StreamConnectionNotifier)Connector.open("btspp://localhost:" + new UUID (0x456) + ";name=Testname");
 
-				} catch (Exception e) { e.printStackTrace(); }
-				accepting = false;
-
-			}
-		};
-		new Thread(r).start();
-		while (!accepting) { synchronized (this) { wait (1000); } }
 		ServiceRecord srec = LocalDevice.getLocalDevice().getRecord(streamConNot);
+		
 		System.out.println ("Press a key to update service name... "  + srec);
+
 		BufferedReader br = new BufferedReader (new InputStreamReader (System.in));
 		br.readLine();
 		srec.setAttributeValue(0x100, new DataElement (DataElement.STRING, "UpdatedName2"));

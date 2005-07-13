@@ -62,6 +62,17 @@ public class L2CAPConnectionNotifierImpl extends ConnectionNotifier implements L
     myRecord=LocalServiceRecord.createSerialSvcRecord(new UUID(url.getLocalServiceUUID(), false), m_serviceName,
         parsedURL.getAttrNumber(), parsedURL.getProtocol());
     if(myRecord==null) throw new Exception("Not a valid Service Record!!!!!");
+
+    try {
+        m_serviceHandle=BlueZ.createService((LocalServiceRecord)myRecord);
+        if(m_serviceHandle < 0) throw new Exception();
+        myRecord.setAttributeValue(0x0, new DataElement(DataElement.U_INT_4, new Long(m_serviceHandle).longValue()));
+        int psm = (int)((LocalServiceRecord)myRecord).getChannelNumberElement().getLong();
+        this.parsedURL.setAttrNumber(psm);
+      }catch(Exception ex) {
+        throw new ServiceRegistrationException("ERROR - The service record could not be added in the local SDB!");
+      }
+
   }
 
   /**
@@ -96,15 +107,6 @@ public class L2CAPConnectionNotifierImpl extends ConnectionNotifier implements L
   	m_fid = -2;
   	failEx = null;
   	isClosed = false;
-  	try {
-      m_serviceHandle=BlueZ.createService((LocalServiceRecord)myRecord);
-      if(m_serviceHandle < 0) throw new Exception();
-      myRecord.setAttributeValue(0x0, new DataElement(DataElement.U_INT_4, new Long(m_serviceHandle).longValue()));
-      int psm = (int)((LocalServiceRecord)myRecord).getChannelNumberElement().getLong();
-      this.parsedURL.setAttrNumber(psm);
-    }catch(Exception ex) {
-      throw new ServiceRegistrationException("ERROR - The service record could not be added in the local Bluetooth BCC!");
-    }
     try {
       BlueZ.registerNotifier(this);
     }catch(Exception ex) {
@@ -117,7 +119,6 @@ public class L2CAPConnectionNotifierImpl extends ConnectionNotifier implements L
      }
 
     if (m_fid > 0) {
-    	  removeNotifier();
       L2CAPConnectionImpl con=new L2CAPConnectionImpl(m_fid);
       con.m_receiveMTU = m_recMTU;
       con.m_transmitMTU = m_transMTU;

@@ -62,14 +62,15 @@ public class Connector {
     public static final int READ_WRITE = 0;
     private static BluetoothStack stack = null;
 
-
+    
     public static Connection open(String url) throws IOException {
-    	if (stack == null) {
-    			try {
-    				stack = BluetoothStack.getBluetoothStack();	
-    			} catch (Exception e) { throw new IOException (e.getMessage()); }
-    		}
-        try {
+    		if (stack == null) {
+			try {
+				stack = BluetoothStack.getBluetoothStack();	
+			} catch (Exception e) { throw new IOException (e.getMessage()); }
+		}
+   
+            try {
           JSR82URL myURL=new JSR82URL(url);
           if(myURL.getBTAddress()==null) {
             if(myURL.getProtocol()==JSR82URL.PROTOCOL_RFCOMM) return new RFCommConnectionNotifierImpl(myURL);

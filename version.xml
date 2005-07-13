@@ -185,6 +185,11 @@
     <build value="10" date="2005-06-17">
 	  Fixed a severe bug in Windows where data could be lost when sending large packets via RFComm.
     </build>    
+    <build value="11" date="2005-07-13">
+	  Fixed a bug in OS X.4 that prevented newly discovered devices to have their names discovered succesfully.
+	  Changed ConnectionNotifiers behaviour to create the SDPRecord with Connector.open() and not with Notifier.acceptAndOpen(). This way, ServiceRecords can be modified before the service is actually offered.
+	  Besides, the specification asks for this behaviour.
+    </build>    
    </revision>
   </version>
 </avetanaBluetooth>

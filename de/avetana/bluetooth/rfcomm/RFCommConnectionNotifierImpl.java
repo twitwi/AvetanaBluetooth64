@@ -63,6 +63,18 @@ public class RFCommConnectionNotifierImpl extends ConnectionNotifier implements 
     myRecord=LocalServiceRecord.createSerialSvcRecord(new UUID(url.getLocalServiceUUID(), false), m_serviceName,
         parsedURL.getAttrNumber(), parsedURL.getProtocol());
     if(myRecord==null) throw new Exception("Not a valid Service Record!!!!!");
+    
+    try {
+        m_serviceHandle=BlueZ.createService((LocalServiceRecord)myRecord);
+        if(m_serviceHandle < 0) throw new Exception();
+        myRecord.setAttributeValue(0x0, new DataElement(DataElement.U_INT_4, new Long(m_serviceHandle).longValue()));
+        int channel = (int)((LocalServiceRecord)myRecord).getChannelNumberElement().getLong();
+        this.parsedURL.setAttrNumber(channel);
+      }catch(Exception ex) {
+      	ex.printStackTrace();
+        throw new IOException("ERROR - The service record could not be added in the local SDB " + m_serviceHandle);
+      }
+
   }
 
 
@@ -81,16 +93,6 @@ public class RFCommConnectionNotifierImpl extends ConnectionNotifier implements 
   	isClosed = false;
   	
       try {
-        m_serviceHandle=BlueZ.createService((LocalServiceRecord)myRecord);
-        if(m_serviceHandle < 0) throw new Exception();
-        myRecord.setAttributeValue(0x0, new DataElement(DataElement.U_INT_4, new Long(m_serviceHandle).longValue()));
-        int channel = (int)((LocalServiceRecord)myRecord).getChannelNumberElement().getLong();
-        this.parsedURL.setAttrNumber(channel);
-      }catch(Exception ex) {
-      	ex.printStackTrace();
-        throw new IOException("ERROR - The service record could not be added in the local Bluetooth BCC! " + m_serviceHandle);
-      }
-      try {
         BlueZ.registerNotifier(this);
       }catch(Exception ex) {
         throw new IOException("ERROR - Unable to register the local Service Record!");
@@ -101,7 +103,6 @@ public class RFCommConnectionNotifierImpl extends ConnectionNotifier implements 
       }
       
       if (m_fid > 0) {
-      	removeNotifier();
         RFCommConnectionImpl con=new RFCommConnectionImpl(m_fid);
         con.setRemoteDevice(m_remote);
         m_fid = 0;
