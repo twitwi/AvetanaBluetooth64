@@ -383,6 +383,7 @@ public class BlueZ
          */
         
         public static void writeBytesS (int fid, byte b[], int off, int len) throws IOException {
+        		if (fid <= 0) throw new IOException ("Connection closed");
         		synchronized (getMutex (fid)) {
         			if (writeBytes (fid, b, off, len) == 0) throw new IOException ("Connection closed");
         		}
@@ -627,20 +628,22 @@ public class BlueZ
           //System.out.println ("Registered notifier at channel " + channel)
           Runnable r = new Runnable() {
           	public void run() {
+          		int fid = 0;
                 try {
                 if(proto==JSR82URL.PROTOCOL_L2CAP) {
-						BlueZ.registerL2CAPService((int)a_notifier.getServiceHandle(),
+						fid = registerL2CAPService((int)a_notifier.getServiceHandle(),
 						                channel,
 						                a_notifier.getConnectionURL().isLocalMaster(),
 						                a_notifier.getConnectionURL().isAuthenticated(),
 						                a_notifier.getConnectionURL().isEncrypted(), -1,-1);
                   } else {
-                    registerService((int)a_notifier.getServiceHandle(),
+                    fid = registerService((int)a_notifier.getServiceHandle(),
                                     channel,
                                     a_notifier.getConnectionURL().isLocalMaster(),
                                     a_notifier.getConnectionURL().isAuthenticated(),
                                     a_notifier.getConnectionURL().isEncrypted());
                   }
+                a_notifier.setServerFID(fid);
 				} catch (BlueZException e) {
 					a_notifier.setFailure(new IOException (e.getMessage()));
 					a_notifier.setConnectionID(-1);
@@ -809,6 +812,14 @@ public class BlueZ
 			
 			return 1;
 		}
+		
+		/**
+		 * Used for Widcomm to wait for the RFCommBuffer to be drained
+		 * @param fd
+		 * @throws IOException
+		 */
+		
+		public static native void flush (int fd) throws IOException;
 		
 		/**
 		 * Called from the native side, when the connection is beeing closed

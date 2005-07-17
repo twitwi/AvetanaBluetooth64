@@ -103,34 +103,15 @@ public class L2CAPConnectionNotifierImpl extends ConnectionNotifier implements L
    * not be placed in connectable mode because the device user has configured the device to be non-connectable.
    */
   public synchronized L2CAPConnection acceptAndOpen() throws IOException, ServiceRegistrationException {
-    if (m_fid == -2) throw  new IOException ("Already waiting to be connected or connected");
-  	m_fid = -2;
-  	failEx = null;
-  	isClosed = false;
-    try {
-      BlueZ.registerNotifier(this);
-    }catch(Exception ex) {
-    	  m_fid = 0;
-      throw new IOException("ERROR - Unable to register the local Service Record!");
-    }
+	super.acceptAndOpenI();
 
-     while(m_fid==-2) {
-        try {wait(200);}catch(Exception ex) {}
-     }
-
-    if (m_fid > 0) {
-      L2CAPConnectionImpl con=new L2CAPConnectionImpl(m_fid);
-      con.m_receiveMTU = m_recMTU;
-      con.m_transmitMTU = m_transMTU;
-      con.setRemoteDevice(m_remote);
-      con.setConnectionURL(parsedURL);
+      myConnection=new L2CAPConnectionImpl(m_fid);
+      ((L2CAPConnectionImpl)myConnection).m_receiveMTU = m_recMTU;
+      ((L2CAPConnectionImpl)myConnection).m_transmitMTU = m_transMTU;
+      myConnection.setRemoteDevice(m_remote);
+      ((L2CAPConnectionImpl)myConnection).setConnectionURL(parsedURL);
       m_fid = 0;
-      return con;
-    } else {
-    		close();
-    		if (failEx != null) throw failEx;
-    		throw new IOException ("Service Revoked");
-    }
+      return (L2CAPConnectionImpl)myConnection;
 
   }
   

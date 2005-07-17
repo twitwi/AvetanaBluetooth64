@@ -157,6 +157,9 @@ public class RFCommConnectionImpl extends BTConnection implements StreamConnecti
       BlueZ.writeBytesS (fid, b, off, len);
     }
 
+    public void flush() throws IOException {
+    		BlueZ.flush (fid);
+    }
   }
 
 }

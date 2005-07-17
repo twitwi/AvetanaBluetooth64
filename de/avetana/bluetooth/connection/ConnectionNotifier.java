@@ -3,8 +3,10 @@ package de.avetana.bluetooth.connection;
 import java.io.IOException;
 
 import javax.bluetooth.*;
+
 import de.avetana.bluetooth.sdp.*;
 import de.avetana.bluetooth.stack.*;
+
 import javax.microedition.io.Connection;
 
 
@@ -51,6 +53,17 @@ public abstract class ConnectionNotifier implements Connection {
   protected int m_fid=0;
   
   /**
+   * The current connection of this notifier
+   */
+  
+   protected BTConnection myConnection = null;
+  
+   /**
+    * When a connection listener is established, its ID is stored as m_serverFid. When the Notifier is closed m_serverFid will be closed too.
+    */
+   
+   protected int m_serverFid = 0;
+  /**
    * When registering of a connection fails, the reason is given here
    */
   
@@ -87,9 +100,18 @@ public abstract class ConnectionNotifier implements Connection {
    */
   public synchronized void setConnectionID(int fid) {
     this.m_fid = fid;
+    m_serverFid = 0;
     notifyAll();
   }
   
+  /**
+   * Sets the connection ID
+   * @param fid The connection ID
+   */
+  public void setServerFID(int fid) {
+    this.m_serverFid = fid;
+  }
+
   public void setFailure (IOException e) {
   	this.failEx = e;
   }
@@ -183,9 +205,44 @@ public abstract class ConnectionNotifier implements Connection {
   
   public synchronized void close() {
   	if (isClosed) return;
+  	if (m_serverFid != 0) BlueZ.closeConnectionS(m_serverFid);
   	removeNotifier();
   	isClosed=true;
   	m_fid = 0;
+  	m_serverFid = 0;
   	notifyAll();
   }
+  
+
+  /**
+   * Waits for a client to connect to this service. This method is called from the subClasses acceptAndOpen method
+   */
+  
+  protected synchronized void acceptAndOpenI() throws IOException, ServiceRegistrationException {
+	while (myConnection != null && !myConnection.isClosed()) {
+    		try { wait (100); } catch (Exception e) {}
+    }
+ 
+    m_fid = -2;
+  	failEx = null;
+  	isClosed = false;
+    try {
+      BlueZ.registerNotifier(this);
+    }catch(Exception ex) {
+    	  m_fid = 0;
+      throw new IOException("ERROR - Unable to register the local Service Record!");
+    }
+
+     while(m_fid==-2) {
+        try {wait(200);}catch(Exception ex) {}
+     }
+     
+	 BlueZ.removeNotifier(this);
+	    
+     if (m_fid <= 0) {
+ 		close();
+ 		if (failEx != null) throw failEx;
+ 		throw new IOException ("Service Revoked");
+     }
+  	}
 }

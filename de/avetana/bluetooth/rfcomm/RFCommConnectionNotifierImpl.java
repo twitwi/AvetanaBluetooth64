@@ -7,6 +7,7 @@ import de.avetana.bluetooth.connection.BadURLFormat;
 import de.avetana.bluetooth.connection.ConnectionNotifier;
 import de.avetana.bluetooth.connection.JSR82URL;
 import de.avetana.bluetooth.stack.BlueZ;
+import de.avetana.bluetooth.stack.BlueZException;
 import de.avetana.bluetooth.sdp.*;
 import javax.bluetooth.*;
 import java.io.IOException;
@@ -87,30 +88,12 @@ public class RFCommConnectionNotifierImpl extends ConnectionNotifier implements 
     * @throws IOException
    */
   public synchronized StreamConnection acceptAndOpen() throws IOException{
-    if (m_fid == -2) throw  new IOException ("Already waiting to be connected");
-  	m_fid = -2;
-  	failEx = null;
-  	isClosed = false;
-  	
-      try {
-        BlueZ.registerNotifier(this);
-      }catch(Exception ex) {
-        throw new IOException("ERROR - Unable to register the local Service Record!");
-      }
-      
-      while(m_fid==-2) {
-        try {wait(200);}catch(Exception ex) {}
-      }
-      
-      if (m_fid > 0) {
-        RFCommConnectionImpl con=new RFCommConnectionImpl(m_fid);
-        con.setRemoteDevice(m_remote);
+	  super.acceptAndOpenI();
+
+        myConnection=new RFCommConnectionImpl(m_fid);
+        myConnection.setRemoteDevice(m_remote);
         m_fid = 0;
-        return con;
-      } else {
-      	close();
-        if (failEx != null) throw failEx;
-        throw new IOException ("Service Revoked");
-      }
+        return (StreamConnection) myConnection;
+     
   }
 }
