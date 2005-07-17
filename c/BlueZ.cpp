@@ -991,6 +991,7 @@ int openBTConnection(JNIEnv *env, const char *name, int channel, int type, int m
      } else if(sel > 0) { //Data is available (inc. 0-length packets)
 	     //printf ("Poll returned %X\n", pfd.revents);
        rlen = read (fd, c, mtu);
+	if (rlen == -1) break;
 		   jbyteArray arr = env->NewByteArray(rlen);
 			 //printf ("Read %d %d\n", rlen, arr);
 			 env->SetByteArrayRegion(arr, 0, rlen, (jbyte *)c);
