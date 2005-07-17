@@ -190,6 +190,11 @@
 	  Changed ConnectionNotifiers behaviour to create the SDPRecord with Connector.open() and not with Notifier.acceptAndOpen(). This way, ServiceRecords can be modified before the service is actually offered.
 	  Besides, the specification asks for this behaviour.
     </build>    
+    <build value="12" date="2005-07-17">
+     Fixed serveral issues in Service Record Handling and Notifier creation and deletion. 
+     Now L2CAP Connection can be re-offered by calling acceptAndOpen() several time.
+     Fixed a Problem with RFComm connection where data could be lost when close() was called too early. Now flush() can be used to clear the buffer before closing.
+    </build>
    </revision>
   </version>
 </avetanaBluetooth>
