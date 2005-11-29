@@ -70,14 +70,15 @@ public class UUID {
      */
     public UUID(byte[] uuidBytes) {
         this.uuidBytes = uuidBytes;
-        if (uuidBytes.length == 4) {
+        if (uuidBytes.length == 4 || uuidBytes.length == 16) {
             this.uuidLong = (long)(((long)uuidBytes[0] & 0xff) << 24 | ((long)uuidBytes[1] & 0xff) << 16 |
                 ((long)uuidBytes[2] & 0xff) << 8 | ((long)uuidBytes[3] & 0xff));
         }
         else if (uuidBytes.length == 2) {
             this.uuidLong = (long)(((long)uuidBytes[0] & 0xff) << 8 | ((long)uuidBytes[1] & 0xff));
         }
-        else if(uuidBytes.length!=16) throw new IllegalArgumentException("uuidValue is not in range.");
+        else throw new IllegalArgumentException("uuidValue is not in range.");
+        
     }
 
     /**
@@ -168,6 +169,7 @@ public class UUID {
         else {
           if(uuidValue.startsWith("0x")) uuidValue=uuidValue.substring(2);
           if(uuidValue.length()!=32) throw new IllegalArgumentException("A 128-bits UUID must be a 32 character long String!!");
+          uuidLong = Long.parseLong (uuidValue.substring(0, 8), 16);
           uuidBytes = new byte[16];
           char[] toCharr=uuidValue.toCharArray();
           for(int i=0;i<uuidBytes.length;i++) {
@@ -176,11 +178,10 @@ public class UUID {
               tmp[0]=toCharr[i*2];
               tmp[1]=toCharr[(i+1)*2-1];
               uuidBytes[i]=Short.decode("0x"+new String(tmp)).byteValue();
-              uuidLong = Long.parseLong (uuidValue.substring(0, 8), 16);
             }catch(Exception ex) {throw new IllegalArgumentException();}
           }
         }
-    }
+     }
 
     /*  End of the constructor method   */
 

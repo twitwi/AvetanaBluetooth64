@@ -156,39 +156,38 @@ public class LocalDevice {
      * a state that does not allow the discoverable mode to be changed
      */
     public boolean setDiscoverable(int mode) throws BluetoothStateException {
-      if((mode > 0x9E8B3F || mode < 0x9E8B00) &&
-         (mode != DiscoveryAgent.NOT_DISCOVERABLE || mode != DiscoveryAgent.GIAC ||
-          mode != DiscoveryAgent.LIAC)) throw new IllegalArgumentException("Invalid mode value!");
-      try {
-        if(mode==DiscoveryAgent.LIAC) {
-          final int modeThread=mode;
-          DiscoverRunnable r=new DiscoverRunnable() {
-            public void run() {
-              int oldMode=-1;
-              try {
-                oldMode=getDiscoverable();
-                if(oldMode==-1) throw new Exception("Unable to get old discovery Mode!");
-                if(bluetoothManager.setDiscoverableMode(modeThread)==-1) throw new Exception("Unable to set new discoverable mode");
-                while(seconds < 60000) {
-                  this.wait(200);
-                  seconds+=200;
-                }
-                if(bluetoothManager.setDiscoverableMode(oldMode)==-1) throw new Exception("Unable to reset old discoverable mode");
-                seconds=0;
-              }catch(Exception ex) {e=ex; seconds=0; return;}
-            }
-          };
-          new Thread(r).start();
-          while(r.seconds!=0 && r.e==null) {this.wait(200);}
-          if(r.e!=null) throw new BluetoothStateException(r.e.getMessage());
+        if(!((mode < 0x9E8B3F && mode > 0x9E8B00) || mode == DiscoveryAgent.NOT_DISCOVERABLE || 
+        		mode == DiscoveryAgent.GIAC || mode == DiscoveryAgent.LIAC)) throw new IllegalArgumentException("Invalid mode value!");
+        try {
+          if(mode==DiscoveryAgent.LIAC) {
+            final int modeThread=mode;
+            DiscoverRunnable r=new DiscoverRunnable() {
+              public void run() {
+                int oldMode=-1;
+                try {
+                  oldMode=getDiscoverable();
+                  if(oldMode==-1) throw new Exception("Unable to get old discovery Mode!");
+                  if(bluetoothManager.setDiscoverableMode(modeThread)==-1) throw new Exception("Unable to set new discoverable mode");
+                  while(seconds < 60000) {
+                    this.wait(200);
+                    seconds+=200;
+                  }
+                  if(bluetoothManager.setDiscoverableMode(oldMode)==-1) throw new Exception("Unable to reset old discoverable mode");
+                  seconds=0;
+                }catch(Exception ex) {e=ex; seconds=0; return;}
+              }
+            };
+            new Thread(r).start();
+            while(r.seconds!=0 && r.e==null) {this.wait(200);}
+            if(r.e!=null) throw new BluetoothStateException(r.e.getMessage());
 
+          }
+          else if(bluetoothManager.setDiscoverableMode(mode) == -1) return false;
+        }catch(Exception ex) {
+          throw new BluetoothStateException(ex.getMessage());
         }
-        else if(bluetoothManager.setDiscoverableMode(mode) == -1) return false;
-      }catch(Exception ex) {
-        throw new BluetoothStateException(ex.getMessage());
+        return true;
       }
-      return true;
-    }
 
     private class DiscoverRunnable implements Runnable {
       public int seconds=-1;

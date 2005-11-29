@@ -56,7 +56,7 @@ public class DeviceFinderPane extends JPanel implements ActionListener, Discover
   private DiscoveryAgent m_agent;
   private int maxServiceSearch=1;
   private int nbOfServiceSearch=0;
-  private static volatile ProgressDialog m_dialog;
+  private ProgressDialog m_dialog;
   private Window m_owner;
   private Hashtable nameCache = new Hashtable();
   private Vector m_remote=new Vector();
@@ -114,6 +114,7 @@ public class DeviceFinderPane extends JPanel implements ActionListener, Discover
       addr=btDevice.getBluetoothAddress();
       name=btDevice.getFriendlyName(false);
       inform("Device: "+btDevice.getFriendlyName(false)+" found!!");
+      System.out.println ("Device: "+btDevice.getFriendlyName(false)+" found!! major device class " + cod.getMajorDeviceClass() + " minor " + cod.getMinorDeviceClass() + " service " + cod.getServiceClasses());
      }
     catch(Exception ex) {ex.printStackTrace();}
     if(addr!=null) {
@@ -179,7 +180,7 @@ public class DeviceFinderPane extends JPanel implements ActionListener, Discover
 
   public void inquiryCompleted(int discType) {
     m_deviceList.setListData(m_remote);
-    m_dialog.setVisible(false);
+    if (m_dialog != null) m_dialog.setVisible(false);
   }
 
   public void serviceSearchCompleted(int transID, int respCode) {

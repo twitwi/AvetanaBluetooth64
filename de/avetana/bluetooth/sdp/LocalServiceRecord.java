@@ -145,10 +145,11 @@ public class LocalServiceRecord extends SDPServiceRecord {
     		DataElement sfl = new DataElement (DataElement.DATSEQ);
     		sfl.addElement(new DataElement (DataElement.U_INT_1, 1));
     		sfl.addElement(new DataElement (DataElement.U_INT_1, 2));
+    		sfl.addElement(new DataElement (DataElement.U_INT_1, 3));
     		sfl.addElement(new DataElement (DataElement.U_INT_1, 4));
     		sfl.addElement(new DataElement (DataElement.U_INT_1, 5));
     		sfl.addElement(new DataElement (DataElement.U_INT_1, 6));
-    		sfl.addElement(new DataElement (DataElement.U_INT_1, 255));
+    		//sfl.addElement(new DataElement (DataElement.U_INT_1, 255));
     		rec.m_attributes.put(new Integer (SDPConstants.ATTR_SUPPORTED_FORMATS_LIST), sfl);
     		rec.m_attributes.put(new Integer (SDPConstants.ATTR_SERVICE_AVAILABILITY), new DataElement (DataElement.U_INT_1, 255));
     }
@@ -161,7 +162,8 @@ public class LocalServiceRecord extends SDPServiceRecord {
    * of this XML element. Useful for the Mac implementation
    * @return The XML-based string representation of the service record
    */
-    
+
+
   public String getSDPRecordXML() {
     try {
       File f = null;
@@ -246,6 +248,15 @@ public class LocalServiceRecord extends SDPServiceRecord {
 
   }
 
+  public int getChannelNumber () {
+	  try {
+	  return (int)getChannelNumberElement().getLong();
+	  } catch (Exception e) {
+		  e.printStackTrace();
+		  return -1;
+	  }
+  }
+  
   /**
    * Gets the channel/PSM number of the local service record
    * @return The channel/PSM number of the local service record
@@ -394,7 +405,7 @@ public class LocalServiceRecord extends SDPServiceRecord {
    * @return  nothing - Throws an Exception
    */
   public void setDeviceServiceClasses(int classes) {
-    throw new java.lang.UnsupportedOperationException("Method setDeviceServiceClasses() not yet implemented.");
+    throw new java.lang.Error("Method setDeviceServiceClasses() not yet implemented.");
   }
 
   /**

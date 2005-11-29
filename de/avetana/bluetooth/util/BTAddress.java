@@ -1,5 +1,6 @@
 package de.avetana.bluetooth.util;
 
+import java.io.Serializable;
 import java.util.StringTokenizer;
 
 /**
@@ -38,7 +39,7 @@ import java.util.StringTokenizer;
 * @author Julien Campana for a few static methods
 */
 
-public class BTAddress implements java.io.Serializable
+public class BTAddress implements Serializable
 {
         /**
          * The address is stored as six 8-bit numbers.

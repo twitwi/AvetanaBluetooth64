@@ -7,8 +7,11 @@
 package de.avetana.bluetooth.util;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Container;
+import java.awt.Dialog;
 import java.awt.Frame;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
@@ -35,6 +38,7 @@ public class DeviceFinder extends JDialog implements ActionListener {
   	private boolean inquiryDone = false;
   	Vector remoteDevices;
   	DiscoveryListener discList;
+  	JProgressBar inqBar = new JProgressBar (0, 0);
   	
  	public DeviceFinder (Frame frame) {
  		this (frame, -1, -1);
@@ -42,8 +46,23 @@ public class DeviceFinder extends JDialog implements ActionListener {
  	
   	public DeviceFinder (Frame frame, final int min, final int maj) {
   		super (frame, true);
+  		init (min, maj, frame);
+  	}
+ 
+ 	public DeviceFinder (Dialog frame) {
+ 		this (frame, -1, -1);
+ 	}
+ 	
+  	public DeviceFinder (Dialog frame, final int min, final int maj) {
+  		super (frame, true);
+  		init (min, maj, frame);
+  	}
+
+  	private void init (final int min, final int maj, Component frame) {
   		Container cont = getContentPane();
   		cont.setLayout(new BorderLayout());
+  		cont.add (inqBar, BorderLayout.NORTH);
+  		inqBar.setIndeterminate(true);
   		cont.add (new JScrollPane (jl), BorderLayout.CENTER);
   		JPanel bp = new JPanel();
   		bp.add(okBut);
@@ -71,9 +90,12 @@ public class DeviceFinder extends JDialog implements ActionListener {
   			}
     		  }
     		  public void inquiryCompleted(int discType) {
+    			  if (discType != DiscoveryListener.INQUIRY_COMPLETED)
+    				  JOptionPane.showMessageDialog(DeviceFinder.this, "Inquiry failed", "Error", JOptionPane.ERROR_MESSAGE);
     		    okBut.setEnabled (true);
     		    inqBut.setEnabled (true);
     		    inqBut.setText ("Inquiry");
+    		    inqBar.setVisible(false);
     		  }
 
     		  public void serviceSearchCompleted(int transID, int respCode) {
@@ -113,6 +135,7 @@ public class DeviceFinder extends JDialog implements ActionListener {
   	private void doInquiry() {
  
   		inquiryDone = false;
+  		inqBar.setVisible(true);
   		remoteDevices = new Vector();
   		lm.removeAllElements();
   		okBut.setEnabled (false);
@@ -125,8 +148,11 @@ public class DeviceFinder extends JDialog implements ActionListener {
   			  try {
 				LocalDevice.getLocalDevice().getDiscoveryAgent().startInquiry(DiscoveryAgent.GIAC, discList);
   			  } catch (BluetoothStateException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
+				  JOptionPane.showMessageDialog(DeviceFinder.this, "Inquiry failed", "Error", JOptionPane.ERROR_MESSAGE);
+				  inqBut.setEnabled(true);
+				  okBut.setEnabled(true);
+				  inqBar.setVisible(false);
 			}
  			}
   		};

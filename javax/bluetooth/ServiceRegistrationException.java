@@ -39,12 +39,16 @@ import java.io.*;
  */
 public class ServiceRegistrationException extends IOException {
     /** Creates a <code>ServiceRegistrationException</code> without a detailed message. */
-    public ServiceRegistrationException() { throw new RuntimeException("Not Implemented! Used to compile Code"); }
+    public ServiceRegistrationException() { 
+    		super();
+    }
 
     /**
      * Creates a <code>ServiceRegistrationException</code> with a detailed message.
      * @param msg the reason for the exception
      */
-    public ServiceRegistrationException(String msg) { throw new RuntimeException("Not Implemented! Used to compile Code"); }
+    public ServiceRegistrationException(String msg) { 
+    		super (msg);
+    	}
 }
 

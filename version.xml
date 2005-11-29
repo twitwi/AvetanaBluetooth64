@@ -195,6 +195,40 @@
      Now L2CAP Connection can be re-offered by calling acceptAndOpen() several time.
      Fixed a Problem with RFComm connection where data could be lost when close() was called too early. Now flush() can be used to clear the buffer before closing.
     </build>
+    <build value="13" date="2005-07-28">
+     Fixed some PocketPC native problems with AttachCurrentThread, where GetEnv would not really get the Environment in CrEme.
+     Native side is now calling deviceDiscovered() in BlueZ to notifiy of newly found devices. That way we don't need to store the DiscoveryAgent.
+    </build>
+    <build value="14" date="2005-08-02">
+     Fixed a bug in OBEX, where headers were sent twice. This mad the Motorola RAZR phone disconnect.
+    </build>
+    <build value="15" date="2005-08-14">
+     Added code in LibLoader to try and find old leftovers of the native library and delete them.
+     Fixed a native bug in Windows, where Connection-closed messages could cause the application to crash.
+    </build>
+    <build value="16" date="2005-09-08">
+	 Prepared integration of Microsoft Bluetooth Stack.
+	 Fixed a problem in UUID generation from 16 Byte values
+	 Fixed a problem in DeviceClass where MajorDevice class was shifted >>8 which was wrong.
+    </build>
+    <build value="17" date="2005-09-17">
+	 Fixed a bug in getFriendlyName for Microsoft that does not support this. The name discovered at device discovery time is used even when called with true as argument.
+	 Prevented native stuff to be initialized multiple times.
+    </build>
+   </revision>
+   <revision value="2">
+    <build value="0" date="2005-10-19">
+	 Release with support for Microsoft BT-Stack.
+	 Automatic discovery of used Stack.
+    </build>    
+    <build value="1" date="2005-11-16">
+	 Update in RemoteDevice.getRemoteDevice(Connection) to throw an IOException if the connection was closed.
+	 Fixed in Native methods to prevent out of memory exception when receiving to much data.
+    </build>    
+    <build value="2" date="2005-11-28">
+	 Updates to handle requesting of specific local channels in a connectionURL. This goes beyond the JSR-82 specification.
+	 Update in native part for Windows/Microsoft to set Discoverable/Not Discoverable.
+    </build>    
    </revision>
   </version>
 </avetanaBluetooth>

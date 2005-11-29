@@ -4,6 +4,8 @@ import de.avetana.bluetooth.connection.*;
 import de.avetana.bluetooth.sdp.*;
 import javax.bluetooth.*;
 import de.avetana.bluetooth.util.BTAddress;
+import de.avetana.bluetooth.util.LibLoader;
+
 import javax.microedition.io.*;
 
 /**
@@ -45,13 +47,13 @@ public class AvetanaBTStack extends BluetoothStack {
   private static boolean initialized = false;
 
   public AvetanaBTStack() throws Exception{
-      m_bd = BlueZ.hciOpenDevice(0, new BlueZ());
-      devID = 0;
+	  this(0);
   }
 
   public AvetanaBTStack(int devID) throws Exception{
-      m_bd = BlueZ.hciOpenDevice(devID, new BlueZ());
-      this.devID = devID;
+ 	 LibLoader.loadBTLib();
+	 m_bd = BlueZ.hciOpenDevice(devID, new BlueZ());
+     this.devID = devID;
   }
 
   public void setDeviceID(int dev) throws Exception{

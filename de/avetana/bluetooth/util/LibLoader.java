@@ -32,38 +32,68 @@ package de.avetana.bluetooth.util;
 
 import java.io.*;
 
+import de.avetana.bluetooth.stack.BlueZ;
+
 public class LibLoader {
 
-	public static void loadCommLib (String name) throws Exception {
+	private static String btname;
 
+	public static void loadMIDPLib() throws Exception {
+		//com.ibm.oti.vm.VM.loadLibrary("avetanaBluetoothCEMS");
+	}
+	
+	public static void loadBTLib () throws Exception {
+		btname = loadLib ("avetanaBT");
+	}
+	
+	protected static String loadLib (String name) throws Exception {
+
+		
+		String confName = System.getProperty ("microedition.profiles");
+		if ((confName != null && confName.indexOf("MIDP") != -1)) {
+			return "";
+		}
+		
 	    String sysName = System.getProperty("os.name");
-	    
-	    if (sysName.toLowerCase().indexOf("windows") != -1 && sysName.toLowerCase().indexOf("ce") != -1) name = name + "CE";
-
-	    String libName = name;
-	    if (sysName.toLowerCase().indexOf("windows") != -1) libName = libName + ".dll";
-	    else if (sysName.toLowerCase().indexOf("linux") != -1) libName = "lib" + libName + ".so";
-	    else if (sysName.toLowerCase().indexOf("mac os x") != -1) libName = "lib" + libName + ".jnilib";
-	    else throw new Exception ("Unsupported operating system" + sysName);
-	    
+		if (name.equals("avetanaBT")) {
+		    
+		    if (sysName.toLowerCase().indexOf("windows") != -1) {
+			    if (sysName.toLowerCase().indexOf("ce") != -1) name = name + "CE";
+			    else {
+			    		String stack = "" + System.getProperty("avetanabt.stack");
+			    	
+			    		int checkHCI = BTCheck.checkHCI();
+			    		
+			    		if (checkHCI == 0) throw new Exception ("No supported stack installed or no dongle available");
+			    		
+			    		if ((checkHCI & 1) == 0 || (stack.equalsIgnoreCase("microsoft") && (checkHCI & 2) == 2)) name += "MS";
+			    		
+			    }
+			    name = name + ".dll";
+		    }
+		    else if (sysName.toLowerCase().indexOf("linux") != -1) name = "lib" + name + ".so";
+		    else if (sysName.toLowerCase().indexOf("mac os x") != -1) name = "lib" + name + ".jnilib";
+		    else throw new Exception ("Unsupported operating system" + sysName);
+		} else name = System.mapLibraryName(name);
+		
 	    InputStream is = null;
 	    
 	    try {
 	    		Class cl = new LibLoader().getClass();
 	    		ClassLoader clo = cl.getClassLoader();
 	    		if (clo == null) {
-	    			is = ClassLoader.getSystemResourceAsStream(libName);
-	    		}else is = clo.getResourceAsStream(libName);
+	    			is = ClassLoader.getSystemResourceAsStream(name);
+	    		} else is = clo.getResourceAsStream(name);
 	 
 	    } catch (Exception e) {
 	    		e.printStackTrace();
-	    		throw new Exception ("Native Library " + libName + " is not a ressource !");
+	    		throw new Exception ("Native Library " + name + " is not a ressource !");
 	    }
 
-		if (is == null) throw new Exception ("Native Library " + libName + " not in CLASSPATH !");
+		if (is == null) throw new Exception ("Native Library " + name + " not in CLASSPATH !");
 
 	    File fd = null;
-	    String tmppath = System.getProperty("java.io.tmpdir");
+	    String tmppath = System.getProperty ("java.io.tmpdir");
 	    
 	    if (sysName.toLowerCase().indexOf("windows") != -1 && sysName.toLowerCase().indexOf("ce") != -1 && (tmppath == null || tmppath.endsWith("null")))
 	    		tmppath = File.separator + "Temp";
@@ -72,7 +102,7 @@ public class LibLoader {
 	      try {
 	      	do {
 	      		int count = (int)(100000f * Math.random());
-	      		fd = new File (tmppath, "" + count);
+	      		fd = new File (tmppath, "abt" + count);
 	      	} while (fd.exists());
 	      } catch (Exception e) { e.printStackTrace(); System.err.println ("Writing of temp lib-file failed " + fd.getAbsolutePath()); }
 	    }
@@ -81,7 +111,7 @@ public class LibLoader {
 	    final File f = new File(path);
 	    f.mkdirs();
 	    	
-	    final File f2 = new File (f, libName);
+	    final File f2 = new File (f, name);
 		//System.out.println ("Library stored in " + f2.getAbsolutePath());
 	    FileOutputStream fos = new FileOutputStream (f2);
 
@@ -116,6 +146,40 @@ public class LibLoader {
 	    		} catch (Throwable e) {
 	    		}
 	    }
+	    
+	    //Find old instances of the library and delete them
+	    
+	    File tmpdir = new File (tmppath);
+	    if (tmpdir.isDirectory()) {
+	    		File listSub[] = tmpdir.listFiles();
+	    		for (int i = 0;i < listSub.length;i++) {
+	    			try {
+	    				if (listSub[i].isDirectory() && listSub[i].getName().startsWith("abt") &&
+	    						listSub[i].listFiles()[0].getName().equalsIgnoreCase(name) && !listSub[i].listFiles()[0].equals(f2) ) {
+	    							listSub[i].listFiles()[0].delete();
+	    							listSub[i].delete();
+	    						}
+	    			} catch (Exception e) {}
+	    		}
+	    }
+	    
+	    return name;
+	    
 	   }
+
+	public static boolean tryload(String name) {
+		try { 
+			System.loadLibrary(name); 
+		} catch (Throwable e) { return false; }
+		
+		return true;
+	}
+
+	/**
+	 * @return Returns the name.
+	 */
+	public static String getName() {
+		return btname;
+	}
 
 }

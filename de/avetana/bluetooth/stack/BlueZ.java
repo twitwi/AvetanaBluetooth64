@@ -29,8 +29,11 @@ package de.avetana.bluetooth.stack;
 import java.io.*;
 import java.util.Vector;
 
+import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.DiscoveryAgent;
 import javax.bluetooth.DiscoveryListener;
+import javax.bluetooth.LocalDevice;
+import javax.bluetooth.RemoteDevice;
 import javax.bluetooth.ServiceRecord;
 
 import de.avetana.bluetooth.connection.BTConnection;
@@ -80,12 +83,16 @@ public class BlueZ
 		}
 }
 
-	// Loads the library containing the native code implementation.
-	// It is usually called "libavetanaBT.so" under UNIX/Linux, but is loaded
-	// with the "avetanaBT" string, since this is how JNI implements platform
-	// independence.
+	/**
+	 * 
+	 * Loads the library containing the native code implementation.
+	 * It is usually called "libavetanaBT.so" under UNIX/Linux, but is loaded
+	 * with the "avetanaBT" string, since this is how JNI implements platform
+	 * independence.
+	 */
+    
 	static {
-		try {LibLoader.loadCommLib("avetanaBT"); } catch (Exception e ) { e.printStackTrace(); System.exit(0);}
+			
 		String version = "0";
 		String revision = "0";
 		String build = "0";
@@ -153,7 +160,7 @@ public class BlueZ
 	 * @return A device descriptor (often named <code>dd</code>) for the HCI
 	 *     device.
 	 */
-	public synchronized static native int hciOpenDevice(int hciDevID, BlueZ ref) throws BlueZException;
+	protected synchronized static native int hciOpenDevice(int hciDevID, BlueZ ref) throws BlueZException;
 
 	/* HCI Close Device */
 	/**
@@ -162,7 +169,7 @@ public class BlueZ
 	 * @param dd The HCI device descriptor (as returned from
 	 *     <code>hciOpenDevice</code>)
 	 */
-	public synchronized static native void hciCloseDevice(int dd);
+	protected synchronized static native void hciCloseDevice(int dd);
 
 	/* HCI Inquiry */
 	/**
@@ -607,7 +614,9 @@ public class BlueZ
             public void run() {
               try {
                 listService(bdaddr_jstr, uuid, attrIds, m_transactionId);
-              }catch(Exception ex) {}
+              }catch(Exception ex) {
+            	  	serviceSearchComplete (m_transactionId, DiscoveryListener.SERVICE_SEARCH_ERROR);
+              }
             }
           };
           new Thread(r).start();
@@ -687,7 +696,7 @@ public class BlueZ
                   not.setRemoteDevice(jaddr);
                   if (not instanceof L2CAPConnectionNotifierImpl) ((L2CAPConnectionNotifierImpl)not).setMTUs(transMTU, recMTU);
                   not.setConnectionID(fid);
-                myFactory.removeNotifier(not);
+                  //myFactory.removeNotifier(not);
                 return true;
               }
             }catch(Exception ex) {ex.printStackTrace();}
@@ -757,7 +766,21 @@ public class BlueZ
          */
         
         public static byte[] newByteArray (int size) {
-        		return new byte[size];
+        		try {
+        			return new byte[size];
+        		} catch (Throwable e) {
+        			System.err.println ("Collection garbage");
+        			e.printStackTrace();
+        			System.gc();
+        			System.runFinalization();
+            		try {
+            			return new byte[size];
+            		} catch (Throwable e2) {
+            			e2.printStackTrace();
+            			return null;
+            		}
+        			
+        		}
         }
         
         /**
@@ -835,7 +858,6 @@ public class BlueZ
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-
 		}
 		
 		/**
@@ -858,4 +880,16 @@ public class BlueZ
 		 * @param mtu
 		 */
 		private static native void readBytes (int fid, int mtu);
+		
+	    /**
+	     * The following method is called by some Stacks to notify of RemoteDevices that have been found.
+	     *
+	     */
+
+	    public static synchronized void deviceDiscovered (RemoteDevice d) {
+	    		try {
+					LocalDevice.getLocalDevice().getDiscoveryAgent().deviceDiscovered (d);
+				} catch (BluetoothStateException e) {
+			}
+	    }
 }

@@ -1,6 +1,8 @@
 package de.avetana.bluetooth.sdp;
 
 import javax.bluetooth.*;
+
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -155,6 +157,6 @@ public abstract class SDPServiceRecord implements ServiceRecord{
       resultAttributes.addElement(value);
   }
   return resultAttributes.toByteArray();
-}
+ }
 
 }

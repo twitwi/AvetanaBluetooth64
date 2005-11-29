@@ -31,7 +31,7 @@ import java.io.*;
  * Die Kinder eines
  */
 
-public class PElement implements Cloneable, Serializable {
+public class PElement {
 
   private int id = 0;
   protected PElement parent;

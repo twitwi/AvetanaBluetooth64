@@ -52,7 +52,9 @@ import de.avetana.bluetooth.connection.JSR82URL;
 import de.avetana.bluetooth.hci.Rssi;
 import de.avetana.bluetooth.hci.LinkQuality;
 import de.avetana.bluetooth.l2cap.L2CAPConnectionNotifierImpl;
+import de.avetana.bluetooth.obex.HeaderSetImpl;
 import de.avetana.bluetooth.sdp.SDPConstants;
+import de.avetana.bluetooth.stack.BlueZ;
 import de.avetana.bluetooth.util.BTAddress;
 import de.avetana.bluetooth.util.IntDeviceFinder;
 import de.avetana.bluetooth.util.ServiceFinderPane;
@@ -121,6 +123,9 @@ public class JSRTest extends JFrame implements ActionListener {
   private ButtonGroup clientServer;
   // Current connection status
   private JLabel serviceStatus = new JLabel ("Idle");
+  
+  //Thread that sends data while sendBut is pressed (Test)
+  //private Thread sendThread = null;
 
   // Connection options.
   private JCheckBox m_authentication=new JCheckBox("Enable authentication");
@@ -128,10 +133,12 @@ public class JSRTest extends JFrame implements ActionListener {
   private JCheckBox m_master=new JCheckBox("Connect as master");
 
   // Connection URL
-  private JTextField connectionURL = new JTextField (40);
+  private JTextField connectionURL = new JTextField (30);
   // Connection button
   private JToggleButton connectTo = new JToggleButton ("Connect");
   // Data exchange info and commands
+  //private Thread sendThread;
+  //private JToggleButton sendData = new JToggleButton ("Send data");
   private JButton sendData = new JButton ("Send data");
   private JLabel dataReceived = new JLabel ("Received 0");
 
@@ -144,8 +151,10 @@ public class JSRTest extends JFrame implements ActionListener {
   private Connection streamCon = null;
   // Connection notifier for SDP server profiles
   private Connection notify=null;
+  
   // Own thread for receiving and sending data for the protocols, which use connection streams.
   private DStreamThread receiverThread = null;
+  
   // L2CAP Data needs to be polled from the stream in order to clear the InputBuffer
   private JButton l2CAPBut = new JButton ("poll");
   // Warn the user if the os specific stack does not support some security options.
@@ -199,6 +208,7 @@ public class JSRTest extends JFrame implements ActionListener {
   private final String[] localPref=new String[]{"lastBTSearchL2CAP",
                                                 "lastBTSearchRFComm",
                                                 "lastBTSearchOBEX"};
+
 
 
   public JSRTest() throws Exception {
@@ -310,7 +320,7 @@ public class JSRTest extends JFrame implements ActionListener {
      GridBagConstraints c=new GridBagConstraints();
      clSer.setBorder(BorderFactory.createTitledBorder("Connection Framework"));
      JPanel clientURL=new JPanel(new FlowLayout());
-     clientURL.add(new JLabel("Connection URL: "));
+     clientURL.add(new JLabel("URL:"));
      clientURL.add(connectionURL);
      clientURL.add(connectTo);
      int i=-1;
@@ -675,6 +685,7 @@ public class JSRTest extends JFrame implements ActionListener {
    public void authenticateLink() {
      try {
        RemoteDevice dev=((BTConnection)streamCon).getRemoteDevice();
+             
        JOptionPane.showMessageDialog(this, "Authentification " + (dev.authenticate() ? "successfull" : "Non successfull"));
      }catch(Exception ex) {
        showError(ex.getMessage());
@@ -731,7 +742,9 @@ public class JSRTest extends JFrame implements ActionListener {
        }
        else if(e.getSource() ==m_discoverable) {
          int mode=m_local.getDiscoverable();
-         showInfo("Discoverable mode : "+mode, "Local discoverable mode");
+         if (mode == DiscoveryAgent.GIAC) m_local.setDiscoverable(DiscoveryAgent.NOT_DISCOVERABLE);
+         else m_local.setDiscoverable(DiscoveryAgent.GIAC);
+         showInfo("Previouse mode : "+mode, "Local discoverable mode");
        }
 
        else if (e.getSource() == connectTo && connectTo.isSelected() == true) {
@@ -760,7 +773,7 @@ public class JSRTest extends JFrame implements ActionListener {
        }
        else if (e.getSource() == sendData) {
          if(m_protocols.getSelectedIndex() == JSR82URL.PROTOCOL_RFCOMM) {
-            byte b[] = new byte[JSRTest.rfcommPackLen];
+            byte b[] = new byte[300];//JSRTest.rfcommPackLen];
             for (int i = 0; i < b.length; i++) {	
 				b[i] = (byte) (0x100 * Math.random());
 			}
@@ -772,8 +785,33 @@ public class JSRTest extends JFrame implements ActionListener {
 				csum += (int)(b[i] & 0xff);
 			}
 			System.out.println ("Checksum of burst " + (csum % 1024));*/
-         	os.write(b);
+            int count = 0;
+            //while (true) {
+            		os.write(b);
+            		count += b.length;
+            		System.out.println ("Sent " + count + " bytes");
+            //}
          	//System.out.println ("Wrote " + (int)(b[0] & 0xff) + " " + (int)(b[1] & 0xff));
+            /*
+            if (sendData.isSelected() && sendThread == null) {
+            		Runnable r = new Runnable() {
+            			public void run() {
+            				while (sendThread != null) {
+            					try {
+									os.write (new byte[JSRTest.rfcommPackLen]);
+								} catch (IOException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+									sendThread = null;
+									sendData.setSelected(false);
+								}
+            				}
+            			}
+            		};
+            		sendThread = new Thread (r);
+            		sendThread.start();
+            } else if (!sendData.isSelected()) sendThread = null;
+            */
          }
          else if(m_protocols.getSelectedIndex() == JSR82URL.PROTOCOL_L2CAP) {
          	byte[] b = new byte[(int)((double)((L2CAPConnection)streamCon).getTransmitMTU() * Math.random())];
@@ -807,35 +845,38 @@ public class JSRTest extends JFrame implements ActionListener {
             HeaderSet hs2 = cs.connect(hs);
             System.out.println ("Connected with response code " + hs2.getResponseCode());
       
+            hs = cs.createHeaderSet();
+            
+            //This way sending a vcard works on any machine I know of.
+            
             InputStream is = this.getClass().getClassLoader().getResourceAsStream("avetana.vcf");
             byte b[] = new byte[is.available()];
             is.read(b);
-
-            //This way sending a vcard works on any machine I know of.
-            
-            hs = cs.createHeaderSet();
             hs.setHeader (HeaderSet.NAME, "avetana.vcf");
             hs.setHeader (HeaderSet.TYPE, "text/x-vcard");
             hs.setHeader(0x49, b); // if everything fits inside a packet, the data can be packed in the PUT command
             Operation po = cs.put(hs);
             po.close();
 
+            
             	//This way, it should work, but it does not on the S55, because the type is not recognised when
             //Data is not sent within the PUT-Command as it is in the example above
- /*           hs.setHeader(HeaderSet.NAME, "avetana.vcf");
-            hs.setHeader (HeaderSet.TYPE, "text/x-vcard");
+            /*hs.setHeader(HeaderSet.NAME, "img.jpg");
+            hs.setHeader (HeaderSet.TYPE, "image/jpg");
+            File f = new File ("/tmp/img.jpg");
+            hs.setHeader (HeaderSet.LENGTH, new Long(f.length()));
             Operation po = cs.put(hs);
             OutputStream os = po.openOutputStream();
-            InputStream is = this.getClass().getClassLoader().getResourceAsStream("avetana.vcf");
-            byte b[] = new byte[100];
+            InputStream is = new FileInputStream(f);
+            byte b[] = new byte[6000];
             int read;
             while ((read = is.read(b)) > 0) {
             		os.write(b, 0, read);
             }
             os.close();
             is.close();
-            po.close();
-*/
+            po.close();*/
+            
             
           /*
             // 	Example on how to send a simple text message
@@ -899,7 +940,7 @@ public class JSRTest extends JFrame implements ActionListener {
          public void run () {
            try {
              //JSR82URL url=new JSR82URL("btspp://localhost:0dad43655df111d69f6e00039353e858;name=JSRTest");
-             JSR82URL url=new JSR82URL("btspp://localhost:ce37ca6e288a409a9796191882ee44fc;name=JSRTest");
+             JSR82URL url=new JSR82URL("btspp://localhost:27012f0c68af4fbf8dbe6bbaf7ab651b;name=JSRTest");
              //JSR82URL url=new JSR82URL("btspp://localhost:00112233445566778899aabbccddeeff;name=JSRTest");
              url.setParameter("encrypt", new Boolean(m_encrypt.isSelected()));
              url.setParameter("authenticate", new Boolean(m_authentication.isSelected()));
@@ -907,6 +948,8 @@ public class JSRTest extends JFrame implements ActionListener {
              serviceStatus.setText("ready");
              System.out.println(url.toString());
              notify = (ConnectionNotifier)Connector.open(url.toString());
+//             notify = (ConnectionNotifier)Connector.open("btspp://localhost:27012f0c68af4fbf8dbe6bbaf7ab651b:22;name=JSRTest");
+
              streamCon = ((StreamConnectionNotifier)notify).acceptAndOpen();
              serviceStatus.setText("connected with fid="+((BTConnection)streamCon).getConnectionID());
              is = ((StreamConnection)streamCon).openInputStream();
@@ -968,6 +1011,8 @@ public class JSRTest extends JFrame implements ActionListener {
 					public int onConnect (HeaderSet request, HeaderSet response) {
 						serviceStatus.setText ("RequestHandler got connect");
 						
+						//response.setHeader(HeaderSetImpl.CONNECTION_ID, new Long(12345));
+						
 						int retCode = ResponseCodes.OBEX_HTTP_OK;
 						//If an authenticationResponseHeader is in the Request and authenticationFailed
 						//has not been called by the SessionNofifier, you can assume that authentication was
@@ -1002,6 +1047,7 @@ public class JSRTest extends JFrame implements ActionListener {
 						}
 						fos.close();
 						System.out.println ("Wrote data to " + f.getAbsolutePath());
+						op.sendHeaders(null);
 						} catch (Exception e) { e.printStackTrace(); }
 						return 0xa0;
 					}

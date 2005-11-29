@@ -76,8 +76,8 @@ public class RemoteDevice {
     }
 
     public RemoteDevice(String bdAddrString, byte repMode, byte periodMode, byte scanMode, short clockOffset, int deviceClass, String name) throws NullPointerException, IllegalArgumentException {
-      this (bdAddrString, repMode, periodMode, scanMode, clockOffset, deviceClass);
-      this.friendlyName = name;
+    		this (bdAddrString, repMode, periodMode, scanMode, clockOffset, deviceClass);
+    		this.friendlyName = name;
     }
 
 
@@ -156,7 +156,8 @@ public class RemoteDevice {
         if ((friendlyName == null) || alwaysAsk) {
             try {
                 BluetoothStack bluetoothStack = BluetoothStack.getBluetoothStack();
-                friendlyName=bluetoothStack.getRemoteName(bdAddrString);
+                String buffer =bluetoothStack.getRemoteName(bdAddrString);
+                if (buffer != null) friendlyName = buffer;
             }
             catch (Exception e) { throw new IOException("Exception: RemoteDevice.getFriendlyName(): " + e); }
         }
@@ -241,15 +242,27 @@ public class RemoteDevice {
      * @exception NullPointerException if <code>conn</code> is <code>null</code>
      */
     public static RemoteDevice getRemoteDevice(Connection conn) throws IOException {
-        if (conn == null) throw new NullPointerException("Connection is null.");
-        RemoteDevice dev=null;
-		if (conn instanceof BTConnection) dev = ((BTConnection)conn).getRemoteDevice();
-		else if (conn instanceof OBEXConnection) dev = ((OBEXConnection)conn).getRemoteDevice();
-		else if (conn instanceof SessionNotifierImpl) dev = ((RFCommConnectionNotifierImpl)((SessionNotifierImpl)conn).getConnectionNotifier()).getRemoteDevice();
-		else if (conn instanceof ConnectionNotifier)	dev = ((ConnectionNotifier)conn).getRemoteDevice();
-		else throw new ClassCastException ("Connection type not supported");
-        if(dev==null) throw new IOException("The remote device could not be determined!");
-        return dev;
+    	        if (conn == null) throw new NullPointerException("Connection is null.");
+    	        RemoteDevice dev=null;
+    			if (conn instanceof BTConnection) {
+    				if (((BTConnection)conn).isClosed())
+    					throw new IOException("Connection Closed");
+    				dev = ((BTConnection)conn).getRemoteDevice();
+    			}
+    			else if (conn instanceof OBEXConnection) dev = ((OBEXConnection)conn).getRemoteDevice();
+    			else if (conn instanceof SessionNotifierImpl) {
+    				if (((SessionNotifierImpl)conn).getConnectionNotifier() == null)
+    					throw new IOException("Connection Closed");
+    				dev = ((RFCommConnectionNotifierImpl)((SessionNotifierImpl)conn).getConnectionNotifier()).getRemoteDevice();
+    			}
+    			else if (conn instanceof ConnectionNotifier) {
+    				if (((ConnectionNotifier)conn).isNotifierClosed())
+    					throw new IOException("Connection Closed");
+    				dev = ((ConnectionNotifier)conn).getRemoteDevice();
+    			}
+    			else throw new ClassCastException ("Connection type not supported");
+    	        if(dev==null) throw new IOException("The remote device could not be determined!");
+    	        return dev;
     }
 
     /**

@@ -68,7 +68,7 @@ public class DeviceClass {
      * Retrieves the major device class.  A device may have only a single major device class.
      * @return the major device class
      */
-    public int getMajorDeviceClass() { return (int)((record & 0x001f00) >> 8); }
+    public int getMajorDeviceClass() { return (int)((record & 0x001f00)); }
 
     /**
      * Retrieves the minor device class.

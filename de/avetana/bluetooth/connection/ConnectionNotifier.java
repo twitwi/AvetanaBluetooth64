@@ -219,9 +219,11 @@ public abstract class ConnectionNotifier implements Connection {
    */
   
   protected synchronized void acceptAndOpenI() throws IOException, ServiceRegistrationException {
-	while (myConnection != null && !myConnection.isClosed()) {
-    		try { wait (100); } catch (Exception e) {}
-    }
+	  if (System.getProperty("os.name", "").indexOf ("Linux") == -1) {
+		  while (myConnection != null && !myConnection.isClosed()) {
+			  try { wait (100); } catch (Exception e) {}
+		  }
+	  }
  
     m_fid = -2;
   	failEx = null;
@@ -234,7 +236,7 @@ public abstract class ConnectionNotifier implements Connection {
     }
 
      while(m_fid==-2) {
-        try {wait(200);}catch(Exception ex) {}
+        try {wait(100);}catch(Exception ex) {}
      }
      
 	 BlueZ.removeNotifier(this);

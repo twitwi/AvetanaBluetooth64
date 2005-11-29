@@ -2,6 +2,7 @@ package de.avetana.bluetooth.sdp;
 
 
 import javax.bluetooth.*;
+
 import java.io.IOException;
 import java.util.Enumeration;
 
@@ -40,6 +41,7 @@ import de.avetana.bluetooth.stack.BlueZ;
  * is to first make a service search, then to select the desired service, to retrieve te connection URL and finally to connect with the remote device.
  * That's why the method getConnectionURL(..) of this class is one of the most used.
  *
+ * The parts to handle Microsoft ServiceRecords (readElement()....) of this code are from the bluecove project http://sourceforge.net/projects/bluecove
  *
  * @author Julien Campana
  */
@@ -224,7 +226,7 @@ public class RemoteServiceRecord extends SDPServiceRecord {
    * @param parm1
    */
   public void setDeviceServiceClasses(int parm1) {
-    throw new java.lang.UnsupportedOperationException("Method setDeviceServiceClasses() not yet implemented.");
+    throw new java.lang.Error("Method setDeviceServiceClasses() not yet implemented.");
   }
 
   private class InternListener implements DiscoveryListener {
@@ -262,5 +264,281 @@ public class RemoteServiceRecord extends SDPServiceRecord {
     public void inquiryCompleted(int discType) {}
 
   }
+
+  private static int read (Object[] rSource) {
+	  int pos = ((Integer)rSource[1]).intValue() ;
+	  rSource[1] = new Integer(pos + 1);
+	  return (int)(((byte[])rSource[0])[pos] & 0xff);
+  }
+  
+  private static long readLong(Object[] rSource, int size) throws IOException {
+
+      long result = 0;
+
+      for(int i = 0; i < size; i++)
+          result = result<<8|read(rSource);
+			
+      return result;
+  }
+
+  private static byte[] readBytes(Object[] rSource, int size) throws IOException  {
+
+      byte[] result = new byte[size];
+
+      for(int i = 0; i < size; i++)
+          result[i] = (byte)read(rSource);
+
+      return result;
+  }
+
+
+  private static String hexString(byte[] b) throws IOException {
+
+      StringBuffer buf = new StringBuffer();
+
+      for(int i = 0; i < b.length; i++) {
+          buf.append(Integer.toHexString(b[i]>>4&0xf));
+          buf.append(Integer.toHexString(b[i]&0xf));
+      }
+		
+      return buf.toString();
+
+  }
+
+  private static DataElement readElement(byte[] data, int rPos) throws IOException {
+	  Object[] rSource = new Object[] { data, new Integer(rPos) };
+	  return readElement (rSource);
+  }  
+  
+  private static DataElement readElement(Object[] rSource) throws IOException {
+
+      int header = read(rSource);
+      int type = header>>3&0x1f;
+      int size = header&0x07;
+
+      switch(type) {			
+
+      case 0:			// NULL
+          return new DataElement(DataElement.NULL);
+      case 1:			// U_INT
+          switch(size) {
+          case 0:
+              return new DataElement(DataElement.U_INT_1, readLong(rSource, 1));
+          case 1:
+              return new DataElement(DataElement.U_INT_2, readLong(rSource, 2));
+          case 2:
+              return new DataElement(DataElement.U_INT_4, readLong(rSource, 4));
+          case 3:
+              return new DataElement(DataElement.U_INT_8, readBytes(rSource, 8));
+          case 4:
+              return new DataElement(DataElement.U_INT_16, readBytes(rSource, 16));
+          default:
+              throw new IOException();
+          }
+      case 2:			// INT
+          switch(size) {
+          case 0:
+              return new DataElement(DataElement.INT_1, (long)(byte)readLong(rSource, 1));
+          case 1:
+              return new DataElement(DataElement.INT_2, (long)(short)readLong(rSource, 2));
+          case 2:
+              return new DataElement(DataElement.INT_4, (long)(int)readLong(rSource, 4));
+          case 3:
+              return new DataElement(DataElement.INT_8, readLong(rSource, 8));
+          case 4:
+              return new DataElement(DataElement.INT_16, readBytes(rSource, 16));
+          default:
+              throw new IOException();
+          }
+      case 3:			// UUID
+          {
+
+              UUID uuid = null;
+              switch(size) {
+              case 1:
+                  uuid = new UUID(readLong(rSource, 2));
+                  break;
+              case 2:
+                  uuid = new UUID(readLong(rSource, 4));
+                  break;
+              case 4:
+                  uuid = new UUID(hexString(readBytes(rSource, 16)), false);
+                  break;
+              default:
+                  throw new IOException();
+              }
+
+              return new DataElement(DataElement.UUID, uuid);
+          }
+
+      case 4:			// STRING
+          {	
+              int length = -1;
+
+              switch(size) {
+              case 5:
+                  length = (int)readLong(rSource, 1);
+                  break;				
+              case 6:
+                  length = (int)readLong(rSource, 2);
+                  break;				
+              case 7:
+                  length = (int)readLong(rSource, 4);
+                  break;
+              default:
+                  throw new IOException();
+              }
+
+
+              return new DataElement(DataElement.STRING, new String(readBytes(rSource, length)));
+          }
+
+      case 5:			// BOOL
+          return new DataElement(readLong(rSource, 1) != 0);
+
+      case 6:			// DATSEQ
+          {	
+              long length;
+		
+              switch(size) {
+              case 5:
+                  length = readLong(rSource, 1);
+                  break;				
+              case 6:
+                  length = readLong(rSource, 2);
+                  break;				
+              case 7:
+                  length = readLong(rSource, 4);
+                  break;
+              default:
+                  throw new IOException();
+              }
+
+              DataElement element = new DataElement(DataElement.DATSEQ);
+
+              for(int end = (((Integer)rSource[1]).intValue()+(int)length); ((Integer)rSource[1]).intValue() < end; ) {
+                  element.addElement(readElement(rSource));
+              }
+              
+              return element;
+
+          }
+
+      case 7:			// DATALT
+          {	
+              long length;
+
+              switch(size) {
+              case 5:
+                  length = readLong(rSource, 1);
+                  break;				
+              case 6:
+                  length = readLong(rSource, 2);
+                  break;				
+              case 7:
+                  length = readLong(rSource, 4);
+                  break;
+              default:
+                  throw new IOException();
+              }
+
+              DataElement element = new DataElement(DataElement.DATALT);
+
+              for(int end = (((Integer)rSource[1]).intValue()+(int)length); ((Integer)rSource[1]).intValue() < end; ) {
+                  element.addElement(readElement(rSource));
+              }
+
+              return element;
+          }
+
+      case 8:			// URL
+          {	
+              int length = -1;
+		
+              switch(size) {
+              case 5:
+                  length = (int)readLong(rSource, 1);
+                  break;				
+              case 6:
+                  length = (int)readLong(rSource, 2);
+                  break;				
+              case 7:
+                  length = (int)readLong(rSource, 4);
+                  break;
+              default:
+                  throw new IOException();
+              }
+
+              return new DataElement(DataElement.URL, new String(readBytes(rSource, length)));
+
+          }
+
+      default:
+          throw new IOException();
+
+      }
+
+
+  }
+
+  public static ServiceRecord createServiceRecord(String adr, byte[][] uuids, int[] attrs, byte[] data) throws IOException {
+	  
+	  SDPServiceRecord srec = new RemoteServiceRecord(adr);
+	  try {
+	  
+	  UUID[] uuid = new UUID[uuids.length];
+	  for (int i = 0;i < uuid.length;i++) uuid[i] = new UUID(uuids[i]);
+	  
+	  DataElement deAll = readElement(data, 0);
+	  
+	  boolean inReq = true;
+	  for (int i = 0;i < uuid.length;i++) {
+		  if (!checkForUUID (deAll, uuid[i])) 
+			  inReq = false;
+	  }
+	  if (inReq == false) return null;
+	  
+	  Enumeration en = (Enumeration)deAll.getValue();
+	  
+	  while (en.hasMoreElements()) {
+		  DataElement de = (DataElement) en.nextElement();
+		  int attID = (int)de.getLong();
+		  inReq = false;
+		  for (int i = 0;i < attrs.length;i++) {
+			  if (attID == attrs[i]) {
+				  inReq = true;
+				  break;
+			  }
+		  }
+		  de = (DataElement) en.nextElement();
+		  if (!inReq) continue;
+		  srec.setAttributeValue(attID, de);
+	  }
+	  } catch (Exception e) { e.printStackTrace();
+/*	  for (int i = 0;i < data.length;i++) {
+		  System.out.print ("(byte)0x" + Integer.toHexString(data[i] & 0xff) + ", "); }
+	  	System.out.println(); */
+	  }
+ 	  return srec;
+  }
+
+	private static boolean checkForUUID(DataElement de, UUID uuid) {
+		if (de.getDataType() == DataElement.UUID) return uuid.equals((UUID)de.getValue());
+		else if (de.getDataType() == DataElement.DATALT || de.getDataType() == DataElement.DATSEQ) {  
+			Enumeration en = (Enumeration)de.getValue();
+			  while (en.hasMoreElements()) {
+				  DataElement des = (DataElement) en.nextElement();
+				  if (checkForUUID (des, uuid)) return true;
+			  }
+		}
+		return false;
+	}
+
+	static byte[] ba = new byte[] { (byte)0x35, (byte)0x7d, (byte)0x09, (byte)0x00, (byte)0x00, (byte)0x0a, (byte)0x00, (byte)0x01, (byte)0x00, (byte)0x03, (byte)0x09, (byte)0x00, (byte)0x01, (byte)0x35, (byte)0x03, (byte)0x19, (byte)0x11, (byte)0x06, (byte)0x09, (byte)0x00, (byte)0x04, (byte)0x35, (byte)0x13, (byte)0x35, (byte)0x05, (byte)0x1a, (byte)0x00, (byte)0x00, (byte)0x01, (byte)0x00, (byte)0x35, (byte)0x05, (byte)0x19, (byte)0x00, (byte)0x03, (byte)0x08, (byte)0x0f, (byte)0x35, (byte)0x03, (byte)0x19, (byte)0x00, (byte)0x08, (byte)0x09, (byte)0x00, (byte)0x05, (byte)0x35, (byte)0x03, (byte)0x19, (byte)0x10, (byte)0x02, (byte)0x09, (byte)0x00, (byte)0x06, (byte)0x35, (byte)0x09, (byte)0x09, (byte)0x65, (byte)0x6e, (byte)0x09, (byte)0x00, (byte)0x6a, (byte)0x09, (byte)0x01, (byte)0x00, (byte)0x09, (byte)0x00, (byte)0x09, (byte)0x35, (byte)0x08, (byte)0x35, (byte)0x06, (byte)0x19, (byte)0x11, (byte)0x06, (byte)0x09, (byte)0x01, (byte)0x00, (byte)0x09, (byte)0x01, (byte)0x00, (byte)0x25, (byte)0x12, (byte)0x4f, (byte)0x42, (byte)0x45, (byte)0x58, (byte)0x20, (byte)0x46, (byte)0x69, (byte)0x6c, (byte)0x65, (byte)0x20, (byte)0x54, (byte)0x72, (byte)0x61, (byte)0x6e, (byte)0x73, (byte)0x66, (byte)0x65, (byte)0x72, (byte)0x09, (byte)0x03, (byte)0x03, (byte)0x35, (byte)0x02, (byte)0x08, (byte)0xff, (byte)0x09, (byte)0x07, (byte)0x77, (byte)0x1c, (byte)0x6f, (byte)0x6d, (byte)0x98, (byte)0xf2, (byte)0x3c, (byte)0x3a, (byte)0x11, (byte)0xd6, (byte)0x95, (byte)0x6a, (byte)0x00, (byte)0x03, (byte)0x93, (byte)0x53, (byte)0xe8, (byte)0x58 };
+	
+	public static void main (String args[]) throws Exception {
+		ServiceRecord de = createServiceRecord("000d9305170e", new byte[0][0], new int[] {0, 1, 2, 3, 4, 5, 6, 7, 256 }, ba);
+		System.out.println ("Service Record " + de);
+	}
 
 }

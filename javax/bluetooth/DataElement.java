@@ -622,6 +622,14 @@ public class DataElement {
      */
     public Object getValue() {
         switch (valueType) {
+        		/*case U_INT_1: 
+        		case INT_1: 
+        		case U_INT_2: 
+        		case INT_2: 
+        		case U_INT_4: 
+        		case INT_4: 
+        			return new Long (getLong());*/
+        		case INT_8:
             case U_INT_8: {
                     byte[] valueObject = new byte[8];
                     System.arraycopy(dataBytes, (int)headerByteSize, valueObject, 0, 8);
@@ -669,7 +677,7 @@ public class DataElement {
                     return elemList;
                 }
             default:
-                throw new ClassCastException();
+                throw new ClassCastException("Unhandled type 0x" + Integer.toHexString(valueType));
         }
     }
 

@@ -237,11 +237,11 @@ public abstract class BluetoothStack {
    * This method is deprecated
    * @param stack
    * @throws Exception
-   * @deprecated
+   * at deprecated
    */
-  public static void init (BluetoothStack stack) throws Exception {
+  public static void init (BluetoothStack stack) {//throws Exception {
     m_stack = stack;
-    System.err.println ("No need to call BluetoothStack.init() anymore");
-    new Throwable().printStackTrace();
+//    System.err.println ("No need to call BluetoothStack.init() anymore");
+//    new Throwable().printStackTrace();
   }
 }

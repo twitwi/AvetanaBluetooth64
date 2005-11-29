@@ -37,7 +37,6 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
-import de.avetana.bluetooth.sdp.ServiceDescriptor;
 
 /**
  * <b>COPYRIGHT:</b><br> (c) Copyright 2004 Avetana GmbH ALL RIGHTS RESERVED. <br><br>
@@ -248,6 +247,12 @@ public class ServiceFinderPane extends JPanel implements Cancelable, ActionListe
       nameCache.put(adr, (name==null?"Not Found":name));
       m_remote.addElement(btDevice);
       inform("Device: "+name+" found!!");
+      try {
+		System.out.println ("Device: "+btDevice.getFriendlyName(false)+" found!! major device class " + cod.getMajorDeviceClass() + " minor " + cod.getMinorDeviceClass() + " service " + cod.getServiceClasses());
+	} catch (IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
     }
   }
 
@@ -311,7 +316,11 @@ public class ServiceFinderPane extends JPanel implements Cancelable, ActionListe
     try {
       m_agent.startInquiry(DiscoveryAgent.GIAC, this);
     }
-    catch(Exception ex) {ex.printStackTrace();}
+    catch(Exception ex) {
+    		JOptionPane.showMessageDialog(this, "Inquiry failed", "Warning", JOptionPane.ERROR_MESSAGE);
+    		m_dialog.setVisible(false);
+    		ex.printStackTrace();
+    	}
   }
 
   private void serviceSearch() {
@@ -321,7 +330,7 @@ public class ServiceFinderPane extends JPanel implements Cancelable, ActionListe
         RemoteDevice dev=(RemoteDevice)m_remote.elementAt(i);
         try {
         	//System.out.println ("Searching services for " + dev.getBluetoothAddress());
-          serviceSearchTransID = m_agent.searchServices(attrids, m_search, dev, this);
+        		serviceSearchTransID = m_agent.searchServices(attrids, m_search, dev, this);
       	//System.out.println ("done starting Searching services for " + dev.getBluetoothAddress());
           synchronized(this) {
             nbOfServiceSearch++;

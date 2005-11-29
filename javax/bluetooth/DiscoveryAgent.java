@@ -115,9 +115,9 @@ public class DiscoveryAgent {
     /**
      * Creates a <code>DiscoveryAgent</code> object.
      *@param bluetoothStack The Instance of the <code>BluetoothStack</code> associated with this <code>DiscoveryAgent</code>.
-     * Christian Lorenz: changed constructor to public and added <code>BluetoothStack</code> as a parameter.
+     * 
      */
-    public DiscoveryAgent(BluetoothStack bluetoothStack) {
+    protected DiscoveryAgent(BluetoothStack bluetoothStack) {
         this.bluetoothStack = bluetoothStack;
         this.listeners = new Vector();
         this.cachedRemoteDevices = new Vector();
