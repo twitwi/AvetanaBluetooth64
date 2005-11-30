@@ -434,10 +434,25 @@ public class DataElement {
 					} catch (UnsupportedEncodingException e) {
 						stringBytes = string.getBytes();
 					}
-                    byte[] bytes       = new byte[stringBytes.length + 2];
-                    bytes[0] = (byte)(valueType == URL ? URL : 0x25);
-                    bytes[1] = (byte)stringBytes.length;
-                    System.arraycopy(stringBytes, 0, bytes, 2, stringBytes.length);
+					
+                    int strtype = 0x25;
+                    if (stringBytes.length > 0xff) { strtype = 0x26; headerByteSize = 3; }
+                    else if (stringBytes.length > 0xffff) { strtype = 0x27; headerByteSize = 5; }
+
+                    byte[] bytes  = new byte[stringBytes.length + (int)headerByteSize];
+                    
+                    bytes[0] = (byte)(valueType == URL ? URL : strtype);
+                    if (headerByteSize == 2) bytes[1] = (byte)stringBytes.length;
+                    else if (headerByteSize == 3) {
+                    		bytes[1] = (byte)((stringBytes.length >> 8) & 0xff);
+                    		bytes[2] = (byte)(stringBytes.length & 0xff);
+                    } else if (headerByteSize == 5) {
+                			bytes[1] = (byte)((stringBytes.length >> 24) & 0xff);
+                			bytes[2] = (byte)((stringBytes.length >> 16) & 0xff);
+                			bytes[3] = (byte)((stringBytes.length >> 8) & 0xff);
+                			bytes[4] = (byte)(stringBytes.length & 0xff);
+                    }
+                    System.arraycopy(stringBytes, 0, bytes, (int)headerByteSize, stringBytes.length);
                     dataBytes = bytes;
                     break;
                 }
@@ -576,6 +591,10 @@ public class DataElement {
             case U_INT_4: 
             case INT_4: 
 					blen = 4;
+            			break;
+            case U_INT_8: 
+            case INT_8: 
+					blen = 8;
             			break;
             	default:
             		throw new IllegalArgumentException();

@@ -32,7 +32,7 @@ public class SDPUpdateTest {
 
 		BufferedReader br = new BufferedReader (new InputStreamReader (System.in));
 		br.readLine();
-		srec.setAttributeValue(0x100, new DataElement (DataElement.STRING, "UpdatedName2"));
+		//srec.setAttributeValue(0x100, new DataElement (DataElement.STRING, "UpdatedName2"));
 		DataElement testEl = new DataElement (DataElement.DATSEQ);
 		testEl.addElement(new DataElement (DataElement.U_INT_2, 0x1234));
 		testEl.addElement(new DataElement (DataElement.UUID, new UUID (0x1234)));
@@ -47,7 +47,9 @@ public class SDPUpdateTest {
 		srec.setAttributeValue(0x213, new DataElement (DataElement.INT_4, 44));
 		srec.setAttributeValue(0x214, new DataElement (DataElement.INT_8, new byte[] { 11,22,33,44,55,66,77,88 }));
 		srec.setAttributeValue(0x215, new DataElement (DataElement.INT_16,new byte[] { 11,22,33,44,55,66,77,88,19,101,111,112,113,114,115,116 }));
-		srec.setAttributeValue(0x216, new DataElement (DataElement.STRING, "Test"));
+		srec.setAttributeValue(0x100, new DataElement (DataElement.STRING, "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"));
+//		srec.setAttributeValue(0x216, new DataElement (DataElement.STRING, "xxx"));
+
 		//srec.setAttributeValue(0x217, new DataElement (true));
 		//srec.setAttributeValue(0x218, new DataElement (false));
 		srec.setAttributeValue(0x217, new DataElement (DataElement.URL, "http://Test"));

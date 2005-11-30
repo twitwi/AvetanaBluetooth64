@@ -1,7 +1,5 @@
 package de.avetana.bluetooth.util;
 
-import sun.tools.tree.CheckContext;
-
 /**
  * Class used in windows to check if dongles are available to the MS or Widcomm stacks
  * @author gmelin
