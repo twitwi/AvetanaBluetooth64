@@ -1,7 +1,8 @@
 package de.avetana.bluetooth.connection;
 
 import java.util.*;
-import de.avetana.bluetooth.util.*;
+
+import de.avetana.bluetooth.util.BTAddress;;
 
 /**
  * The class used to manage connection URLs.
@@ -135,11 +136,10 @@ public class JSR82URL {
       } else {
          if(m_address==null) m_localUUID=toWork.substring(0,ser).trim();
         try {
-          parseURL(toWork.substring(ser+1));
+          parseURL(toWork.substring(ser + 1));
         }catch(Exception ex) {}
       }
-      if(m_protocol!=PROTOCOL_L2CAP) this.m_attrNumber=1;
-      else m_attrNumber=11;
+      this.m_attrNumber = 0;
       if(m_address==null && (m_localUUID.length()!=32 && m_localUUID.length()!=8))
         throw new BadURLFormat("The Service Class ID must be a 32 or 128-bits UUID! " +m_localUUID + " " + m_localUUID.length());
     }
@@ -168,10 +168,18 @@ public class JSR82URL {
   // Help method used to analyse the URL parameters.
   private void parseURL(String analyse) throws Exception {
     if(analyse==null || analyse.trim().equals("")) return;
-	StringTokenizer st = new StringTokenizer (analyse, ";");
-
-    while (st.hasMoreTokens()) {
-	 String arg = st.nextToken();
+	
+    while (analyse.length() > 0) {
+    	 int pos = analyse.indexOf (";");
+	 String arg = "";
+	 if (pos != -1) {
+		 arg = analyse.substring(0, pos);
+		 analyse = analyse.substring (pos + 1);
+	 } else {
+		 arg = analyse;
+		 analyse = "";
+	 }
+		 
       try {
         int index=arg.indexOf('=');
         String param=arg.substring(0,index).toLowerCase();
@@ -185,10 +193,10 @@ public class JSR82URL {
           else b=true;
           m_parameters.put("master", new Boolean(b));
         } else
-          m_parameters.put(param, new Boolean(value.toLowerCase()));
+          m_parameters.put(param, new Boolean(value.toLowerCase().equals("true")));
       }catch(Exception e) {}
     }
-    if(m_parameters.get("master")==null) m_parameters.put("master", Boolean.TRUE);
+    if(m_parameters.get("master")==null) m_parameters.put("master", new Boolean (true));
     if(!isAuthenticated() && isEncrypted())
       throw new BadURLFormat("Combination authenticate=false and encrypt=true not allowed. Encryption requests authentication!");
     if(!isAuthenticated() & isAuthorized())
@@ -196,7 +204,10 @@ public class JSR82URL {
   }
 
   private boolean getBoolParam(String name) {
-    try { return ((Boolean)m_parameters.get(name)).booleanValue(); }catch(Exception ex) {return false;}
+    try { 
+    		if (m_parameters == null || m_parameters.get (name) == null) return false;
+    		return ((Boolean)m_parameters.get(name)).booleanValue(); 
+    	}catch(Exception ex) {return false;}
   }
 
   /**

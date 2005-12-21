@@ -2522,6 +2522,12 @@ void extract_str_len(const char *p, int *len) {
 			p += sizeof(uint16_t);
 			*len += sizeof(uint16_t) + n;
 			break;
+		case SDP_TEXT_STR32:
+		case SDP_URL_STR32:
+			n = ntohs(sdp_get_unaligned((uint32_t *)p));
+			p += sizeof(uint32_t);
+			*len += sizeof(uint32_t) + n;
+			break;
 		default:
 			return;
 	}

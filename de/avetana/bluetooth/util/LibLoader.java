@@ -46,7 +46,7 @@ public class LibLoader {
 		btname = loadLib ("avetanaBT");
 	}
 	
-	protected static String loadLib (String name) throws Exception {
+	public static String loadLib (String name) throws Exception {
 
 		
 		String confName = System.getProperty ("microedition.profiles");

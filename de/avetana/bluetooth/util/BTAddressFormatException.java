@@ -1,5 +1,7 @@
 package de.avetana.bluetooth.util;
 
+
+
 /*
    Copyright (c) 2002 The Appliance Studio Limited.
    Written by Edward Kay <ed.kay@appliancestudio.com>
@@ -23,7 +25,7 @@ package de.avetana.bluetooth.util;
    COPYRIGHTS, TRADEMARKS OR OTHER RIGHTS, RELATING TO USE OF THIS SOFTWARE IS
    DISCLAIMED.
 
-   $Id: BTAddressFormatException.java,v 1.6 2004/10/12 14:39:40 moritzg Exp $
+   $Id: BTAddressFormatException.java,v 1.7 2005/12/21 20:37:49 moritzg Exp $
 */
 
 /**

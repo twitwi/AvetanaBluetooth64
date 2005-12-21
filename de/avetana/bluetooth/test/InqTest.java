@@ -7,13 +7,13 @@
 package de.avetana.bluetooth.test;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 
-import javax.bluetooth.DeviceClass;
-import javax.bluetooth.DiscoveryListener;
-import javax.bluetooth.RemoteDevice;
-import javax.bluetooth.ServiceRecord;
 import javax.bluetooth.*;
+
+import de.avetana.bluetooth.sdp.RemoteServiceRecord;
+import de.avetana.bluetooth.util.MSServiceRecord;
 
 /**
  * @author gmelin
@@ -23,13 +23,25 @@ import javax.bluetooth.*;
  */
 public class InqTest implements DiscoveryListener {
 
+	private static final boolean doException = false;
+	
 	private boolean searchCompleted = false;
 	/* (non-Javadoc)
 	 * @see javax.bluetooth.DiscoveryListener#deviceDiscovered(javax.bluetooth.RemoteDevice, javax.bluetooth.DeviceClass)
 	 */
 	public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
-		// TODO Auto-generated method stub
-
+		
+		try {
+			System.out.println ("device discovered " + btDevice + " name " + btDevice.getFriendlyName(false));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		if (doException) {
+			byte[] b = new byte[0];
+			b[1] = 0;
+		}
+		
 	}
 
 	/* (non-Javadoc)
@@ -38,13 +50,42 @@ public class InqTest implements DiscoveryListener {
 	public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
 		// TODO Auto-generated method stub
 		System.out.println (servRecord.length + " services discovered " + transID);
+		
+		if (doException) {
+			byte[] b = new byte[0];
+			b[1] = 0;
+		}
+
 		for (int i = 0;i < servRecord.length;i++) {
 			try {
 				System.out.println ("Record " + (i + 1));
 				System.out.println ("" + servRecord[i]);
 				} catch (Exception e) { e.printStackTrace(); }
- 		}
+				/*if (servRecord[0] instanceof RemoteServiceRecord) {
+					RemoteServiceRecord rsr = (RemoteServiceRecord)servRecord[0];
+					if (rsr.raw.length == 0) return;
+					for (int j = 0; j < rsr.raw.length;j++) {
+						System.out.print (" " + Integer.toHexString(rsr.raw[j] & 0xff));
+					}
+					System.out.println("\n----------------");
+					
+					ServiceRecord rsr2;
+					try {
+						rsr2 = RemoteServiceRecord.createServiceRecord("000000000000", new byte[0][0], new int[] { 0,1,2,3,4,5,6,7,8,9,10, 256 }, rsr.raw);
+						byte[] raw2 = MSServiceRecord.getByteArray (rsr2);
+						for (int j = 0; j < raw2.length;j++) {
+							System.out.print (" " + Integer.toHexString(raw2[j] & 0xff));
+						}
+						System.out.println();
 
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
+				}*/
+ 		}
+		
 	}
 
 	/* (non-Javadoc)
@@ -60,25 +101,31 @@ public class InqTest implements DiscoveryListener {
 	 * @see javax.bluetooth.DiscoveryListener#inquiryCompleted(int)
 	 */
 	public void inquiryCompleted(int discType) {
-		// TODO Auto-generated method stub
+		System.out.println ("Inquiry completed " + discType);
+		searchCompleted = true;
 
 	}
 
 	public InqTest (String addr, String uuid) throws Exception {
-		UUID uuids[];
-		System.out.println ("Setting up uuids");
-		if (uuid == null) uuids = new UUID[] { };
-		else if (uuid.length() == 32) uuids = new UUID[] { new UUID (uuid, false) };
-		else uuids = new UUID[] { new UUID (uuid, true) };
 		System.out.println ("Getting discoveryAgent");
 		DiscoveryAgent da = LocalDevice.getLocalDevice().getDiscoveryAgent();
-		System.out.println ("Starting search");
-		int transID = da.searchServices(new int[] { 0x05, 0x06, 0x07, 0x08, 0x09, 0x100, 0x303 }, uuids, new RemoteDevice (addr), this);
-		System.out.println ("Started");
-		BufferedReader br = new BufferedReader (new InputStreamReader (System.in));
-		//br.readLine();
-		//if (!searchCompleted) da.cancelServiceSearch(transID);
-		//System.out.println ("Canceled");
+		
+		if (addr == null) {
+			da.startInquiry(DiscoveryAgent.GIAC, this);
+		} else {
+			UUID uuids[];
+			System.out.println ("Setting up uuids");
+			if (uuid == null) uuids = new UUID[] { };
+			else if (uuid.length() == 32) uuids = new UUID[] { new UUID (uuid, false) };
+			else uuids = new UUID[] { new UUID (uuid, true) };
+			System.out.println ("Starting search");
+			int transID = da.searchServices(new int[] { 0x05, 0x06, 0x07, 0x08, 0x09, 0x100, 0x303 }, uuids, new RemoteDevice (addr), this);
+			System.out.println ("Started");
+			//BufferedReader br = new BufferedReader (new InputStreamReader (System.in));
+			//br.readLine();
+			//if (!searchCompleted) da.cancelServiceSearch(transID);
+			//System.out.println ("Canceled");
+		}
 		while (!searchCompleted) {
 			synchronized (this) { wait(100); }
 		}
@@ -86,6 +133,6 @@ public class InqTest implements DiscoveryListener {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		new InqTest(args[0], args.length == 1 ? null : args[1]);
+		new InqTest(args.length == 0 ? null : args[0], args.length <= 1 ? null : args[1]);
 	}
 }

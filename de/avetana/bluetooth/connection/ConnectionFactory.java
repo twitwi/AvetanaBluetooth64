@@ -133,7 +133,7 @@ public class ConnectionFactory {
    *         <code>false</code> - Otherwise.
    */
   public boolean removeNotifier(ConnectionNotifier desc) {
-    return m_notifiers.removeElement(desc);
+	  return m_notifiers.removeElement(desc);
   }
 
   /**

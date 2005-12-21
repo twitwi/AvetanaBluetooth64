@@ -3,6 +3,7 @@ package de.avetana.bluetooth.stack;
 import de.avetana.bluetooth.connection.*;
 import de.avetana.bluetooth.sdp.*;
 import javax.bluetooth.*;
+
 import de.avetana.bluetooth.util.BTAddress;
 import de.avetana.bluetooth.util.LibLoader;
 
@@ -127,7 +128,7 @@ public class AvetanaBTStack extends BluetoothStack {
     else {
       uuidSetB=new byte[uuidSet.length][];
       for(int i=0;i<uuidSetB.length;i++) {
-        try {uuidSetB[i]= uuidSet[i].toByteArray128(); } catch (Exception ex) {throw new IllegalArgumentException("UUID must be 16 bits length!!!!!");}
+        try {uuidSetB[i]= uuidSet[i].toByteArray128(); } catch (Exception ex) { throw new IllegalArgumentException("UUID must be 16 bits length!!!!!");}
       }
     }
     return searchServices(attrSet,uuidSetB,btDev,myListener);

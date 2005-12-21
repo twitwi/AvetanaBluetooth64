@@ -48,22 +48,6 @@ import javax.microedition.io.Connection;
 public abstract class ConnectionNotifier implements Connection {
 
   /**
-   * The connection ID
-   */
-  protected int m_fid=0;
-  
-  /**
-   * The current connection of this notifier
-   */
-  
-   protected BTConnection myConnection = null;
-  
-   /**
-    * When a connection listener is established, its ID is stored as m_serverFid. When the Notifier is closed m_serverFid will be closed too.
-    */
-   
-   protected int m_serverFid = 0;
-  /**
    * When registering of a connection fails, the reason is given here
    */
   
@@ -93,6 +77,11 @@ public abstract class ConnectionNotifier implements Connection {
    * The remote device
    */
   protected RemoteDevice m_remote;
+  
+  /**
+   * Used to transport the connectionID from BlueZ Notification to acceptAndOpenI;
+   */
+  private int m_fid;
 
   /**
    * Sets the connection ID
@@ -100,18 +89,9 @@ public abstract class ConnectionNotifier implements Connection {
    */
   public synchronized void setConnectionID(int fid) {
     this.m_fid = fid;
-    m_serverFid = 0;
     notifyAll();
   }
   
-  /**
-   * Sets the connection ID
-   * @param fid The connection ID
-   */
-  public void setServerFID(int fid) {
-    this.m_serverFid = fid;
-  }
-
   public void setFailure (IOException e) {
   	this.failEx = e;
   }
@@ -205,11 +185,9 @@ public abstract class ConnectionNotifier implements Connection {
   
   public synchronized void close() {
   	if (isClosed) return;
-  	if (m_serverFid != 0) BlueZ.closeConnectionS(m_serverFid);
   	removeNotifier();
   	isClosed=true;
   	m_fid = 0;
-  	m_serverFid = 0;
   	notifyAll();
   }
   
@@ -218,12 +196,7 @@ public abstract class ConnectionNotifier implements Connection {
    * Waits for a client to connect to this service. This method is called from the subClasses acceptAndOpen method
    */
   
-  protected synchronized void acceptAndOpenI() throws IOException, ServiceRegistrationException {
-	  if (System.getProperty("os.name", "").indexOf ("Linux") == -1) {
-		  while (myConnection != null && !myConnection.isClosed()) {
-			  try { wait (100); } catch (Exception e) {}
-		  }
-	  }
+  protected synchronized int acceptAndOpenI() throws IOException, ServiceRegistrationException {
  
     m_fid = -2;
   	failEx = null;
@@ -246,5 +219,7 @@ public abstract class ConnectionNotifier implements Connection {
  		if (failEx != null) throw failEx;
  		throw new IOException ("Service Revoked");
      }
+     
+     return m_fid;
   	}
 }

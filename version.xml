@@ -10,7 +10,7 @@
       Added support for remote authentication of devices while connections are already established.
     </build>
     <build value="2" date="2004-12-08" time="16:52">
- 		Fixed bug in MInputStream.read(), where the byte transferred and casted to an int needed to be & 0xff'ed.
+ 		Fixed bug in MInputStream.read(), where the byte transferred and casted to an int needed to be and-0xff'ed.
  		BluetoothStream in ObexInputStream.
     </build>
     <build value="3" date="2004-12-10" time="23:00">
@@ -229,6 +229,18 @@
 	 Updates to handle requesting of specific local channels in a connectionURL. This goes beyond the JSR-82 specification.
 	 Update in native part for Windows/Microsoft to set Discoverable/Not Discoverable.
     </build>    
+    <build value="3" date="2005-11-30">
+		Support for SDP-String Element longer than 255 characters.
+    </build>    
+   </revision>
+   <revision value="3">
+    <build value="0" date="2005-06-08">
+     -many improvements in native code on all plattforms.
+     -now handles multithreaded acceptAndOpen() to serve multiple connections on the same channel
+     -fully MIDP-Compliant. Works with J9 MIDP (needs special distribution)
+     -Exception handling in callback methods deviceDiscovered and servicesDiscovered
+     -Removed many of the synchronized tags in BlueZ to be able to open Connections from multiple threads at the same time.
+    </build>
    </revision>
   </version>
 </avetanaBluetooth>

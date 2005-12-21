@@ -20,9 +20,11 @@ import java.io.OutputStream;
 
 import javax.bluetooth.DeviceClass;
 import javax.bluetooth.DiscoveryAgent;
+import javax.bluetooth.DiscoveryListener;
 import javax.bluetooth.L2CAPConnection;
 import javax.bluetooth.LocalDevice;
 import javax.bluetooth.RemoteDevice;
+import javax.bluetooth.ServiceRecord;
 import javax.bluetooth.UUID;
 import javax.microedition.io.Connection;
 import javax.microedition.io.Connector;
@@ -177,7 +179,7 @@ public class JSRTest extends JFrame implements ActionListener {
   private final int WINDOWS=0x1;
   private final int MACOSX=0x2;
 
-  private static final int rfcommPackLen = 300;
+  private static final int rfcommPackLen = 100;
   
   /*
    * Matrix of possibilites:
@@ -246,17 +248,17 @@ public class JSRTest extends JFrame implements ActionListener {
      switch(m_os) {
        case LINUX:
          for(int i=0;i<3;i++) properties[0][i]=1;
-         for(int i=0;i<3;i++) properties[1][i]=0;
+         for(int i=0;i<3;i++) properties[1][i]=1;
          for(int i=0;i<3;i++) properties[2][i]=0;
          break;
        case WINDOWS:
          for(int u=0;u<3;u++)
            for(int i=0;i<3;i++)
-             properties[u][i]=(i==2?0:1);
+             properties[u][i]=1;
          break;
        case MACOSX:
          for(int i=0;i<3;i++) properties[i][0]=1;
-         for(int i=0;i<3;i++) properties[i][1]=0;
+         for(int i=0;i<3;i++) properties[i][1]=1;
          for(int i=0;i<3;i++) properties[i][2]=0;
          break;
      }
@@ -321,20 +323,19 @@ public class JSRTest extends JFrame implements ActionListener {
      JPanel clientURL=new JPanel(new FlowLayout());
      clientURL.add(new JLabel("URL:"));
      clientURL.add(connectionURL);
-     clientURL.add(connectTo);
      int i=-1;
-     c.gridx=++i;c.gridy=0;c.anchor=GridBagConstraints.WEST;c.weightx=0;c.weighty=0;c.gridwidth=2;
-     clSer.add(statusPanel);
-     c.gridy=++i;
+     c.gridx=++i;c.gridy=0;c.anchor=GridBagConstraints.WEST;c.weightx=0;c.weighty=0;c.gridwidth=3;
+     clSer.add(statusPanel, c);
+     c.gridy=++i; c.gridwidth = 1;
      clSer.add(m_client,c);
-     c.gridy=++i;c.insets=new Insets(1,15,0,0);
+     c.gridx++;
+     clSer.add (connectTo, c);
+     c.gridy=++i; c.gridx = 0; c.insets=new Insets(1,15,0,0); c.gridwidth = 3;
      clSer.add(clientURL,c);
-     JPanel serverURL=new JPanel(new FlowLayout());
-     serverURL.add(m_offerService);
-     c.gridy=++i;c.insets=new Insets(1,0,1,1);
+     c.gridy=++i;c.insets=new Insets(1,0,1,1); c.gridwidth = 1;
      clSer.add(m_server,c);
      c.gridx=1;c.insets=new Insets(1,5,0,0);
-     clSer.add(serverURL, c);
+     clSer.add(m_offerService, c);
      c.gridx =0;c.gridy=++i;c.insets=new Insets(1,1,1,1);
      clSer.add(m_authentication,c);
      c.gridy=++i;
@@ -411,6 +412,25 @@ public class JSRTest extends JFrame implements ActionListener {
          if(e.getClickCount() == 2) selectService();
        }
      });
+     
+     m_authentication.addActionListener(new ActionListener () {
+
+		public void actionPerformed(ActionEvent e) {
+			if (!m_authentication.isSelected()) m_encrypt.setSelected(false);
+			
+		}
+    	 
+     });
+    
+     m_encrypt.addActionListener(new ActionListener () {
+
+ 		public void actionPerformed(ActionEvent e) {
+ 			if (m_encrypt.isSelected()) m_authentication.setSelected(true);
+ 			
+ 		}
+     	 
+      });
+
    }
 
    /**
@@ -748,6 +768,7 @@ public class JSRTest extends JFrame implements ActionListener {
 
        else if (e.getSource() == connectTo && connectTo.isSelected() == true) {
          streamCon = Connector.open(connectionURL.getText());
+         System.out.println ("Connected to " + connectionURL.getText() + " " + streamCon);
          if(streamCon instanceof StreamConnection) {
            is = ((StreamConnection)streamCon).openInputStream();
            os = ((StreamConnection)streamCon).openOutputStream();
@@ -772,7 +793,7 @@ public class JSRTest extends JFrame implements ActionListener {
        }
        else if (e.getSource() == sendData) {
          if(m_protocols.getSelectedIndex() == JSR82URL.PROTOCOL_RFCOMM) {
-            byte b[] = new byte[300];//JSRTest.rfcommPackLen];
+            byte b[] = new byte[rfcommPackLen];
             for (int i = 0; i < b.length; i++) {	
 				b[i] = (byte) (0x100 * Math.random());
 			}
@@ -944,10 +965,13 @@ public class JSRTest extends JFrame implements ActionListener {
              url.setParameter("encrypt", new Boolean(m_encrypt.isSelected()));
              url.setParameter("authenticate", new Boolean(m_authentication.isSelected()));
              url.setParameter("master", new Boolean(m_master.isSelected()));
-             serviceStatus.setText("ready");
              System.out.println(url.toString());
              notify = (ConnectionNotifier)Connector.open(url.toString());
 //             notify = (ConnectionNotifier)Connector.open("btspp://localhost:27012f0c68af4fbf8dbe6bbaf7ab651b:22;name=JSRTest");
+             int secSet = ServiceRecord.NOAUTHENTICATE_NOENCRYPT;
+             if (m_authentication.isSelected() && m_encrypt.isSelected()) secSet = ServiceRecord.AUTHENTICATE_ENCRYPT;
+             else if (m_authentication.isSelected() && !m_encrypt.isSelected()) secSet = ServiceRecord.AUTHENTICATE_NOENCRYPT;
+             serviceStatus.setText("ready " + LocalDevice.getLocalDevice().getRecord(notify).getConnectionURL(secSet, m_master.isSelected()));
 
              streamCon = ((StreamConnectionNotifier)notify).acceptAndOpen();
              serviceStatus.setText("connected with fid="+((BTConnection)streamCon).getConnectionID());
@@ -969,9 +993,13 @@ public class JSRTest extends JFrame implements ActionListener {
              url.setParameter("encrypt", new Boolean(m_encrypt.isSelected()));
              url.setParameter("authenticate", new Boolean(m_authentication.isSelected()));
              url.setParameter("master", new Boolean(m_master.isSelected()));
-             serviceStatus.setText("ready");
-             System.out.println(url.toString());
+
              notify = (ConnectionNotifier)Connector.open(url.toString());
+             int secSet = ServiceRecord.NOAUTHENTICATE_NOENCRYPT;
+             if (m_authentication.isSelected() && m_encrypt.isSelected()) secSet = ServiceRecord.AUTHENTICATE_ENCRYPT;
+             else if (m_authentication.isSelected() && !m_encrypt.isSelected()) secSet = ServiceRecord.AUTHENTICATE_NOENCRYPT;
+             serviceStatus.setText("ready " + LocalDevice.getLocalDevice().getRecord(notify).getConnectionURL(secSet, m_master.isSelected()));
+
              streamCon = ((L2CAPConnectionNotifierImpl)notify).acceptAndOpen();
              serviceStatus.setText("connected with fid="+((BTConnection)streamCon).getConnectionID());
              System.out.println ("ReceiveMTU=" + ((L2CAPConnection)streamCon).getReceiveMTU() + " TransmitMTU=" + ((L2CAPConnection)streamCon).getTransmitMTU());
@@ -988,7 +1016,10 @@ public class JSRTest extends JFrame implements ActionListener {
 					//Obex must be offered with only the OBEX-ObjetPush UUID. It will not be
 					//recognised as an OBEX Service with a other UUID
 		    	notify = Connector.open("btgoep://localhost:" + new UUID (SDPConstants.UUID_OBEX_OBJECT_PUSH) + ";name=OBEXTest;authenticate=false;master=false;encrypt=false");
-				serviceStatus.setText ("ready");
+	             int secSet = ServiceRecord.NOAUTHENTICATE_NOENCRYPT;
+	             if (m_authentication.isSelected() && m_encrypt.isSelected()) secSet = ServiceRecord.AUTHENTICATE_ENCRYPT;
+	             else if (m_authentication.isSelected() && !m_encrypt.isSelected()) secSet = ServiceRecord.AUTHENTICATE_NOENCRYPT;
+	             serviceStatus.setText("ready " + LocalDevice.getLocalDevice().getRecord(notify).getConnectionURL(secSet, m_master.isSelected()));
 				
 				Authenticator authHandler = null;/*new Authenticator() {
 

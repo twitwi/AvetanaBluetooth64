@@ -44,7 +44,6 @@ import de.avetana.bluetooth.l2cap.L2CAPConnParam;
 import de.avetana.bluetooth.l2cap.L2CAPConnectionNotifierImpl;
 import de.avetana.bluetooth.sdp.LocalServiceRecord;
 import de.avetana.bluetooth.util.BTAddress;
-import de.avetana.bluetooth.util.LibLoader;
 
 /**
  * This class provides the methods to access the underlying BlueZ functions.
@@ -68,7 +67,6 @@ public class BlueZ
     public static ConnectionFactory myFactory=new ConnectionFactory();
 
     public static int m_transactionId = 0;
-    public static final String  m_version;
     private static Vector mutexes = new Vector();
     
     private static class Mutex {
@@ -92,46 +90,7 @@ public class BlueZ
 	 */
     
 	static {
-			
-		String version = "0";
-		String revision = "0";
-		String build = "0";
-
-		String line = "";
-		try {
-			InputStream is = ClassLoader.getSystemResourceAsStream("version.xml");
-			if (is == null) is = new BlueZ().getClass().getClassLoader().getResourceAsStream("version.xml");
-			BufferedReader br = new BufferedReader (new InputStreamReader (is));
-			
-		while ((line = br.readLine()) != null) {
-			line = line.toLowerCase();
-			if (line.indexOf("<version") != -1) {
-				revision = "0";
-				build = "0";
-				int idx = line.indexOf("value");
-				idx = line.indexOf("\"", idx + 1);
-				int idx2 = line.indexOf("\"", idx + 1);
-				version = line.substring(idx + 1, idx2);
-			} else if (line.indexOf("<revision") != -1) {
-				build = "0";
-				int idx = line.indexOf("value");
-				idx = line.indexOf("\"", idx + 1);
-				int idx2 = line.indexOf("\"", idx + 1);
-				revision = line.substring(idx + 1, idx2);				
-			} else if (line.indexOf("<build") != -1) {
-				int idx = line.indexOf("value");
-				idx = line.indexOf("\"", idx + 1);
-				int idx2 = line.indexOf("\"", idx + 1);
-				build = line.substring(idx + 1, idx2);				
-			}
-		}
-		} catch (Exception e) {
-			version = "not";
-			revision = "available";
-			build ="";
-		}
-		m_version = version + "." + revision + "." + build;
-		System.out.println ("avetanaBluetooth version " + m_version);
+		de.avetana.bluetooth.util.Version.readVersion();
 	}
 
 	
@@ -160,7 +119,7 @@ public class BlueZ
 	 * @return A device descriptor (often named <code>dd</code>) for the HCI
 	 *     device.
 	 */
-	protected synchronized static native int hciOpenDevice(int hciDevID, BlueZ ref) throws BlueZException;
+	public synchronized static native int hciOpenDevice(int hciDevID, BlueZ ref) throws BlueZException;
 
 	/* HCI Close Device */
 	/**
@@ -217,7 +176,7 @@ public class BlueZ
 	 *     by BlueZ for further information)
 	 * @return A BTAddress object representing the Bluetooth device address.
 	 */
-	public synchronized static native BTAddress hciDevBTAddress(int hciDevID) throws BlueZException;
+	public static native BTAddress hciDevBTAddress(int hciDevID) throws BlueZException;
 
 	/* HCI Device ID */
 	/**
@@ -228,7 +187,7 @@ public class BlueZ
 	 *     <code>"00:12:34:56:78:9A"</code>.
 	 * @return The device ID for the local device.
 	 */
-	public synchronized static native int hciDeviceID(String bdaddr) throws BlueZException;
+	public static native int hciDeviceID(String bdaddr) throws BlueZException;
 	/**
 	 * Gets the device ID for a specified local HCI device.
 	 *
@@ -236,7 +195,7 @@ public class BlueZ
 	 * @param bdaddr Bluetooth address as a BTAddress object.
 	 * @return The device ID for the local device.
 	 */
-	public synchronized static int hciDeviceID(BTAddress bdaddr) throws BlueZException
+	public static int hciDeviceID(BTAddress bdaddr) throws BlueZException
 	{	return hciDeviceID(bdaddr.toString());	}
 
 	/* HCI Local Name */
@@ -249,7 +208,7 @@ public class BlueZ
 	 * @param timeOut Timeout, in milliseconds.
 	 * @return A String containing the name of the specified local device.
 	 */
-	public synchronized static native String hciLocalName(int dd, int timeOut) throws BlueZException;
+	public static native String hciLocalName(int dd, int timeOut) throws BlueZException;
 	/**
 	 * Gets the name of a local device. The device must be opened using
 	 * <code>hciOpenDevice</code> before calling this method. This is the same
@@ -260,7 +219,7 @@ public class BlueZ
 	 * @exception BlueZException If unable to get the local device name.
 	 * @return A String containing the name of the specified local device.
 	 */
-	public synchronized static String hciLocalName(int dd) throws BlueZException
+	public static String hciLocalName(int dd) throws BlueZException
 	{	return hciLocalName(dd, 10000);	}
 
 	/* HCI Remote Name */
@@ -276,7 +235,7 @@ public class BlueZ
 	 * @param timeOut Timeout, in milliseconds.
 	 * @return A String containing the name of the specified remote device.
 	 */
-	public synchronized static native String hciRemoteName(int dd, String bdaddr, int timeOut) throws BlueZException;
+	public static native String hciRemoteName(int dd, String bdaddr, int timeOut) throws BlueZException;
 	/**
 	 * Gets the name of a remote device, as specified by its Bluetooth device
 	 * address. The local device must be opened using <code>hciOpenDevice</code>
@@ -290,7 +249,7 @@ public class BlueZ
 	 * @exception BlueZException If unable to get the remote device name.
 	 * @return A String containing the name of the specified remote device.
 	 */
-	public synchronized static String hciRemoteName(int dd, String bdaddr) throws BlueZException
+	public static String hciRemoteName(int dd, String bdaddr) throws BlueZException
 	{	return hciRemoteName(dd, bdaddr, 10000);	}
 	/**
 	 * Gets the name of a remote device, as specified by its Bluetooth device
@@ -321,10 +280,10 @@ public class BlueZ
 	{	return hciRemoteName(dd, bdaddr.toString(), 25000);	}
 
         // Call of the native method openRFCommNative
-        private synchronized static native int openRFCommNative (String addr, int channel,  boolean master, boolean auth, boolean encrypt);
+        private static native int openRFCommNative (String addr, int channel,  boolean master, boolean auth, boolean encrypt);
 
         // Call of the native method openL2CAPNative
-        private synchronized static native L2CAPConnParam openL2CAPNative (String addr, int psm, boolean master, boolean auth, boolean encrypt,            int receiveMTU, int transmitMTU);
+        private static native L2CAPConnParam openL2CAPNative (String addr, int psm, boolean master, boolean auth, boolean encrypt,            int receiveMTU, int transmitMTU);
 
         /**
          * Opens an L2CAP connection with a remote BT device.
@@ -418,7 +377,7 @@ public class BlueZ
          * @param attrIds The list of Attributes which will populate the Service record.
          * @throws BlueZException
          */
-        public static synchronized native void listService (String bdaddr_jstr, byte[][] uuid, int[] attrIds, int transID) throws BlueZException;
+        public static native void listService (String bdaddr_jstr, byte[][] uuid, int[] attrIds, int transID) throws BlueZException;
 
         /**
          * Stores a new Service record in the BCC.
@@ -426,7 +385,7 @@ public class BlueZ
          * @return a positive integer is the process succeeds.
          * @throws BlueZException
          */
-        public synchronized static native int createService(LocalServiceRecord service) throws BlueZException;
+        public static native int createService(LocalServiceRecord service) throws BlueZException;
 
         /**
          * Updates an existing service record (the old <service record must be already stored in the BCC.)
@@ -436,7 +395,7 @@ public class BlueZ
          * @return a positive integer is the process succeeds.
          * @throws BlueZException
          */
-        public synchronized static native int updateService(ServiceRecord service, long recordHandle) throws BlueZException;
+        public static native int updateService(ServiceRecord service, long recordHandle) throws BlueZException;
 
         /**
          * Registers the service record identified by the variable "serviceHandle" and listens for an incoming RFCOMM Connection
@@ -475,7 +434,7 @@ public class BlueZ
          * @param recordHandle
          * @throws BlueZException
          */
-        public synchronized static native void disposeLocalRecord(long recordHandle) throws BlueZException;
+        public static native void disposeLocalRecord(long recordHandle) throws BlueZException;
 
         /**
          * Gets the access mode of the local device
@@ -483,7 +442,7 @@ public class BlueZ
          * @return The access mode if this device
          * @throws BlueZException
          */
-        public synchronized static native int getAccessMode(int device) throws BlueZException;
+        public static native int getAccessMode(int device) throws BlueZException;
 
         /**
          * Sets the access mode of the local device
@@ -492,7 +451,7 @@ public class BlueZ
          * @return
          * @throws BlueZException
          */
-        public synchronized static native int setAccessMode(int device, int mode) throws BlueZException;
+        public static native int setAccessMode(int device, int mode) throws BlueZException;
 
         /**
          * Gets the device class of the local device number "dev_id"
@@ -500,7 +459,7 @@ public class BlueZ
          * @return The current device class
          * @throws BlueZException
          */
-        public synchronized static native int getDeviceClass(int dev_id) throws BlueZException;
+        public static native int getDeviceClass(int dev_id) throws BlueZException;
 
         /**
          * sets the device class to "cls" of the local device number "dev_id"
@@ -510,7 +469,7 @@ public class BlueZ
          * @return true/false
          * @throws BlueZException
          */
-        public synchronized static native boolean setDeviceClass(int dev_id, int cls) throws BlueZException;
+        public static native boolean setDeviceClass(int dev_id, int cls) throws BlueZException;
 	
         /**
          * Is master/slave switch allowed?
@@ -518,7 +477,7 @@ public class BlueZ
          *         <code>false</code> Otherwise
          * @throws BlueZException
          */
-        public synchronized static native boolean isMasterSwitchAllowed() throws BlueZException;
+        public static native boolean isMasterSwitchAllowed() throws BlueZException;
 
         /**
          * Returns the maximum number of connected devices allowed by the stack
@@ -527,7 +486,7 @@ public class BlueZ
          * @return The maximum number of connected devices allowed by the stack
          * @throws BlueZException
          */
-        public synchronized static native int getMaxConnectedDevices() throws BlueZException;
+        public static native int getMaxConnectedDevices() throws BlueZException;
 
         /**
          * Inquiry scanning allowed during connection?
@@ -535,7 +494,7 @@ public class BlueZ
          *         <code>false</code> Otherwise
          * @throws BlueZException
          */
-        public synchronized static native boolean inquiryScanAndConAllowed() throws BlueZException;
+        public static native boolean inquiryScanAndConAllowed() throws BlueZException;
 
         /**
          * Is Inquiry allowed during a connection?
@@ -543,7 +502,7 @@ public class BlueZ
          *         <code>false</code> Otherwise
          * @throws BlueZException
          */
-        public synchronized static native boolean inquiryAndConAllowed() throws BlueZException;
+        public static native boolean inquiryAndConAllowed() throws BlueZException;
 
         /**
          * Page scanning allowed during connection?
@@ -551,7 +510,7 @@ public class BlueZ
          *         <code>false</code> Otherwise
          * @throws BlueZException
          */
-        public synchronized static native boolean pageScanAndConAllowed() throws BlueZException;
+        public static native boolean pageScanAndConAllowed() throws BlueZException;
 
         /**
          * Is paging allowed during a connection?
@@ -571,7 +530,7 @@ public class BlueZ
          * @return 1 if successful 0 if not
          * @throws BlueZException
          */
-        public synchronized static native int authenticate(int handle, String deviceAddr, String pin) throws BlueZException;
+        public static native int authenticate(int handle, String deviceAddr, String pin) throws BlueZException;
 
         /**
          * Turns on/off the encryption of an ACL link
@@ -581,7 +540,7 @@ public class BlueZ
          * @return
          * @throws BlueZException
          */
-        public synchronized static native int encrypt(int handle, String deviceAddr, boolean enable) throws BlueZException;
+        public static native int encrypt(int handle, String deviceAddr, boolean enable) throws BlueZException;
 
         /**
          * Retrieves the connection options
@@ -590,7 +549,7 @@ public class BlueZ
          * @return
          * @throws BlueZException
          */
-        public synchronized static native boolean[] connectionOptions(int handle, String deviceAddr) throws BlueZException;
+        public  static native boolean[] connectionOptions(int handle, String deviceAddr) throws BlueZException;
 
 
         // Debug method
@@ -652,7 +611,6 @@ public class BlueZ
                                     a_notifier.getConnectionURL().isAuthenticated(),
                                     a_notifier.getConnectionURL().isEncrypted());
                   }
-                a_notifier.setServerFID(fid);
 				} catch (BlueZException e) {
 					a_notifier.setFailure(new IOException (e.getMessage()));
 					a_notifier.setConnectionID(-1);
@@ -717,6 +675,12 @@ public class BlueZ
          * @param transID SDP transaction ID
          * @param rec The service record discovered
          */
+        public static void addService(int transID, ServiceRecord rec[]) {
+        		for (int i = 0;i < rec.length;i++) {
+        			addService (transID, rec[i]);
+        		}
+        }
+        
         public static void addService(int transID, ServiceRecord rec) {
           DiscoveryListener myListener=myFactory.getListener(transID);
           if(myListener==null) {
@@ -772,7 +736,6 @@ public class BlueZ
         			System.err.println ("Collection garbage");
         			e.printStackTrace();
         			System.gc();
-        			System.runFinalization();
             		try {
             			return new byte[size];
             		} catch (Throwable e2) {

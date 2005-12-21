@@ -9,6 +9,9 @@ package de.avetana.bluetooth.test;
 import javax.bluetooth.*;
 import javax.microedition.io.*;
 
+import de.avetana.bluetooth.sdp.RemoteServiceRecord;
+import de.avetana.bluetooth.util.MSServiceRecord;
+
 import java.io.*;
 
 /**
@@ -28,6 +31,15 @@ public class SDPUpdateTest {
 
 		ServiceRecord srec = LocalDevice.getLocalDevice().getRecord(streamConNot);
 		
+			byte[] raw = MSServiceRecord.getByteArray (srec);
+			for (int j = 0; j < raw.length;j++) {
+				System.out.print (" " + Integer.toHexString(raw[j] & 0xff));
+			}
+			System.out.println();
+
+			ServiceRecord srs2 = RemoteServiceRecord.createServiceRecord("000000000000", new byte[0][0], new int[] { 1,2,3,4,5,6,7,256 }, raw);
+			System.out.println (srs2);
+
 		System.out.println ("Press a key to update service name... "  + srec);
 
 		BufferedReader br = new BufferedReader (new InputStreamReader (System.in));

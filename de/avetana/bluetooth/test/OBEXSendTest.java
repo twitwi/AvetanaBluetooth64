@@ -24,26 +24,31 @@ public class OBEXSendTest implements DiscoveryListener {
 	private boolean finishedSearching = false;
 	private ServiceRecord rec = null;
 	
-	public OBEXSendTest(String bta, String file) throws Exception {
+	public OBEXSendTest(String bta, String file, int channel) throws Exception {
         LocalDevice myLocalDevice = LocalDevice.getLocalDevice();
         DiscoveryAgent myDiscoveryAgent = myLocalDevice.getDiscoveryAgent();
         
         File sendFile = new File (file);
         
-        finishedSearching = false;
+        String url = "";
         
-        myDiscoveryAgent.searchServices(null, new UUID[] { new UUID (0x1105) }, new RemoteDevice (bta), this);
-        
-        while (!finishedSearching) {
-        		synchronized (this) {
-        			wait (100);
-        		}
-        }
-        
-        if (rec == null) throw new Exception ("No OBEX_OBJECT_PUSH Service found on device " + bta);
+        if (channel == 0) {
+	        finishedSearching = false;
+	        
+	        myDiscoveryAgent.searchServices(null, new UUID[] { new UUID (0x1105) }, new RemoteDevice (bta), this);
+	        
+	        while (!finishedSearching) {
+	        		synchronized (this) {
+	        			wait (100);
+	        		}
+	        }
+	        
+	        if (rec == null) throw new Exception ("No OBEX_OBJECT_PUSH Service found on device " + bta);
+	        url = rec.getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
+        } else url = "btgoep://" + bta + ":" + channel;
         
         ClientSession conn = (ClientSession) Connector 
-              .open(rec.getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false));
+              .open(url);
         HeaderSet header = conn.createHeaderSet();
         HeaderSet response = conn.connect(header);
         System.out.println("connected");
@@ -76,13 +81,46 @@ public class OBEXSendTest implements DiscoveryListener {
         op.close();
         
         conn.disconnect(conn.createHeaderSet());
-        
-        System.exit(0);
+        conn.close();
         
 	}
 	
-	public static void main(String[] args) throws Exception {
-		new OBEXSendTest (args[0], args[1]);
+	/*public static void main(String[] args) throws Exception {
+		new OBEXSendTest (args[0], args[1], args.length > 2 ? Integer.parseInt(args[2]) : 0);
+	}*/
+	
+	public static void main (final String[] args) throws Exception {
+		
+		LocalDevice.getLocalDevice();
+		
+		Runnable r1 = new Runnable () {
+
+			public void run() {
+				try {//"000E6D7057F9" 9
+					new OBEXSendTest ("000E6D7057F9", "avetana.vcf", 9);
+					//new OBEXSendTest (args[0], "avetana.vcf", Integer.parseInt (args[1]));
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			
+		};
+		Runnable r2 = new Runnable () {
+
+			public void run() {
+				try {
+					new OBEXSendTest ("006057e3f442", "avetana.vcf", 1);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			
+		};
+		
+		if (args.length == 0 || args[0].equals("1")) new Thread (r1).start();
+		if (args.length == 0 || args[0].equals("2")) new Thread (r2).start();
 	}
 
 	/* (non-Javadoc)

@@ -1,8 +1,5 @@
 package de.avetana.bluetooth.util;
 
-import java.io.Serializable;
-import java.util.StringTokenizer;
-
 /**
 * <b>COPYRIGHT:</b><br> (c) Copyright 2004 Avetana GmbH ALL RIGHTS RESERVED. <br><br>
 *
@@ -39,7 +36,7 @@ import java.util.StringTokenizer;
 * @author Julien Campana for a few static methods
 */
 
-public class BTAddress implements Serializable
+public class BTAddress
 {
         /**
          * The address is stored as six 8-bit numbers.
@@ -51,6 +48,10 @@ public class BTAddress implements Serializable
          */
         public BTAddress()
         {
+        }
+        
+        protected BTAddress (BTAddress a2) {
+        		addr_arr = a2.addr_arr;
         }
 
         /**
@@ -83,17 +84,22 @@ public class BTAddress implements Serializable
 				while ((pos = addr_str.indexOf("-")) != -1) {
 					addr_str = addr_str.substring(0, pos) + ":" + addr_str.substring (pos + 1);
 				}
-                StringTokenizer st = new StringTokenizer(addr_str, ":");
 
-                if (st.countTokens() != 6)
+				int count = 0;
+				pos = -1;
+				while ((pos = addr_str.indexOf(":", pos + 1)) != -1) count++;
+				
+                if (count != 5)
                         throw new BTAddressFormatException("Bad number of tokens");
 
-                int i = 0;
+                int i = 0, lastPos = 0;
                 short s;
                 String str = new String();
-                while (st.hasMoreTokens())
+                pos = -1;
+                while ((pos = addr_str.indexOf(":", pos + 1)) != -1)
                 {
-                        str = st.nextToken();
+                        str = addr_str.substring (lastPos, pos);
+                        lastPos = pos + 1;
                         // Try and parse the (hex) token to a short
                         try
                         {
@@ -110,7 +116,16 @@ public class BTAddress implements Serializable
                         addr_arr[i] = s;
                         i++;
                 }
-                return;
+                try { 
+                	addr_arr[5] = Short.parseShort(addr_str.substring(addr_str.lastIndexOf(':') + 1), 16);
+                }
+                catch (NumberFormatException nfe)
+                {
+                        String msg = "NumberFormatExpection occurred whilst trying to parseShort from token " + str + ".";
+                        throw new BTAddressFormatException(msg);
+                }
+
+                	return;
         }
 
         /**
@@ -172,4 +187,5 @@ public class BTAddress implements Serializable
 
                 return true;
         }
+        
 }

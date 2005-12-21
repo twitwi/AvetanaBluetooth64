@@ -73,7 +73,7 @@ public class RFCommConnectionNotifierImpl extends ConnectionNotifier implements 
         this.parsedURL.setAttrNumber(channel);
       }catch(Exception ex) {
       	ex.printStackTrace();
-        throw new IOException("ERROR - The service record could not be added in the local SDB " + m_serviceHandle);
+        throw new IOException("ERROR - The service record could not be added in the local SDB " + m_serviceHandle + " " + ex.getMessage());
       }
 
   }
@@ -88,9 +88,9 @@ public class RFCommConnectionNotifierImpl extends ConnectionNotifier implements 
     * @throws IOException
    */
   public synchronized StreamConnection acceptAndOpen() throws IOException{
-	  super.acceptAndOpenI();
+	  int m_fid = super.acceptAndOpenI();
 
-        myConnection=new RFCommConnectionImpl(m_fid);
+	  RFCommConnectionImpl myConnection=new RFCommConnectionImpl(m_fid);
         myConnection.setRemoteDevice(m_remote);
         m_fid = 0;
         return (StreamConnection) myConnection;

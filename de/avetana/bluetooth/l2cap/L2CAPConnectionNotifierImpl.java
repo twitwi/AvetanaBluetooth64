@@ -103,9 +103,9 @@ public class L2CAPConnectionNotifierImpl extends ConnectionNotifier implements L
    * not be placed in connectable mode because the device user has configured the device to be non-connectable.
    */
   public synchronized L2CAPConnection acceptAndOpen() throws IOException, ServiceRegistrationException {
-	super.acceptAndOpenI();
+	int m_fid = super.acceptAndOpenI();
 
-      myConnection=new L2CAPConnectionImpl(m_fid);
+      L2CAPConnectionImpl myConnection=new L2CAPConnectionImpl(m_fid);
       ((L2CAPConnectionImpl)myConnection).m_receiveMTU = m_recMTU;
       ((L2CAPConnectionImpl)myConnection).m_transmitMTU = m_transMTU;
       myConnection.setRemoteDevice(m_remote);
