@@ -5,9 +5,10 @@ import javax.bluetooth.*;
 
 import java.io.IOException;
 import java.util.Enumeration;
+import java.util.Vector;
 
-import de.avetana.bluetooth.util.BTAddress;
 import de.avetana.bluetooth.stack.BlueZ;
+import de.avetana.bluetooth.util.BTAddress;
 
 /**
  * The class used to manage remote service records.
@@ -47,6 +48,8 @@ import de.avetana.bluetooth.stack.BlueZ;
  */
 public class RemoteServiceRecord extends SDPServiceRecord {
 
+	
+  //public byte[] raw = new byte[0];
   /**
    * The remote device this service belongs to
    */
@@ -210,7 +213,7 @@ public class RemoteServiceRecord extends SDPServiceRecord {
     }
     if (isObex && rfcommChannel != -1) url += "btgoep://"+m_remote.getBluetoothAddress()+":"+rfcommChannel;
     else if (rfcommChannel!=-1) url+="btspp://"+m_remote.getBluetoothAddress()+":"+rfcommChannel;
-    else if (l2capPSM!=-1) url+="btl2cap://"+m_remote.getBluetoothAddress()+":"+Long.toHexString(l2capPSM);
+    else if (l2capPSM!=-1) url+="btl2cap://"+m_remote.getBluetoothAddress()+":"+Long.toString(l2capPSM, 16);
     if(url.equals("")) return null;
     url+=";";
 
@@ -481,15 +484,62 @@ public class RemoteServiceRecord extends SDPServiceRecord {
 
   }
 
+  public static ServiceRecord[] createServiceRecordCE(String adr, byte[][] uuids, int[] attrs, byte[] data) throws IOException {
+
+	  ServiceRecord[] srx = new ServiceRecord[1];
+	  srx[0] = new RemoteServiceRecord ("001122334455");
+	  srx[0].setAttributeValue(256, new DataElement (DataElement.STRING, "Test"));
+	  //if (true) return srx;
+	  
+	  try {
+	  DataElement deAll = readElement(data, 0);
+	  
+	  Vector v = new Vector();
+	  
+	  Object o = deAll.getValue();
+	  
+	  if (o == null) throw new Exception ("No value in DataElement");
+	  if (!(o instanceof Enumeration)) throw new Exception ("ClassCastException " + o.getClass());
+	  
+	  Enumeration en = (Enumeration)o;
+	  
+	  while (en.hasMoreElements()) {
+		  Object o2 = en.nextElement();
+		  
+		  if (o2 == null) throw new Exception ("Inner Element is null");
+		  if (!(o2 instanceof DataElement)) throw new Exception ("Inner Element no DataElement");
+		  
+		  DataElement de = (DataElement) o2;
+		  v.addElement(createServiceRecord(adr, uuids, attrs, de));
+	  }
+	  
+	  ServiceRecord sr[] = new ServiceRecord[v.size()];
+	  v.copyInto(sr);
+	  return sr;
+	  } catch (Exception e) {
+		  ServiceRecord[] sr = new ServiceRecord[1];
+		  sr[0] = new RemoteServiceRecord ("001122334455");
+		  sr[0].setAttributeValue(256, new DataElement (DataElement.STRING, "" + e.getClass() + " " + e.getMessage()));
+		  return sr;
+	  }
+	  
+  }
+
   public static ServiceRecord createServiceRecord(String adr, byte[][] uuids, int[] attrs, byte[] data) throws IOException {
+	  ServiceRecord sr = createServiceRecord(adr, uuids, attrs, readElement(data, 0));
+	  //((RemoteServiceRecord)sr).raw = data;
+
+	  return sr;
+  }
+  
+  public static ServiceRecord createServiceRecord(String adr, byte[][] uuids, int[] attrs, DataElement deAll) throws IOException {
 	  
 	  SDPServiceRecord srec = new RemoteServiceRecord(adr);
+
 	  try {
 	  
 	  UUID[] uuid = new UUID[uuids.length];
 	  for (int i = 0;i < uuid.length;i++) uuid[i] = new UUID(uuids[i]);
-	  
-	  DataElement deAll = readElement(data, 0);
 	  
 	  boolean inReq = true;
 	  for (int i = 0;i < uuid.length;i++) {
@@ -534,11 +584,21 @@ public class RemoteServiceRecord extends SDPServiceRecord {
 		return false;
 	}
 
-	static byte[] ba = new byte[] { (byte)0x35, (byte)0x7d, (byte)0x09, (byte)0x00, (byte)0x00, (byte)0x0a, (byte)0x00, (byte)0x01, (byte)0x00, (byte)0x03, (byte)0x09, (byte)0x00, (byte)0x01, (byte)0x35, (byte)0x03, (byte)0x19, (byte)0x11, (byte)0x06, (byte)0x09, (byte)0x00, (byte)0x04, (byte)0x35, (byte)0x13, (byte)0x35, (byte)0x05, (byte)0x1a, (byte)0x00, (byte)0x00, (byte)0x01, (byte)0x00, (byte)0x35, (byte)0x05, (byte)0x19, (byte)0x00, (byte)0x03, (byte)0x08, (byte)0x0f, (byte)0x35, (byte)0x03, (byte)0x19, (byte)0x00, (byte)0x08, (byte)0x09, (byte)0x00, (byte)0x05, (byte)0x35, (byte)0x03, (byte)0x19, (byte)0x10, (byte)0x02, (byte)0x09, (byte)0x00, (byte)0x06, (byte)0x35, (byte)0x09, (byte)0x09, (byte)0x65, (byte)0x6e, (byte)0x09, (byte)0x00, (byte)0x6a, (byte)0x09, (byte)0x01, (byte)0x00, (byte)0x09, (byte)0x00, (byte)0x09, (byte)0x35, (byte)0x08, (byte)0x35, (byte)0x06, (byte)0x19, (byte)0x11, (byte)0x06, (byte)0x09, (byte)0x01, (byte)0x00, (byte)0x09, (byte)0x01, (byte)0x00, (byte)0x25, (byte)0x12, (byte)0x4f, (byte)0x42, (byte)0x45, (byte)0x58, (byte)0x20, (byte)0x46, (byte)0x69, (byte)0x6c, (byte)0x65, (byte)0x20, (byte)0x54, (byte)0x72, (byte)0x61, (byte)0x6e, (byte)0x73, (byte)0x66, (byte)0x65, (byte)0x72, (byte)0x09, (byte)0x03, (byte)0x03, (byte)0x35, (byte)0x02, (byte)0x08, (byte)0xff, (byte)0x09, (byte)0x07, (byte)0x77, (byte)0x1c, (byte)0x6f, (byte)0x6d, (byte)0x98, (byte)0xf2, (byte)0x3c, (byte)0x3a, (byte)0x11, (byte)0xd6, (byte)0x95, (byte)0x6a, (byte)0x00, (byte)0x03, (byte)0x93, (byte)0x53, (byte)0xe8, (byte)0x58 };
+ 	//static byte[] ba = new byte[] { (byte)0x35, (byte)0x7d, (byte)0x09, (byte)0x00, (byte)0x00, (byte)0x0a, (byte)0x00, (byte)0x01, (byte)0x00, (byte)0x03, (byte)0x09, (byte)0x00, (byte)0x01, (byte)0x35, (byte)0x03, (byte)0x19, (byte)0x11, (byte)0x06, (byte)0x09, (byte)0x00, (byte)0x04, (byte)0x35, (byte)0x13, (byte)0x35, (byte)0x05, (byte)0x1a, (byte)0x00, (byte)0x00, (byte)0x01, (byte)0x00, (byte)0x35, (byte)0x05, (byte)0x19, (byte)0x00, (byte)0x03, (byte)0x08, (byte)0x0f, (byte)0x35, (byte)0x03, (byte)0x19, (byte)0x00, (byte)0x08, (byte)0x09, (byte)0x00, (byte)0x05, (byte)0x35, (byte)0x03, (byte)0x19, (byte)0x10, (byte)0x02, (byte)0x09, (byte)0x00, (byte)0x06, (byte)0x35, (byte)0x09, (byte)0x09, (byte)0x65, (byte)0x6e, (byte)0x09, (byte)0x00, (byte)0x6a, (byte)0x09, (byte)0x01, (byte)0x00, (byte)0x09, (byte)0x00, (byte)0x09, (byte)0x35, (byte)0x08, (byte)0x35, (byte)0x06, (byte)0x19, (byte)0x11, (byte)0x06, (byte)0x09, (byte)0x01, (byte)0x00, (byte)0x09, (byte)0x01, (byte)0x00, (byte)0x25, (byte)0x12, (byte)0x4f, (byte)0x42, (byte)0x45, (byte)0x58, (byte)0x20, (byte)0x46, (byte)0x69, (byte)0x6c, (byte)0x65, (byte)0x20, (byte)0x54, (byte)0x72, (byte)0x61, (byte)0x6e, (byte)0x73, (byte)0x66, (byte)0x65, (byte)0x72, (byte)0x09, (byte)0x03, (byte)0x03, (byte)0x35, (byte)0x02, (byte)0x08, (byte)0xff, (byte)0x09, (byte)0x07, (byte)0x77, (byte)0x1c, (byte)0x6f, (byte)0x6d, (byte)0x98, (byte)0xf2, (byte)0x3c, (byte)0x3a, (byte)0x11, (byte)0xd6, (byte)0x95, (byte)0x6a, (byte)0x00, (byte)0x03, (byte)0x93, (byte)0x53, (byte)0xe8, (byte)0x58 };
+	/*static String ba = "35 c2 35 5b 9 0 0 a 0 1 0 4 9 0 1 35 3 19 11 1 9 0 4 35 c 35 3 19 1 0 35 5 19 0 3 8 3 9 0 5 35 3 19 10 2 9 0 6 35 9 9 65 6e 9 0 6a 9 1 0 9 0 9 35 8 35 6 19 11 1 9 1 0 9 1 0 25 12 42 6c 75 65 74 6f 6f 74 68 2d 50 44 41 2d 53 79 6e 63 35 63 9 0 0 a 0 1 0 1 9 0 1 35 6 19 11 12 19 12 3 9 0 4 35 c 35 3 19 1 0 35 5 19 0 3 8 1 9 0 5 35 3 19 10 2 9 0 6 35 9 9 65 6e 9 0 6a 9 1 0 9 0 9 35 8 35 6 19 11 3 9 11 8 9 1 0 25 17 42 6c 75 65 74 6f 6f 74 68 20 41 75 64 69 6f 20 47 61 74 65 77 61 79";
 	
 	public static void main (String args[]) throws Exception {
-		ServiceRecord de = createServiceRecord("000d9305170e", new byte[0][0], new int[] {0, 1, 2, 3, 4, 5, 6, 7, 256 }, ba);
-		System.out.println ("Service Record " + de);
-	}
+		
+		StringTokenizer st = new StringTokenizer (ba);
+		byte[] b = new byte[st.countTokens()];
+		
+		for (int i = 0;i < b.length;i++) {
+			b[i] = (byte)(Integer.parseInt(st.nextToken(), 16) & 0xff);
+		}
+		
+		ServiceRecord[] de = createServiceRecordCE("000d9305170e", new byte[0][0], new int[] {0, 1, 2, 3, 4, 5, 6, 7, 256 }, b);
+		for (int i = 0;i < de.length;i++)
+			System.out.println ("Service Record " + de[i]);
+	}*/
 
 }

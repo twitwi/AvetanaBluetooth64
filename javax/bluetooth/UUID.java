@@ -117,9 +117,8 @@ public class UUID {
             char[] tmp=new char[2];
             tmp[0]=toCharr[i*2];
             tmp[1]=toCharr[(i+1)*2-1];
-            bUUIDBytes[i]=Short.decode("0x"+new String(tmp)).byteValue();
-          }
-          catch(Exception ex) {throw new IllegalArgumentException();}
+            bUUIDBytes[i]=(byte)Short.parseShort(new String(tmp), 16);
+          }  catch(Exception ex) { throw new IllegalArgumentException();}
         }
       }
       return bUUIDBytes;
@@ -177,7 +176,7 @@ public class UUID {
               char[] tmp=new char[2];
               tmp[0]=toCharr[i*2];
               tmp[1]=toCharr[(i+1)*2-1];
-              uuidBytes[i]=Short.decode("0x"+new String(tmp)).byteValue();
+              uuidBytes[i]=(byte)Short.parseShort(new String(tmp), 16);
             }catch(Exception ex) {throw new IllegalArgumentException();}
           }
         }

@@ -28,11 +28,14 @@ package javax.bluetooth;
 import java.io.*;
 import java.util.*;
 import javax.microedition.io.*;
-import de.avetana.bluetooth.connection.*;
+
+import de.avetana.bluetooth.connection.BTConnection;
+import de.avetana.bluetooth.l2cap.L2CAPConnectionNotifierImpl;
+import de.avetana.bluetooth.obex.OBEXConnection;
+import de.avetana.bluetooth.obex.SessionNotifierImpl;
 import de.avetana.bluetooth.rfcomm.RFCommConnectionNotifierImpl;
 import de.avetana.bluetooth.stack.BluetoothStack;
 import de.avetana.bluetooth.util.BTAddress;
-import de.avetana.bluetooth.obex.*;
 
 public class RemoteDevice {
     private String bdAddrString;
@@ -98,9 +101,7 @@ public class RemoteDevice {
         String tmp="";
         address = address.replace('-', ':').toUpperCase();
         if(address.length()>12) {
-          StringTokenizer st = new StringTokenizer(address, ":");
-          if (st.countTokens() != 6) throw new Exception();
-          while (st.hasMoreTokens()) tmp += st.nextToken();
+        		tmp = "" + address.substring(0, 2) + address.substring(3, 5) + address.substring(6,8) + address.substring(9, 11) + address.substring(12, 14) + address.substring(15);
         } else tmp=address;
         //System.out.println("address="+tmp);
         this.bdAddrString=tmp;
@@ -118,7 +119,7 @@ public class RemoteDevice {
      */
     public RemoteDevice(long address) {
         this.bdAddrLong = address;
-        bdAddrString = Long.toHexString(address).toUpperCase();
+        bdAddrString = Long.toString(address, 16).toUpperCase();
         while (bdAddrString.length() < 12) { bdAddrString = "0" + bdAddrString; }
         this.serviceRecords = new Hashtable();
     }
@@ -171,7 +172,7 @@ public class RemoteDevice {
      */
     public final String getBluetoothAddress() {
         if (bdAddrString == null) {
-            bdAddrString = Long.toHexString(bdAddrLong).toUpperCase();
+            bdAddrString = Long.toString(bdAddrLong, 16).toUpperCase();
             while (bdAddrString.length() < 12) { bdAddrString = "0" + bdAddrString; }
         }
         return bdAddrString;
@@ -250,15 +251,8 @@ public class RemoteDevice {
     				dev = ((BTConnection)conn).getRemoteDevice();
     			}
     			else if (conn instanceof OBEXConnection) dev = ((OBEXConnection)conn).getRemoteDevice();
-    			else if (conn instanceof SessionNotifierImpl) {
-    				if (((SessionNotifierImpl)conn).getConnectionNotifier() == null)
-    					throw new IOException("Connection Closed");
-    				dev = ((RFCommConnectionNotifierImpl)((SessionNotifierImpl)conn).getConnectionNotifier()).getRemoteDevice();
-    			}
-    			else if (conn instanceof ConnectionNotifier) {
-    				if (((ConnectionNotifier)conn).isNotifierClosed())
-    					throw new IOException("Connection Closed");
-    				dev = ((ConnectionNotifier)conn).getRemoteDevice();
+    			else if (conn instanceof RFCommConnectionNotifierImpl || conn instanceof L2CAPConnectionNotifierImpl || conn instanceof SessionNotifierImpl) {
+    					throw new IllegalArgumentException ();
     			}
     			else throw new ClassCastException ("Connection type not supported");
     	        if(dev==null) throw new IOException("The remote device could not be determined!");

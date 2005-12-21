@@ -6,7 +6,6 @@ import java.io.*;
 import java.util.Enumeration;
 import java.util.Vector;
 
-import de.avetana.bluetooth.util.*;
 import de.avetana.bluetooth.connection.*;
 
 /**
@@ -158,84 +157,6 @@ public class LocalServiceRecord extends SDPServiceRecord {
   }
 
   /**
-   * Transforms the service record object into an XML element and returns the string representation
-   * of this XML element. Useful for the Mac implementation
-   * @return The XML-based string representation of the service record
-   */
-
-
-  public String getSDPRecordXML() {
-    try {
-      File f = null;
-      do {
-      	int counter = (int)(1000f * Math.random());
-      	f = new File (System.getProperty("java.io.tmpdir") + File.separator + "serviceRecord" + counter + ".xml");
-      } while (f.exists());
-
-      PElement plist = new PElement ("plist");
-      plist.setAttribute("version", "0.9");
-      PElement dict = new PElement ("dict");
-      plist.addChild(dict);
-      dict.addChild(new PElement ("key", "0000 - ServiceRecordHandle*"));
-      dict.addChild(new PElement ("integer", "65540"));
-      for (int i = 1;i < 65535;i++) {
-      	DataElement de = this.getAttributeValue(i);
-      	if (de == null) continue;
-      	PElement depe = makePElement (de);
-      	if (depe == null) continue;
-      	String attId = "" + Integer.toHexString(i);
-      	while (attId.length() < 4) attId = "0" + attId;
-        dict.addChild(new PElement ("key", attId));
-      	dict.addChild (depe);
-      }
-
-      FileOutputStream fos = new FileOutputStream (f);
-      plist.writeXML(fos);
-
-      return f.getAbsolutePath();
-    } catch (Exception e) {
-      e.printStackTrace();
-      return null;
-    }
-  }
-  
-  private PElement makePElement (DataElement e) {
-  	PElement ret = null;
-  	switch (e.getDataType()) {
-  		case DataElement.STRING:
- 		case DataElement.URL:
-  			//try {
-			//	return newDataElement (4, ((String)e.getValue()).getBytes("UTF-8"));
-			//} catch (UnsupportedEncodingException e1) {
-				return new PElement ("string", (String)e.getValue());
-			//}
- 		case DataElement.U_INT_1:
-  			return newDataElement (1, 1, e.getLong());
-  		case DataElement.U_INT_2:
-  			return newDataElement (2, 1, e.getLong());
-  		case DataElement.U_INT_4:
-  			return newDataElement (4, 1, e.getLong());
-  		case DataElement.INT_1:
-  			return newDataElement (1, 2, e.getLong());
-  		case DataElement.INT_2:
-  			return newDataElement (2, 2, e.getLong());
-  		case DataElement.INT_4:
-  			return newDataElement (4, 2, e.getLong());
-  		case DataElement.UUID:
-  			return new PElement ("data", new String (Base64.encode (((UUID)e.getValue()).toByteArray())));
-  		case DataElement.DATSEQ:
-  			ret = new PElement ("array");
-  			Enumeration v = (Enumeration)e.getValue();
-  			while (v.hasMoreElements())
-  				ret.addChild(makePElement ((DataElement)v.nextElement()));
-  			
-  			return ret;
-  		default:
-  			System.err.println ("Unhandeled DataElement type" + e.getDataType());
-  	}
-  	return ret;
-  }
-  /**
    * Changes the channel number of an RFCOMM local service record
    * @param newChannel The new Channel number
    */
@@ -253,7 +174,7 @@ public class LocalServiceRecord extends SDPServiceRecord {
 	  return (int)getChannelNumberElement().getLong();
 	  } catch (Exception e) {
 		  e.printStackTrace();
-		  return -1;
+		  return 0;
 	  }
   }
   
@@ -343,26 +264,6 @@ public class LocalServiceRecord extends SDPServiceRecord {
     return null;
   }
 
-  private PElement newDataElement (int size, int type, long value) {
-    PElement dict = new PElement ("dict");
-    dict.addChild(new PElement ("key", "DataElementSize"));
-    dict.addChild(new PElement ("integer", "" + size));
-    dict.addChild(new PElement ("key", "DataElementType"));
-    dict.addChild(new PElement ("integer", "" + type));
-    dict.addChild(new PElement ("key", "DataElementValue"));
-    dict.addChild(new PElement ("integer", "" + value));
-    return dict;
-  }
-
-  private PElement newDataElement (int type, byte value[]) {
-      PElement dict = new PElement ("dict");
-      dict.addChild(new PElement ("key", "DataElementType"));
-      dict.addChild(new PElement ("integer", "" + type));
-      dict.addChild(new PElement ("key", "DataElementValue"));
-      dict.addChild(new PElement ("data", new String (Base64.encode(value))));
-      return dict;
-  }
-
   /**
    * Method not available for a local service record.<br>
    * This method always returns null. (This returned value is the one requested by the JSR82 specification
@@ -395,7 +296,7 @@ public class LocalServiceRecord extends SDPServiceRecord {
 	} catch (BluetoothStateException e) {
 		e.printStackTrace();
 	}
-  	url += getChannelNumberElement().getLong();
+  	url += Long.toString(getChannelNumberElement().getLong(), getProtocol() == JSR82URL.PROTOCOL_L2CAP ? 16 : 10);
   	if (mustBeMaster) url += ";master=true";
   	return url;
   }
@@ -423,7 +324,7 @@ public class LocalServiceRecord extends SDPServiceRecord {
   		Vector v = new Vector ();
   		while (en.hasMoreElements()) v.addElement(((DataElement)en.nextElement()).getValue());
   		UUID ret[] = new UUID[v.size()];
-  		v.toArray(ret);
+  		v.copyInto(ret);
   		return ret;
   }
 
