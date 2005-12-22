@@ -234,12 +234,15 @@
     </build>    
    </revision>
    <revision value="3">
-    <build value="0" date="2005-06-08">
+    <build value="0" date="2005-12-08">
      -many improvements in native code on all plattforms.
      -now handles multithreaded acceptAndOpen() to serve multiple connections on the same channel
      -fully MIDP-Compliant. Works with J9 MIDP (needs special distribution)
      -Exception handling in callback methods deviceDiscovered and servicesDiscovered
      -Removed many of the synchronized tags in BlueZ to be able to open Connections from multiple threads at the same time.
+    </build>
+    <build value="1" date="2005-12-22">
+     -Fixed a locking bug in BTConnection that could cause connection closings to hang.
     </build>
    </revision>
   </version>

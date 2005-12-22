@@ -71,12 +71,15 @@ public class BTConnection {
    */
   
   protected Vector dataBuffer;
+
+  private Object readLock;
   
   /**
    * Creates a new instance of BTConnection and set the value of the connection ID
    * @param a_fid The connection ID
    */
   protected BTConnection(int a_fid) {
+	readLock = new Object();
     fid=a_fid;
     dataBuffer = new Vector();
     BlueZ.myFactory.addConnection(this);
@@ -136,9 +139,11 @@ public class BTConnection {
 	 * Called from BlueZ when new data has arrived for that connection
 	 * @param data
 	 */
-	public synchronized void newData(byte[] data) {
-		dataBuffer.addElement (data);
-		notifyAll();
+	public void newData(byte[] data) {
+		synchronized (readLock) {
+			dataBuffer.addElement (data);
+			readLock.notify();
+		}
 	}
 	
 	/**
@@ -149,9 +154,10 @@ public class BTConnection {
 	 * @throws IOException if the connection is closed.
 	 */
 	
-	protected synchronized byte[] read(int len) throws IOException {
+	protected byte[] read(int len) throws IOException {
+		synchronized (readLock) {
 		while (dataBuffer.size() == 0) {
-			try { wait (100); } catch (Exception e) {}
+			try { readLock.wait (100); } catch (Exception e) {}
 			if (closed) throw new IOException ("Connection closed");
 		}
 		
@@ -181,6 +187,7 @@ public class BTConnection {
 			}
 		}
 		return bret;
+		}
 	}
 	
 	protected synchronized int available() throws IOException {
