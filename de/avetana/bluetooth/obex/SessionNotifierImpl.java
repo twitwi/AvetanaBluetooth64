@@ -149,11 +149,19 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 								
 								int ret = 0xa0;
 								if (m_getOperation == null) {
-									m_getOperation = new OperationImpl (SessionNotifierImpl.this, request, OBEXConnection.GET);
-									response = ((OperationImpl)m_getOperation).getHeadersToSend();
+									m_getOperation = new OperationImpl(SessionNotifierImpl.this, request, OBEXConnection.GET);
+									response = myHandler.createHeaderSet();
+
+									((OperationImpl)m_getOperation).sendHeaders(response);
 									handleAuthResponse(request);
 									handleAuthChallenge(request, response);
 									ret = myHandler.onGet(m_getOperation);
+									if (((OperationImpl)m_getOperation).getHeadersToSend() != response) {
+										Object auResp = response.getHeader(HeaderSetImpl.AUTH_RESPONSE);
+										response = ((OperationImpl)m_getOperation).getHeadersToSend();
+										if (auResp != null)
+											response.setHeader(HeaderSetImpl.AUTH_RESPONSE, auResp);
+									}
 								} else 	response = ((OperationImpl)m_getOperation).getHeadersToSend();
 
 								
