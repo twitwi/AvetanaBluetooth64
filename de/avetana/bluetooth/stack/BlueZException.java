@@ -1,5 +1,7 @@
 package de.avetana.bluetooth.stack;
 
+import java.io.IOException;
+
 /*
    Copyright (c) 2002 The Appliance Studio Limited.
    Written by Edward Kay <ed.kay@appliancestudio.com>
@@ -23,7 +25,7 @@ package de.avetana.bluetooth.stack;
    COPYRIGHTS, TRADEMARKS OR OTHER RIGHTS, RELATING TO USE OF THIS SOFTWARE IS
    DISCLAIMED.
 
-   $Id: BlueZException.java,v 1.6 2004/10/12 14:39:40 moritzg Exp $
+   $Id: BlueZException.java,v 1.7 2006/01/27 20:22:18 moritzg Exp $
 */
 
 /**
@@ -33,7 +35,7 @@ package de.avetana.bluetooth.stack;
  * @see BlueZ
  * @version 1.0
  */
-public class BlueZException extends Exception
+public class BlueZException extends IOException
 {
         /**
          * Constructs a BlueZException with no detail message.
