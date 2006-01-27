@@ -16,7 +16,7 @@ public class BTCheck {
 //			System.out.println ("Loaded MS");
 			loadedMS = true;
 		} catch (Throwable e) {
-//			e.printStackTrace();
+			if (System.getProperty("btdebug", "false").equals("true")) e.printStackTrace();
 		}
 		try {
 //			System.out.println ("Trying to load BTCheckWC");
@@ -26,7 +26,7 @@ public class BTCheck {
 				loadedWC = true;
 			}
 		} catch (Throwable e) {
-//			e.printStackTrace();
+			if (System.getProperty("btdebug", "false").equals("true")) e.printStackTrace();
 		}
 	}
 	
@@ -48,6 +48,7 @@ public class BTCheck {
 	}
 	
 	public static void main (String args[]) {
+		if (System.getProperty("btdebug", "false").equals("true"))  System.out.println ("Debugging turned on");
 		System.out.println ("Result " + checkHCI() + " hasMS " + loadedMS + " hasWC " + loadedWC);
 	}
 	

@@ -13,6 +13,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -179,7 +180,7 @@ public class JSRTest extends JFrame implements ActionListener {
   private final int WINDOWS=0x1;
   private final int MACOSX=0x2;
 
-  private static final int rfcommPackLen = 100;
+  private static final int rfcommPackLen = 500;
   
   /*
    * Matrix of possibilites:
@@ -798,13 +799,13 @@ public class JSRTest extends JFrame implements ActionListener {
 				b[i] = (byte) (0x100 * Math.random());
 			}
             /*byte b[] = new byte[] { (byte) 0x00, 0x00,
-                    0x07, 0x0, (byte)0xfd};   
+                    0x07, 0x0, (byte)0xfd}; */
         	    int csum = 0;
 			for (int i = 0; i < b.length; i++) {	
 				//b[i] = (byte) (0x100 * Math.random());
 				csum += (int)(b[i] & 0xff);
 			}
-			System.out.println ("Checksum of burst " + (csum % 1024));*/
+			System.out.println ("Checksum of burst " + (csum % 1024));
             int count = 0;
             //while (true) {
             		os.write(b);
@@ -873,9 +874,11 @@ public class JSRTest extends JFrame implements ActionListener {
             byte b[] = new byte[is.available()];
             is.read(b);
             hs.setHeader (HeaderSet.NAME, "avetana.vcf");
-            hs.setHeader (HeaderSet.TYPE, "text/x-vcard");
-            hs.setHeader(0x49, b); // if everything fits inside a packet, the data can be packed in the PUT command
+            //hs.setHeader (HeaderSet.TYPE, "text/x-vcard");
+            hs.setHeader (HeaderSet.LENGTH, new Long(b.length));
+            hs.setHeader (0x48, b); // if everything fits inside a packet, the data can be packed in the PUT command
             Operation po = cs.put(hs);
+            //po.openOutputStream().write (b);
             po.close();
 
             

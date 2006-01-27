@@ -8,6 +8,7 @@ import java.awt.event.*;
 import java.io.IOException;
 
 import javax.bluetooth.*;
+import javax.bluetooth.UUID;
 import javax.microedition.io.*;
 
 public class MultiReceiveTest extends JFrame implements ActionListener {
@@ -22,6 +23,7 @@ public class MultiReceiveTest extends JFrame implements ActionListener {
 		private int receiveCount = 0;
 		
 		public ConnectionHandler(Connection con) {
+			System.out.println ("New connection opened");
 			this.sCon = con;
 			add (receivedLab);
 			add (sendBut);
@@ -38,7 +40,7 @@ public class MultiReceiveTest extends JFrame implements ActionListener {
 				try {
 					if (protocol.equals ("btspp")) receiveCount += ((StreamConnection)sCon).openInputStream().read(b);
 					else if (protocol.equals ("btl2cap")) receiveCount += ((L2CAPConnection)sCon).receive(b);
-					
+					System.out.println ("received " + receiveCount);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -67,6 +69,8 @@ public class MultiReceiveTest extends JFrame implements ActionListener {
 				}
 				closed = true;
 				conPan.remove(ConnectionHandler.this);
+				conPan.invalidate();
+				conPan.repaint();
 			}
 		}
 
@@ -103,7 +107,7 @@ public class MultiReceiveTest extends JFrame implements ActionListener {
 
 					public void run() {
 					try {
-							conNot = (Connection)Connector.open(protocol + "://localhost:00112233445566778899aabbccddeeff;name=MultiTest;authenticate=false;encrypt=false");
+							conNot = (Connection)Connector.open(protocol + "://localhost:" + new UUID (de.avetana.bluetooth.sdp.SDPConstants.UUID_DIALUP_NETWORKING) + ";name=MultiTest;authenticate=false;encrypt=false");
 
 							while (true) {
 						
@@ -115,6 +119,8 @@ public class MultiReceiveTest extends JFrame implements ActionListener {
 									L2CAPConnection sCon = ((L2CAPConnectionNotifier) conNot).acceptAndOpen();
 									conPan.add(new ConnectionHandler (sCon));
 								}
+conPan.invalidate();
+conPan.repaint();
 							} 
 					} catch (IOException e1) {
 						// TODO Auto-generated catch block

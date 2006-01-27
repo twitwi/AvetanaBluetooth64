@@ -357,8 +357,8 @@ public class DiscoveryAgent {
      */
     public String selectService(final UUID uuid, int security, boolean master) throws BluetoothStateException,
                                                                                 NullPointerException,
-                                                                                IllegalArgumentException,
-                                                                                TimeOutException, ServiceFoundException{
+                                                                                IllegalArgumentException
+                                                                                {
       if(uuid==null) throw new NullPointerException("UUID given in argument is null!!");
       if(security!=ServiceRecord.AUTHENTICATE_ENCRYPT && security!= ServiceRecord.AUTHENTICATE_NOENCRYPT &&
          security!=ServiceRecord.NOAUTHENTICATE_NOENCRYPT) throw new IllegalArgumentException("Bad security argument");
@@ -391,14 +391,10 @@ public class DiscoveryAgent {
           Thread.sleep(100);
         }catch(Exception ex) { return null;}
       }
-      //if(timeout>m_timeout) throw new TimeOutException();
-      if(m_remoteServ.size()!=1) {
-      	throw new ServiceFoundException(m_remoteServ.size());
-      }
 
-      RemoteServiceRecord serv=(RemoteServiceRecord)m_remoteServ.elementAt(0);
       String back=null;
       try {
+        RemoteServiceRecord serv=(RemoteServiceRecord)m_remoteServ.elementAt(0);
         back=serv.getConnectionURL(security, master);
       }catch(Exception ex) {}
       return back;

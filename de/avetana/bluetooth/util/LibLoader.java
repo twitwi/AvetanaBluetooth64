@@ -170,7 +170,10 @@ public class LibLoader {
 	public static boolean tryload(String name) {
 		try { 
 			System.loadLibrary(name); 
-		} catch (Throwable e) { return false; }
+		} catch (Throwable e) { 
+			if (System.getProperty("btdebug", "false").equals("true")) e.printStackTrace();
+			return false; 
+		}
 		
 		return true;
 	}

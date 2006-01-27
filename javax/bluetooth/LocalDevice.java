@@ -314,8 +314,8 @@ public class LocalDevice {
      * notifier, e.g., a <code>StreamConnectionNotifier</code> created with a scheme other than <code>btspp</code>.
      * @exception NullPointerException if <code>notifier</code> is <code>null</code>
      */
-    public ServiceRecord getRecord(Connection notifier) throws Exception{
-      if(notifier==null) throw new NullPointerException("Notifier is null!");
+    public ServiceRecord getRecord(Connection notifier) {
+      if(notifier==null) throw new IllegalArgumentException ("Notifier is null!");
       if(!(notifier instanceof StreamConnectionNotifier) &&
          !(notifier instanceof L2CAPConnectionNotifier) &&
 		 !(notifier instanceof SessionNotifierImpl)) {
@@ -407,8 +407,8 @@ public class LocalDevice {
         try {
           int retour=bluetoothManager.updateService((LocalServiceRecord)srvRecord, ((LocalServiceRecord)srvRecord).getRecordHandle());
           if(retour < 0) throw new Exception();
-        }catch(Exception ex) {ex.printStackTrace(); throw new ServiceRegistrationException("Registration of the new Service was not successful!");}
-      }catch(Exception ex) { ex.printStackTrace(); throw new IllegalArgumentException(ex.getMessage());}
+        }catch(Exception ex) {throw new ServiceRegistrationException("Registration of the new Service was not successful!");}
+      }catch(Exception ex) { throw new IllegalArgumentException(ex.getMessage());}
     }
 
     /*  End of the method updateRecord  */

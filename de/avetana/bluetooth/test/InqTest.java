@@ -1,8 +1,9 @@
 /*
  * Created on 28.10.2004
  *
- * TODO To change the template for this generated file go to
- * Window - Preferences - Java - Code Style - Code Templates
+ * if the program is called without any parameters, it does an inquiry. 
+ * If it is calles with 1 parameter it does a service serach on the device specified (e.g. 000d9305170e). 
+ * If it is called with 2 parameters, the second parameter is considered a UUID on which the service search is supposed to be restricted on.
  */
 package de.avetana.bluetooth.test;
 

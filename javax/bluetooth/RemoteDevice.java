@@ -465,6 +465,13 @@ public class RemoteDevice {
     public DeviceClass getDeviceClass() {
     		return this.deviceClass;
     }
+
+	/**
+	 * @return the clockOffset
+	 */
+	public short getClockOffset() {
+		return clockOffset;
+	}
     
 }
 

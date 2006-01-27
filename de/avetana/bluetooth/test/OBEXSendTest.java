@@ -89,8 +89,16 @@ public class OBEXSendTest implements DiscoveryListener {
 		new OBEXSendTest (args[0], args[1], args.length > 2 ? Integer.parseInt(args[2]) : 0);
 	}*/
 	
+	/**
+	 * start this program with two parameters
+	 * param 1 is the BT-Address of the device to send to
+	 * param 2 is the full path of the file to send
+	 */
+	 
 	public static void main (final String[] args) throws Exception {
 		
+		/*
+		//THIS IS ONLY USED TO INITIALIZE THE STACK WHEN THREADS ARE STARTED
 		LocalDevice.getLocalDevice();
 		
 		Runnable r1 = new Runnable () {
@@ -121,6 +129,8 @@ public class OBEXSendTest implements DiscoveryListener {
 		
 		if (args.length == 0 || args[0].equals("1")) new Thread (r1).start();
 		if (args.length == 0 || args[0].equals("2")) new Thread (r2).start();
+		*/
+		new OBEXSendTest (args[0], args[1], 0);
 	}
 
 	/* (non-Javadoc)
@@ -136,6 +146,7 @@ public class OBEXSendTest implements DiscoveryListener {
 	 */
 	public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
 		rec = servRecord[0];
+		System.out.println ("Service discovered " + rec);
 	}
 
 	/* (non-Javadoc)
@@ -143,6 +154,7 @@ public class OBEXSendTest implements DiscoveryListener {
 	 */
 	public void serviceSearchCompleted(int transID, int respCode) {
 		finishedSearching = true;
+		System.out.println ("Service search completed");
 		
 	}
 

@@ -80,7 +80,7 @@ public class OperationImpl implements Operation {
 			if (opCode == OBEXConnection.GET && b[0] != (byte)0xa0) {
 				receive();
 			}
-			hs = con.createHeaderSet();
+			this.hs = con.createHeaderSet();
 		} else { // The command must come from the SessionNotifierImpl -> Save the headers received
 			recHeaders = hs;
 		}

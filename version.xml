@@ -244,6 +244,14 @@
     <build value="1" date="2005-12-22">
      -Fixed a locking bug in BTConnection that could cause connection closings to hang.
     </build>
+    <build value="2" date="2006-01-23">
+     -RemoteDevice.selectService() now conforms to the spec.
+     -LocalDevice.getRecord() now conforms to the spec.
+     -Many fixes in MacOS X native code.
+    </build>
+    <build value="3" date="2006-01-27">
+	-Make BlueZException a subclass of IOException
+    </build>
    </revision>
   </version>
 </avetanaBluetooth>
