@@ -1234,6 +1234,23 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_createService
 	jmethodID mid=env->GetMethodID(lsrclass,
 			"toByteArray",
 			"()[B");
+	
+	jmethodID mid_gcn=env->GetMethodID(lsrclass,
+			"getChannelNumber",
+			"()I");
+	
+	jmethodID mid_ucn=env->GetMethodID(lsrclass,
+			"updateChannelNumber",
+			"(I)V");
+	
+	jmethodID mid_gpr=env->GetMethodID(lsrclass,
+			"getProtocol",
+			"()S");
+
+	jint cn = env->CallIntMethod (srecord, mid_gcn);
+	jshort prot = env->CallShortMethod (srecord, mid_gpr);
+	if (cn == 0) cn = prot == 0 ? 11 : 1;
+	env->CallVoidMethod (srecord, mid_ucn, cn);
 
 	if(mid == 0) {
 		throwException(env, "de_avetana_bluetooth_stack_BlueZ_createService: Bad method description. Unable to create Service!");
