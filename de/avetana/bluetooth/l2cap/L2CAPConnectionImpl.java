@@ -190,12 +190,8 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
    */
   public void send(byte[] data) throws IOException {
     if(data==null) throw new NullPointerException("The buffer is null!");
+    else if (data.length == 0) throw new IOException ("Sending of 0-length packet not supported");
     if(closed) throw new IOException("Connection does not exists or was previously closed");
-    if(data.length > m_transmitMTU) {
-      byte[] newData=new byte[m_transmitMTU];
-      System.arraycopy(data,0,newData,0,m_transmitMTU);
-      BlueZ.writeBytesS(fid, newData, 0, newData.length);
-    } else
-      BlueZ.writeBytesS(fid, data, 0, data.length);
+    BlueZ.writeBytesS(fid, data, 0, Math.min (m_transmitMTU, data.length));
   }
 }

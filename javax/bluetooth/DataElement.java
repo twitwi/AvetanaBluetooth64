@@ -676,7 +676,10 @@ public class DataElement {
             case 0x26:
             case 0x27: {
             	// If the String is NULL-Terminated, then ignore the 0-Element
-                    byte[] valueObject = new byte[(int)(dataBytes.length - headerByteSize) - (dataBytes[dataBytes.length - 1] == 0 ? 1 : 0)];
+            	       if (dataBytes.length == 0) return "";
+            		   int clen = (int)(dataBytes.length - headerByteSize) - (dataBytes[dataBytes.length - 1] == 0 ? 1 : 0);
+            		   if (clen <= 0) return "";
+            		   byte[] valueObject = new byte[clen];
                     System.arraycopy(dataBytes, (int)(headerByteSize), valueObject, 0, valueObject.length);
                     try {
 						return new String(valueObject, "UTF-8");

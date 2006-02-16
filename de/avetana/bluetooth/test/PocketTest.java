@@ -242,7 +242,7 @@ public class PocketTest extends Frame {
 				public void run() {
 					try {
 						dataList.add ("Offering connection through Connector2 " + Connector.class.getName());
-						scnot = (StreamConnectionNotifier)de.avetana.bluetooth.connection.Connector.open ("btspp://localhost:00112233445566778899aabbccddeeff;name=ceTestRFCOMM");
+						scnot = (StreamConnectionNotifier)Connector.open ("btspp://localhost:00112233445566778899aabbccddeeff;name=ceTestRFCOMM");
 						scon = (StreamConnection)scnot.acceptAndOpen();
 			
 						inStream = scon.openInputStream();
@@ -458,7 +458,7 @@ public class PocketTest extends Frame {
 				closeBut.setEnabled(true);
 
 				try {
-				scon = (StreamConnection)de.avetana.bluetooth.connection.Connector.open (adrField.getText());
+				scon = (StreamConnection)Connector.open (adrField.getText());
 				dataList.add ("Connected");
 				
 				inStream = scon.openInputStream();

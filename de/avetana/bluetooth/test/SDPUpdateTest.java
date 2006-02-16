@@ -59,7 +59,7 @@ public class SDPUpdateTest {
 		srec.setAttributeValue(0x213, new DataElement (DataElement.INT_4, 44));
 		srec.setAttributeValue(0x214, new DataElement (DataElement.INT_8, new byte[] { 11,22,33,44,55,66,77,88 }));
 		srec.setAttributeValue(0x215, new DataElement (DataElement.INT_16,new byte[] { 11,22,33,44,55,66,77,88,19,101,111,112,113,114,115,116 }));
-		srec.setAttributeValue(0x100, new DataElement (DataElement.STRING, "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"));
+		srec.setAttributeValue(0x100, new DataElement (DataElement.STRING, "updated"));
 //		srec.setAttributeValue(0x216, new DataElement (DataElement.STRING, "xxx"));
 
 		//srec.setAttributeValue(0x217, new DataElement (true));

@@ -58,7 +58,11 @@ public class SessionNotifierImpl implements SessionNotifier, CommandHandler {
 	public StreamConnectionNotifier getConnectionNotifier() {
 		return (StreamConnectionNotifier)locConNot;
 	}
-	
+
+	public StreamConnection getConnection() {
+		return (StreamConnection)streamCon;
+	}
+
 	public HeaderSet createHeaderSet() {
 		if (myHandler != null) return myHandler.createHeaderSet();
 		else return new HeaderSetImpl();

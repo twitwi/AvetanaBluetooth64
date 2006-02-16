@@ -252,6 +252,12 @@
     <build value="3" date="2006-01-27">
 	-Make BlueZException a subclass of IOException
     </build>
+    <build value="4" date="2006-01-30">
+	-Fixed a bug in DataElement that would make it throw an Exception when handling 0-length strings.
+	-Fixed some memory leaks in Windows (MS)
+	-Now catching exceptions in DiscoveryListener callbacks on the java side.
+	-Sending of 0-length L2CAP-packet does not throw a Connection Closed Exception but an apropriate text.
+    </build>
    </revision>
   </version>
 </avetanaBluetooth>

@@ -30,6 +30,7 @@ import java.io.*;
 import java.util.Vector;
 
 import javax.bluetooth.BluetoothStateException;
+import javax.bluetooth.DeviceClass;
 import javax.bluetooth.DiscoveryAgent;
 import javax.bluetooth.DiscoveryListener;
 import javax.bluetooth.LocalDevice;
@@ -566,8 +567,35 @@ public class BlueZ
          * @param listener The discovery listener, which handles the callback methods.
          * @throws BlueZException
          */
-        public static int searchServices(final String bdaddr_jstr, final byte[][] uuid, final int[] attrIds, DiscoveryListener listener) {
+        public static int searchServices(final String bdaddr_jstr, final byte[][] uuid, final int[] attrIds, final DiscoveryListener flistener) {
            m_transactionId++;
+           
+           DiscoveryListener listener = new DiscoveryListener () {
+
+			public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
+			}
+
+			public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
+				try {
+					flistener.servicesDiscovered(transID, servRecord);
+				} catch (Throwable e) {
+					e.printStackTrace();
+				}
+			}
+
+			public void serviceSearchCompleted(int transID, int respCode) {
+				try {
+					flistener.serviceSearchCompleted(transID, respCode);
+				} catch (Throwable e) {
+					e.printStackTrace();
+				}
+			}
+
+			public void inquiryCompleted(int discType) {
+			}
+        	   
+           };
+           
            myFactory.addListener(m_transactionId, listener);
            Runnable r=new Runnable() {
             public void run() {
@@ -665,7 +693,14 @@ public class BlueZ
 
         public static boolean cancelServiceSearch(int transID)  {
         	  DiscoveryListener dl = myFactory.getListener(transID);
-        	  if (dl != null) dl.serviceSearchCompleted(transID, DiscoveryListener.SERVICE_SEARCH_TERMINATED);
+        	  if (dl != null) {
+        		  try {
+					dl.serviceSearchCompleted(transID, DiscoveryListener.SERVICE_SEARCH_TERMINATED);
+				} catch (Throwable e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+        	  }
           myFactory.removeListener(transID);
           return true;
         }
@@ -687,7 +722,11 @@ public class BlueZ
             //System.out.println("ERROR - Listener not defined. Unable to add service " + transID);
             return;
           }
-          myListener.servicesDiscovered(transID, new ServiceRecord[]{rec});
+          try {
+        	  	myListener.servicesDiscovered(transID, new ServiceRecord[]{rec});
+          } catch (Throwable e) {
+        	  	e.printStackTrace();
+          }
         }
 
         /**
@@ -852,7 +891,8 @@ public class BlueZ
 	    public static synchronized void deviceDiscovered (RemoteDevice d) {
 	    		try {
 					LocalDevice.getLocalDevice().getDiscoveryAgent().deviceDiscovered (d);
-				} catch (BluetoothStateException e) {
+				} catch (Throwable e) {
+					e.printStackTrace();
 			}
 	    }
 }

@@ -180,7 +180,7 @@ public class JSRTest extends JFrame implements ActionListener {
   private final int WINDOWS=0x1;
   private final int MACOSX=0x2;
 
-  private static final int rfcommPackLen = 500;
+  private static final int rfcommPackLen = 100;
   
   /*
    * Matrix of possibilites:
@@ -869,7 +869,7 @@ public class JSRTest extends JFrame implements ActionListener {
             hs = cs.createHeaderSet();
             
             //This way sending a vcard works on any machine I know of.
-            
+           
             InputStream is = this.getClass().getClassLoader().getResourceAsStream("avetana.vcf");
             byte b[] = new byte[is.available()];
             is.read(b);
@@ -884,7 +884,7 @@ public class JSRTest extends JFrame implements ActionListener {
             
             	//This way, it should work, but it does not on the S55, because the type is not recognised when
             //Data is not sent within the PUT-Command as it is in the example above
-            /*hs.setHeader(HeaderSet.NAME, "img.jpg");
+/*            hs.setHeader(HeaderSet.NAME, "img.jpg");
             hs.setHeader (HeaderSet.TYPE, "image/jpg");
             File f = new File ("/tmp/img.jpg");
             hs.setHeader (HeaderSet.LENGTH, new Long(f.length()));
@@ -898,8 +898,8 @@ public class JSRTest extends JFrame implements ActionListener {
             }
             os.close();
             is.close();
-            po.close();*/
-            
+            po.close();
+            */
             
           /*
             // 	Example on how to send a simple text message

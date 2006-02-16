@@ -205,14 +205,26 @@ public class DiscoveryAgent {
               try {
                   boolean ret = BlueZ.hciInquiry(0, DiscoveryAgent.this);
                   isInquiring=false;
-                  for(int u=0;u<listeners.size();u++)
-                      ((DiscoveryListener)listeners.elementAt(u)).inquiryCompleted(ret == true ? DiscoveryListener.INQUIRY_COMPLETED : DiscoveryListener.INQUIRY_ERROR);
+                  for(int u=0;u<listeners.size();u++) {
+                      try {
+						((DiscoveryListener)listeners.elementAt(u)).inquiryCompleted(ret == true ? DiscoveryListener.INQUIRY_COMPLETED : DiscoveryListener.INQUIRY_ERROR);
+					} catch (Throwable e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}                	  
+                  }
               }
               catch (Exception e) {
               	isInquiring = false;
-                for(int u=0;u<listeners.size();u++)
-                    ((DiscoveryListener)listeners.elementAt(u)).inquiryCompleted(DiscoveryListener.INQUIRY_ERROR);
-              	}
+                for(int u=0;u<listeners.size();u++) {
+                    try {
+						((DiscoveryListener)listeners.elementAt(u)).inquiryCompleted(DiscoveryListener.INQUIRY_ERROR);
+					} catch (Throwable e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+                }
+               }
             }
           };
           new Thread(r).start();
@@ -240,7 +252,12 @@ public class DiscoveryAgent {
     public boolean cancelInquiry(DiscoveryListener listener) {
         if (listener == null) throw new NullPointerException("DiscoveryAgent.cancelInquiry: DiscoveryListener is null.");
         listeners.removeElement(listener);
-        listener.inquiryCompleted(DiscoveryListener.INQUIRY_TERMINATED);
+        try {
+			listener.inquiryCompleted(DiscoveryListener.INQUIRY_TERMINATED);
+		} catch (Throwable e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
         return true;
     }
 

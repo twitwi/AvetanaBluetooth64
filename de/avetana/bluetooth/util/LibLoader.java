@@ -54,6 +54,8 @@ public class LibLoader {
 			return "";
 		}
 		
+		String libName = name;
+		
 	    String sysName = System.getProperty("os.name");
 		if (name.equals("avetanaBT")) {
 		    
@@ -69,6 +71,7 @@ public class LibLoader {
 			    		if ((checkHCI & 1) == 0 || (stack.equalsIgnoreCase("microsoft") && (checkHCI & 2) == 2)) name += "MS";
 			    		
 			    }
+			    libName = name;
 			    name = name + ".dll";
 		    }
 		    else if (sysName.toLowerCase().indexOf("linux") != -1) name = "lib" + name + ".so";
@@ -90,7 +93,15 @@ public class LibLoader {
 	    		throw new Exception ("Native Library " + name + " is not a ressource !");
 	    }
 
-		if (is == null) throw new Exception ("Native Library " + name + " not in CLASSPATH !");
+		if (is == null) {
+			try {
+				System.out.println ("Loading library " + libName + " from ld.library.path");
+				System.loadLibrary(libName);
+				return libName;
+			} catch (Throwable e) {
+				throw new Exception ("Native Library " + libName + " not in CLASSPATH !");
+			}
+		}
 
 	    File fd = null;
 	    String tmppath = System.getProperty ("java.io.tmpdir");
@@ -129,7 +140,7 @@ public class LibLoader {
 	    		System.load(f2.getAbsolutePath());
 	    } catch (UnsatisfiedLinkError e) {
 	    		System.out.println ("Could not find own library " + name + ". Will try from ld.library.path");
-	    		System.loadLibrary(name);
+	    		System.loadLibrary(libName);
 	    }
 	    Runnable r = new Runnable() {
 	    		public void run() {
@@ -149,19 +160,19 @@ public class LibLoader {
 	    
 	    //Find old instances of the library and delete them
 	    
-	    File tmpdir = new File (tmppath);
-	    if (tmpdir.isDirectory()) {
-	    		File listSub[] = tmpdir.listFiles();
-	    		for (int i = 0;i < listSub.length;i++) {
-	    			try {
-	    				if (listSub[i].isDirectory() && listSub[i].getName().startsWith("abt") &&
-	    						listSub[i].listFiles()[0].getName().equalsIgnoreCase(name) && !listSub[i].listFiles()[0].equals(f2) ) {
-	    							listSub[i].listFiles()[0].delete();
-	    							listSub[i].delete();
-	    						}
-	    			} catch (Exception e) {}
-	    		}
-	    }
+		try {
+		    File tmpdir = new File (tmppath);
+		    if (tmpdir.isDirectory()) {
+		    		File listSub[] = tmpdir.listFiles();
+		    		for (int i = 0;i < listSub.length;i++) {
+		    				if (listSub[i].isDirectory() && listSub[i].getName().startsWith("abt") &&
+		    						listSub[i].listFiles()[0].getName().equalsIgnoreCase(name) && !listSub[i].listFiles()[0].equals(f2) ) {
+		    							listSub[i].listFiles()[0].delete();
+		    							listSub[i].delete();
+		    						}
+		    		}
+		    }
+		} catch (Throwable e) {}
 	    
 	    return name;
 	    
@@ -185,4 +196,8 @@ public class LibLoader {
 		return btname;
 	}
 
+	public static void main(String args[]) {
+		System.out.println (System.getProperty ("os.name"));
+	}
+	
 }
