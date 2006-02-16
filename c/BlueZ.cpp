@@ -333,7 +333,7 @@ JNIEXPORT jboolean JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciInquiry
 
 #ifdef __HCI_DEVICE_HACK__
 //	printf("BlueZ.cpp hciInquiry: changing dd=%i => to dd=%i \n", dd, dd);
-	dd = 1;
+	dd = HCI_DEVICE_ID;
 #endif
 
 	/* Perform the HCI inquiry */
