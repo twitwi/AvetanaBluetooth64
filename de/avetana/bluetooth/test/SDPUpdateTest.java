@@ -22,12 +22,12 @@ import java.io.*;
  */
 public class SDPUpdateTest {
 
-	private StreamConnectionNotifier streamConNot;
+	private Connection streamConNot;
 	private boolean accepting = false;
 	
 	public SDPUpdateTest() throws Exception {
 		System.out.println ("Registering Service");
-		streamConNot = (StreamConnectionNotifier)Connector.open("btspp://localhost:" + new UUID (0x456) + ";name=Testname");
+		streamConNot = (Connection)Connector.open("btgoep://localhost:" + new UUID (0x456) + ";name=Testname");
 
 		ServiceRecord srec = LocalDevice.getLocalDevice().getRecord(streamConNot);
 		

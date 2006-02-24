@@ -45,7 +45,7 @@ import javax.microedition.io.Connection;
  * @author Julien Campana
  */
 
-public abstract class ConnectionNotifier implements Connection {
+public abstract class ConnectionNotifier implements Connection, RecordOwner {
 
   /**
    * When registering of a connection fails, the reason is given here
@@ -198,6 +198,7 @@ public abstract class ConnectionNotifier implements Connection {
   
   protected synchronized int acceptAndOpenI() throws IOException, ServiceRegistrationException {
  
+	  if (isClosed) throw new IOException ("Notifier has been closed.");
     m_fid = -2;
   	failEx = null;
   	isClosed = false;

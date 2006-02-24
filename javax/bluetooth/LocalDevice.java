@@ -27,11 +27,11 @@
 package javax.bluetooth;
 
 import javax.microedition.io.*;
-import de.avetana.bluetooth.stack.BluetoothStack;
 import de.avetana.bluetooth.stack.*;
 import de.avetana.bluetooth.obex.*;
 import de.avetana.bluetooth.connection.*;
 import de.avetana.bluetooth.sdp.*;
+
 import java.util.*;
 
 /**
@@ -47,7 +47,6 @@ public class LocalDevice {
     private BluetoothStack bluetoothManager;
     private DiscoveryAgent discoveryAgent;
     private String bdAddrString;
-    private ConnectionNotifier m_notifier=null;
 
     /**
      * The default constructor is hidden so that no one can create a new instance of the LocalDevice.  To get the LocalDevice
@@ -316,18 +315,15 @@ public class LocalDevice {
      */
     public ServiceRecord getRecord(Connection notifier) {
       if(notifier==null) throw new IllegalArgumentException ("Notifier is null!");
-      if(!(notifier instanceof StreamConnectionNotifier) &&
-         !(notifier instanceof L2CAPConnectionNotifier) &&
-		 !(notifier instanceof SessionNotifierImpl)) {
+      if(!(notifier instanceof RecordOwner) && !(notifier instanceof SessionNotifierImpl)) {
         throw new IllegalArgumentException("Notifier must be an instance of StreamConnectionNotifier, L2CAPConnectionNotifier or SessionNotifier");
       }
       
       if (notifier instanceof SessionNotifierImpl) notifier = ((SessionNotifierImpl)notifier).getConnectionNotifier();
       
-      if(((ConnectionNotifier)notifier).isNotifierClosed())
+      if(((RecordOwner)notifier).isNotifierClosed())
         throw new IllegalArgumentException("The connection is already closed!");
-      ServiceRecord myRecord=((ConnectionNotifier)notifier).getServiceRecord();
-      m_notifier=(ConnectionNotifier)notifier;
+      ServiceRecord myRecord=((RecordOwner)notifier).getServiceRecord();
       return myRecord;
     }
 
@@ -376,13 +372,17 @@ public class LocalDevice {
      */
     public void updateRecord(ServiceRecord srvRecord) throws ServiceRegistrationException {
       if(srvRecord==null) throw new NullPointerException("The new Service Record is null!");
+      
+      if(!(srvRecord instanceof LocalServiceRecord))
+          throw new IllegalArgumentException("Only local records may be updated!");
+
+      RecordOwner m_notifier = ((LocalServiceRecord)srvRecord).getRecordOwner();
+      
       if(m_notifier==null || !m_notifier.isServiceRegistered()) {
           System.out.println("There is actually no SDDB version of this service record (the service record is not registered)");
           System.out.println("Returning without updating");
           return;
       }
-      if(!(srvRecord instanceof LocalServiceRecord))
-        throw new IllegalArgumentException("Service record was obtained using a remote service search!");
       if(m_notifier.getServiceRecord()==null ||
          ((LocalServiceRecord)m_notifier.getServiceRecord()).getRecordHandle()!=((LocalServiceRecord)srvRecord).getRecordHandle())
         throw new IllegalArgumentException("Before updating a service record, you must get it with the help of the method getRecord(Connection)!");

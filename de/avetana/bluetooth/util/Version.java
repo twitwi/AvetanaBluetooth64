@@ -16,8 +16,7 @@ public class Version {
 
 		String line = "";
 		try {
-			InputStream is = ClassLoader.getSystemResourceAsStream("version.xml");
-			if (is == null) is = new BlueZ().getClass().getClassLoader().getResourceAsStream("version.xml");
+			InputStream is = "".getClass().getResourceAsStream("/version.xml");
 			BufferedReader br = new BufferedReader (new InputStreamReader (is));
 			
 		while ((line = br.readLine()) != null) {
@@ -42,7 +41,7 @@ public class Version {
 				build = line.substring(idx + 1, idx2);				
 			}
 		}
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			version = "not";
 			revision = "available";
 			build ="";

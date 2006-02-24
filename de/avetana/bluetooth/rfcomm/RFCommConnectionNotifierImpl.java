@@ -9,6 +9,7 @@ import de.avetana.bluetooth.connection.JSR82URL;
 import de.avetana.bluetooth.stack.BlueZ;
 import de.avetana.bluetooth.stack.BlueZException;
 import de.avetana.bluetooth.sdp.*;
+
 import javax.bluetooth.*;
 import java.io.IOException;
 
@@ -64,7 +65,8 @@ public class RFCommConnectionNotifierImpl extends ConnectionNotifier implements 
     myRecord=LocalServiceRecord.createSerialSvcRecord(new UUID(url.getLocalServiceUUID(), false), m_serviceName,
         parsedURL.getAttrNumber(), parsedURL.getProtocol());
     if(myRecord==null) throw new Exception("Not a valid Service Record!!!!!");
-    
+
+    ((LocalServiceRecord)myRecord).setRecordOwner(this);
     try {
         m_serviceHandle=BlueZ.createService((LocalServiceRecord)myRecord);
         if(m_serviceHandle < 0) throw new Exception();

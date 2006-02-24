@@ -63,6 +63,8 @@ public class L2CAPConnectionNotifierImpl extends ConnectionNotifier implements L
         parsedURL.getAttrNumber(), parsedURL.getProtocol());
     if(myRecord==null) throw new Exception("Not a valid Service Record!!!!!");
 
+    ((LocalServiceRecord)myRecord).setRecordOwner(this);
+    
     try {
         m_serviceHandle=BlueZ.createService((LocalServiceRecord)myRecord);
         if(m_serviceHandle < 0) throw new Exception();

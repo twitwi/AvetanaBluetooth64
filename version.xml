@@ -258,6 +258,17 @@
 	-Now catching exceptions in DiscoveryListener callbacks on the java side.
 	-Sending of 0-length L2CAP-packet does not throw a Connection Closed Exception but an apropriate text.
     </build>
+    <build value="5" date="2006-02-21">
+     -changed the authenticate method in BlueZ to accept a JSR-82 style bluetooth address
+     -added an unPair method to BlueZ
+     fixed a bug in de.avetana.bluetooth.connection.ConnectionNotifier that would make the app crash when acceptAndOpen was called on a closed notifier.
+    </build>
+    <build value="6" date="2006-02-23">
+    	-Implemented new licensing scheme to include a signed license.txt file that contains validity, possibilities and valid addresses.
+    	-Create class SessionHandler that handles an OBEX Server connection after acceptAndOpen in a separate Thread. Now OBEX Conenctions can be offered right after acceptAndOpen has been called.
+     -Changed managmenet of ServiceRecord-updating in order to get it to work with J9-MIDP. ConnectionNotifiers do now implement a RecordOwner interface that gives access to the service record.
+     This also fixes a problem where only one ServiceRecord at a time could be manipulated.
+    </build>
    </revision>
   </version>
 </avetanaBluetooth>

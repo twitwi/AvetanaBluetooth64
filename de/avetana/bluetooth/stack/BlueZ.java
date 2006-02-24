@@ -526,7 +526,7 @@ public class BlueZ
         /**
          * Authenticates the remote device
          * @param hci number (0)
-         * @param deviceAddr The BT address of the remote device
+         * @param deviceAddr The BT address of the remote device (00-0d-93-05-17-0e)
          * @param pin in Windows, one can specify a given PIN number to use
          * @return 1 if successful 0 if not
          * @throws BlueZException
@@ -534,6 +534,30 @@ public class BlueZ
         public static native int authenticate(int handle, String deviceAddr, String pin) throws BlueZException;
 
         /**
+         * Authenticates the remote device
+         * @param deviceAddr The BT address of the remote device
+         * @param pin in Windows, one can specify a given PIN number to use
+         * @return 1 if successful 0 if not
+         * @throws BlueZException
+         */
+        public static int authenticate(String deviceAddr, String pin) throws BlueZException {
+        		if (deviceAddr.length() == 12) {
+        			deviceAddr = deviceAddr.substring(0, 2) + "-" + deviceAddr.substring(2, 4) + "-" + deviceAddr.substring(4, 6) + "-" + deviceAddr.substring(6, 8) + "-" + deviceAddr.substring(8, 10) + "-" + deviceAddr.substring(10, 12);
+        		} else if (deviceAddr.length() != 17) throw new BlueZException ("Wrong address length " + deviceAddr.length());
+        		return authenticate (0, deviceAddr, pin);
+        }
+        
+        public static int unPair(String deviceAddr) throws BlueZException {
+       		if (deviceAddr.length() == 12) {
+    			deviceAddr = deviceAddr.substring(0, 2) + "-" + deviceAddr.substring(2, 4) + "-" + deviceAddr.substring(4, 6) + "-" + deviceAddr.substring(6, 8) + "-" + deviceAddr.substring(8, 10) + "-" + deviceAddr.substring(10, 12);
+    		} else if (deviceAddr.length() != 17) throw new BlueZException ("Wrong address length " + deviceAddr.length());
+    		return unPairN (deviceAddr);
+
+        }
+
+        private static native int unPairN(String deviceAddr);
+
+		/**
          * Turns on/off the encryption of an ACL link
          * @param handle The number, which uniquely identifies the connection
          * @param deviceAddr The BT address of the remote device
@@ -894,5 +918,25 @@ public class BlueZ
 				} catch (Throwable e) {
 					e.printStackTrace();
 			}
+	    }
+	    
+	    /**
+	     * Called from the native side on Linux and Windows to check the license file.
+	     * 
+	     * @return byte[] representation of the license file.
+	     */
+	    
+	    public static byte[] loadLicenseFile() {
+			try {
+				InputStream is = mutexes.getClass().getResourceAsStream("/license.txt");
+	    			if (is == null) return null;
+	    			byte[] b;
+					b = new byte[is.available()];
+		    		is.read (b);
+		    		return b;
+			} catch (Throwable e) {
+					e.printStackTrace();
+			}
+			return null;
 	    }
 }

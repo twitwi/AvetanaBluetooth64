@@ -45,7 +45,9 @@ import de.avetana.bluetooth.connection.*;
 
 public class LocalServiceRecord extends SDPServiceRecord {
 
-
+  private RecordOwner m_owner;
+	
+	
   private short m_type;
 
   /**
@@ -327,5 +329,19 @@ public class LocalServiceRecord extends SDPServiceRecord {
   		v.copyInto(ret);
   		return ret;
   }
+	
+	/**
+	 * @return the m_owner
+	 */
+	public RecordOwner getRecordOwner() {
+		return m_owner;
+	}
+	
+	/**
+	 * @param m_owner the m_owner to set
+	 */
+	public void setRecordOwner(RecordOwner m_owner) {
+		this.m_owner = m_owner;
+	}
 
 }
