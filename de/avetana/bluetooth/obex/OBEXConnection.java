@@ -335,10 +335,13 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 					//UTF-16BE encoding. 
 					byte[] b = nameObj.getBytes("UTF-8");
 					byte[] b2 = new byte[b.length * 2 + 2];
-					for (int j = 0;j < b2.length;j++) b2[j] = 0;
-					for (int j = 0;j < b.length;j++) b2[j * 2 + 1] = b[j];
+					if (nameObj.equals("")) b2 = new byte[0];
+					else {
+						for (int j = 0;j < b2.length;j++) b2[j] = 0;
+						for (int j = 0;j < b.length;j++) b2[j * 2 + 1] = b[j];
+					}
 					writeShortLen (bos, 3 + b2.length);
-					bos.write (b2);
+					if (b2.length > 0) bos.write (b2);
 					break;
 				case HeaderSetImpl.TYPE:
 					String typeObj = (String)header;
