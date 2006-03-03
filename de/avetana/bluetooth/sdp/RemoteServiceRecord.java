@@ -510,9 +510,11 @@ public class RemoteServiceRecord extends SDPServiceRecord {
 		  if (!(o2 instanceof DataElement)) throw new Exception ("Inner Element no DataElement");
 		  
 		  DataElement de = (DataElement) o2;
-		  v.addElement(createServiceRecord(adr, uuids, attrs, de));
+		  Object o3 = createServiceRecord(adr, uuids, attrs, de);
+		  if (o3 != null) v.addElement(o3);
 	  }
 	  
+	  if (v.size() == 0) return null;
 	  ServiceRecord sr[] = new ServiceRecord[v.size()];
 	  v.copyInto(sr);
 	  return sr;

@@ -88,7 +88,7 @@ public class OperationImpl implements Operation {
 	
 	private void receive() throws IOException {
 		while (true) {
-				con.sendCommand (OBEXConnection.GET, new byte[0]);
+				con.sendCommand ((OBEXConnection.GET | 0x80), new byte[0]);
 				byte b[] = con.receiveCommand();
 				respCode = (int)(b[0] & 0xff);
 				newData (OBEXConnection.parseHeaders(b, 3));

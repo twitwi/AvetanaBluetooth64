@@ -33,7 +33,6 @@ import java.util.Vector;
 
 import de.avetana.bluetooth.sdp.RemoteServiceRecord;
 import de.avetana.bluetooth.sdp.ServiceFoundException;
-import de.avetana.bluetooth.sdp.TimeOutException;
 import de.avetana.bluetooth.stack.BlueZ;
 import de.avetana.bluetooth.stack.BluetoothStack;
 import de.avetana.bluetooth.util.BTAddress;
@@ -365,16 +364,12 @@ public class DiscoveryAgent {
      * @exception IllegalArgumentException if <code>security</code> is
      * not <code>ServiceRecord.NOAUTHENTICATE_NOENCRYPT</code>, <code>ServiceRecord.AUTHENTICATE_NOENCRYPT</code>, or
      * <code>ServiceRecord.AUTHENTICATE_ENCRYPT</code>
-     * @exception TimeOutException if the search time was bigger than authorized
-     * @exception ServiceFoundException if no matching service was found or if too much services were found.
      * The ServiceFoundException class encapsulates the number of services found.
      * @return <code>The connection URL</code> if the service was found.<br>
      *         <code>null</code> if the selected service does not have a valid connection URL.
      * @author Julien Campana
      */
-    public String selectService(final UUID uuid, int security, boolean master) throws BluetoothStateException,
-                                                                                NullPointerException,
-                                                                                IllegalArgumentException
+    public String selectService(final UUID uuid, int security, boolean master) throws BluetoothStateException
                                                                                 {
       if(uuid==null) throw new NullPointerException("UUID given in argument is null!!");
       if(security!=ServiceRecord.AUTHENTICATE_ENCRYPT && security!= ServiceRecord.AUTHENTICATE_NOENCRYPT &&

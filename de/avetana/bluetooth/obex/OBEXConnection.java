@@ -331,15 +331,19 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 				case HeaderSetImpl.NAME:
 				case HeaderSetImpl.DESCRIPTION:
 					String nameObj = (String)header;
+
+					//To handle 0-lengh names in some DIR-Listing cases.
+					if (nameObj.equals("")) {
+						writeShortLen (bos, 3);
+						break;
+					}
+					
 					//UTF-8 -> UTF-16BE convertion some J2ME implementations do not handle
 					//UTF-16BE encoding. 
 					byte[] b = nameObj.getBytes("UTF-8");
 					byte[] b2 = new byte[b.length * 2 + 2];
-					if (nameObj.equals("")) b2 = new byte[0];
-					else {
-						for (int j = 0;j < b2.length;j++) b2[j] = 0;
-						for (int j = 0;j < b.length;j++) b2[j * 2 + 1] = b[j];
-					}
+					for (int j = 0;j < b2.length;j++) b2[j] = 0;
+					for (int j = 0;j < b.length;j++) b2[j * 2 + 1] = b[j];
 					writeShortLen (bos, 3 + b2.length);
 					if (b2.length > 0) bos.write (b2);
 					break;
