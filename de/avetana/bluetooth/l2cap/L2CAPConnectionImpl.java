@@ -156,14 +156,13 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
    * @exception InterruptedIOException if the request timed out
    * @exception NullPointerException if <code>inBuf</code> is <code>null</code>
    */
-  public synchronized int receive(byte[] inBuf) throws IOException, NullPointerException {
-
-  	byte[] b = read(0);
-  	
-    int rlen = b.length;
-    if (rlen > inBuf.length) rlen = inBuf.length;
-    System.arraycopy(b, 0, inBuf, 0, rlen);
-    return rlen;
+  public int receive(byte[] inBuf) throws IOException, NullPointerException {
+	  	byte[] b = read(0);
+	  	
+	    int rlen = b.length;
+	    if (rlen > inBuf.length) rlen = inBuf.length;
+	    System.arraycopy(b, 0, inBuf, 0, rlen);
+	    return rlen;
   }
 
   /**
@@ -174,7 +173,7 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
    * @exception IOException if the connection is closed
    */
   public synchronized boolean ready() throws IOException {
-    return available() > 0;
+		return available() > 0;
   }
 
   /**
@@ -191,7 +190,7 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
   public void send(byte[] data) throws IOException {
     if(data==null) throw new NullPointerException("The buffer is null!");
     else if (data.length == 0) throw new IOException ("Sending of 0-length packet not supported");
-    if(closed) throw new IOException("Connection does not exists or was previously closed");
+    if(closed) throw new IOException("Connection closed");
     BlueZ.writeBytesS(fid, data, 0, Math.min (m_transmitMTU, data.length));
   }
 }
