@@ -268,6 +268,14 @@
     	-Create class SessionHandler that handles an OBEX Server connection after acceptAndOpen in a separate Thread. Now OBEX Conenctions can be offered right after acceptAndOpen has been called.
      -Changed managmenet of ServiceRecord-updating in order to get it to work with J9-MIDP. ConnectionNotifiers do now implement a RecordOwner interface that gives access to the service record.
      This also fixes a problem where only one ServiceRecord at a time could be manipulated.
+	</build>
+    <build value="7" date="2006-03-03">
+	 -Two OBEX patches to handle 0-length name headers and set the final bit in a multipart OBEX-Get operation
+	 -Fixed a locking problem in L2CapConnection where the notification of closing the channel did not get through.
+    </build>
+    <build value="8" date="2006-04-11">
+	 -Finalized Macintosh universal support
+	 -Support for Cached Inquiries on Microsoft stack.
     </build>
    </revision>
   </version>

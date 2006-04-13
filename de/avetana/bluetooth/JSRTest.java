@@ -56,7 +56,9 @@ import de.avetana.bluetooth.hci.LinkQuality;
 import de.avetana.bluetooth.l2cap.L2CAPConnectionNotifierImpl;
 import de.avetana.bluetooth.obex.HeaderSetImpl;
 import de.avetana.bluetooth.sdp.SDPConstants;
+import de.avetana.bluetooth.stack.AvetanaBTStack;
 import de.avetana.bluetooth.stack.BlueZ;
+import de.avetana.bluetooth.stack.BluetoothStack;
 import de.avetana.bluetooth.util.BTAddress;
 import de.avetana.bluetooth.util.IntDeviceFinder;
 import de.avetana.bluetooth.util.ServiceFinderPane;
@@ -440,6 +442,7 @@ public class JSRTest extends JFrame implements ActionListener {
     * @throws Exception
     */
    public void initStack() throws Exception{
+	   de.avetana.bluetooth.stack.BluetoothStack.init(new de.avetana.bluetooth.stack.AvetanaBTStack());
      m_local=LocalDevice.getLocalDevice();
      m_agent=m_local.getDiscoveryAgent();
    }
@@ -1166,13 +1169,15 @@ public class JSRTest extends JFrame implements ActionListener {
        received = 0;
        byte b[] = new byte[rfcommPackLen];
        try {
-		   int csum = 0, csumc = 0;
+		   int csum = 0, csumc = 0, a = 0;
          while (running) {
            //int v1 = is.read();
            //int v2 = is.read();
            //System.out.println (v1 + " " + v2);
            dataReceived.setText("Received " + received);
-           int a = is.read(b);
+           if (is.available() > 0)
+            a = is.read(b);
+           else a = 0;
 		   /*for (int i = 0;i < a;i++) {
 			   System.out.print (" " + Integer.toHexString((int)(b[i] & 0xff)));
 			   csum += (int)(b[i] & 0xff);
@@ -1184,6 +1189,7 @@ public class JSRTest extends JFrame implements ActionListener {
 			   csumc = csum = 0;
 		   }*/
            received += a;
+           //os.write (new byte[100]);
          }
        } catch (Exception e) {e.printStackTrace(); if (m_offerService.isSelected()) revokeService(); if (connectTo.isSelected()) { connectTo.setSelected(false); try { closeConnection(); } catch (Exception ec) {}} }
      }

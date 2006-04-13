@@ -62,6 +62,12 @@ public class SDPUpdateTest {
 		srec.setAttributeValue(0x100, new DataElement (DataElement.STRING, "updated"));
 //		srec.setAttributeValue(0x216, new DataElement (DataElement.STRING, "xxx"));
 
+		 
+        final short ATTR_SVCINFO_TTL = 0x008;
+        srec.setAttributeValue(ATTR_SVCINFO_TTL, 
+                new DataElement(DataElement.U_INT_1, 123)); // Seconds
+
+		
 		//srec.setAttributeValue(0x217, new DataElement (true));
 		//srec.setAttributeValue(0x218, new DataElement (false));
 		srec.setAttributeValue(0x217, new DataElement (DataElement.URL, "http://Test"));

@@ -181,7 +181,7 @@ public class DiscoveryAgent {
      * @exception BluetoothStateException if the Bluetooth device does
      * not allow an inquiry to be started due to other operations that are being performed by the device
      */
-    public synchronized boolean startInquiry(int accessCode, DiscoveryListener listener) throws BluetoothStateException {
+    public synchronized boolean startInquiry(final int accessCode, DiscoveryListener listener) throws BluetoothStateException {
     		if (!isInquiring) listeners = new Vector();
 
     		if (listener != null) { if (!listeners.contains(listener)) listeners.addElement(listener); }
@@ -202,7 +202,7 @@ public class DiscoveryAgent {
               cachedRemoteDevices = new Vector();
               //bluetoothStack.registerDiscoveryAgent(DiscoveryAgent.this);
               try {
-                  boolean ret = BlueZ.hciInquiry(0, DiscoveryAgent.this);
+                  boolean ret = BlueZ.hciInquiry(0, 8, 10, accessCode, DiscoveryAgent.this);
                   isInquiring=false;
                   for(int u=0;u<listeners.size();u++) {
                       try {

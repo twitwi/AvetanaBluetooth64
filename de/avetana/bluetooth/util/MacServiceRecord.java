@@ -26,7 +26,7 @@ public class MacServiceRecord {
 			  if (prot == 1 || prot == 2)
 				  lsr.updateChannelNumber(1);
 			  else
-				  lsr.updateChannelNumber(11);
+				  lsr.updateChannelNumber(0x1001);
 		  }
 		  
 	    try {

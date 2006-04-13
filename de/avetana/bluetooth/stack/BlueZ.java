@@ -703,6 +703,7 @@ public class BlueZ
               if (proto == JSR82URL.PROTOCOL_OBEX) proto = JSR82URL.PROTOCOL_RFCOMM;
               int ch = not.getConnectionURL().getAttrNumber();
               if(ch==channel && protocol==proto) {
+            	  if (fid == 0) return true;   //Native wants to check if there is a notifier to be called
                   not.setRemoteDevice(jaddr);
                   if (not instanceof L2CAPConnectionNotifierImpl) ((L2CAPConnectionNotifierImpl)not).setMTUs(transMTU, recMTU);
                   not.setConnectionID(fid);

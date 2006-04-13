@@ -99,6 +99,8 @@ public class MultiReceiveTest extends JFrame implements ActionListener {
 	
 	public static void main(String[] args) {
 		new MultiReceiveTest(args.length == 1 ? args[0] : "btspp").setVisible(true);
+		new MultiReceiveTest(args.length == 1 ? args[0] : "btspp").setVisible(true);
+		new MultiReceiveTest(args.length == 1 ? args[0] : "btspp").setVisible(true);
 	}
 
 	public void actionPerformed(ActionEvent e) {
@@ -108,7 +110,8 @@ public class MultiReceiveTest extends JFrame implements ActionListener {
 					public void run() {
 					try {
 							conNot = (Connection)Connector.open(protocol + "://localhost:" + new UUID (de.avetana.bluetooth.sdp.SDPConstants.UUID_DIALUP_NETWORKING) + ";name=MultiTest;authenticate=false;encrypt=false");
-
+							System.out.println ("Accepting at " + LocalDevice.getLocalDevice().getRecord(conNot).getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false));
+							
 							while (true) {
 						
 								if (protocol.equals("btspp")) {

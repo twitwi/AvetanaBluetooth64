@@ -33,7 +33,7 @@ public class InqTest implements DiscoveryListener {
 	public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
 		
 		try {
-			System.out.println ("device discovered " + btDevice + " name " + btDevice.getFriendlyName(false));
+			System.out.println ("device discovered " + btDevice + " name " + btDevice.getFriendlyName(false) + " majc " + cod.getMajorDeviceClass() + " minc " + cod.getMinorDeviceClass() + " sc " + cod.getServiceClasses());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -121,15 +121,28 @@ public class InqTest implements DiscoveryListener {
 			else uuids = new UUID[] { new UUID (uuid, true) };
 			System.out.println ("Starting search");
 			int transID = da.searchServices(new int[] { 0x05, 0x06, 0x07, 0x08, 0x09, 0x100, 0x303 }, uuids, new RemoteDevice (addr), this);
-			System.out.println ("Started");
+			System.out.println ("Started " + transID);
 			//BufferedReader br = new BufferedReader (new InputStreamReader (System.in));
 			//br.readLine();
 			//if (!searchCompleted) da.cancelServiceSearch(transID);
 			//System.out.println ("Canceled");
+
+/*			Thread.currentThread().sleep(100);
+			
+			System.out.println ("Interrupting service search " + transID);
+			da.cancelServiceSearch(transID);
+			Thread.currentThread().sleep(1500);
+			System.out.println ("Restarting service search");
+			searchCompleted = false;
+			transID = da.searchServices(new int[] { 0x05, 0x06, 0x07, 0x08, 0x09, 0x100, 0x303 }, uuids, new RemoteDevice ("000E0799107C"), this);
+			*/
 		}
 		while (!searchCompleted) {
 			synchronized (this) { wait(100); }
 		}
+		
+		
+		
 		System.exit(0);
 	}
 	
