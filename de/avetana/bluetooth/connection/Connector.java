@@ -43,8 +43,7 @@ import de.avetana.bluetooth.stack.*;
 import javax.microedition.io.*;
 
 /**
- * This class only supports the RFCOMM Protocol for the moment.
- * It will be soon extended in order to support RFCOMM and maybe OBEX.
+ * This class the RFCOMM, OBEX and L2CAP Protocol.
  *
  * Remote (btspp://010203040506:1;master=false)
  * or
@@ -62,8 +61,11 @@ public class Connector {
     public static final int READ_WRITE = 0;
     private static BluetoothStack stack = null;
 
-    
     public static Connection open(String url) throws IOException {
+    	return openWithTimeout(url, 60000);
+    }
+    
+    public static Connection openWithTimeout(String url, int timeout) throws IOException {
     		if (stack == null) {
 			try {
 				stack = BluetoothStack.getBluetoothStack();	
@@ -80,11 +82,11 @@ public class Connector {
           }
           else {
             if(myURL.getProtocol() == JSR82URL.PROTOCOL_RFCOMM)
-              return stack.openRFCommConnection(myURL);
+              return stack.openRFCommConnection(myURL, timeout);
             else if(myURL.getProtocol() == JSR82URL.PROTOCOL_L2CAP)
-              return stack.openL2CAPConnection(myURL);
+              return stack.openL2CAPConnection(myURL, timeout);
             if(myURL.getProtocol() == JSR82URL.PROTOCOL_OBEX)
-                return new OBEXConnection ((RFCommConnectionImpl)stack.openRFCommConnection(myURL));
+                return new OBEXConnection ((RFCommConnectionImpl)stack.openRFCommConnection(myURL, timeout));
           }
         }
         catch (BluetoothStateException e) { throw new IOException("" + e); }

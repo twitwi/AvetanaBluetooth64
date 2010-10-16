@@ -7,7 +7,7 @@ if [ "$JDK_HOME" = "" ] ; then
 	#sets the root path of the installed JDK
 	#
 	#Put here the full path to the JDK home directory
-	export JDK_HOME="/YOURJDKDIR/j2sdk1.4.2_07"
+	export JDK_HOME="/usr/lib/jdk1.5.0_12"
 	echo JDK_HOME variable not set! Using default JDK_HOME = $JDK_HOME
 fi
 
@@ -20,6 +20,6 @@ fi
 if [ "$BIN_DIR" = "" ] ; then
 	#Put here the path of the directory to which you want the
 	#installation process to put the produced binaries.
-	export BIN_DIR="/home/myuser/avetanabt/binaries"
+	export BIN_DIR="/home/gmelin/avetanabt/binaries"
 	echo BIN_DIR variable not set! Using default BIN_DIR = $BIN_DIR	
 fi

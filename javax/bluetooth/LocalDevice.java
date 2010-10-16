@@ -31,6 +31,7 @@ import de.avetana.bluetooth.stack.*;
 import de.avetana.bluetooth.obex.*;
 import de.avetana.bluetooth.connection.*;
 import de.avetana.bluetooth.sdp.*;
+import de.avetana.bluetooth.util.LibLoader;
 
 import java.util.*;
 
@@ -162,22 +163,27 @@ public class LocalDevice {
             final int modeThread=mode;
             DiscoverRunnable r=new DiscoverRunnable() {
               public void run() {
+              	LibLoader.cremeInit(this);
+
                 int oldMode=-1;
                 try {
                   oldMode=getDiscoverable();
                   if(oldMode==-1) throw new Exception("Unable to get old discovery Mode!");
                   if(bluetoothManager.setDiscoverableMode(modeThread)==-1) throw new Exception("Unable to set new discoverable mode");
                   while(seconds < 60000) {
-                    this.wait(200);
+                    synchronized (this) { this.wait(200); }
                     seconds+=200;
                   }
                   if(bluetoothManager.setDiscoverableMode(oldMode)==-1) throw new Exception("Unable to reset old discoverable mode");
                   seconds=0;
                 }catch(Exception ex) {e=ex; seconds=0; return;}
+                finally {
+    				LibLoader.cremeOut(this);
+                }
               }
             };
             new Thread(r).start();
-            while(r.seconds!=0 && r.e==null) {this.wait(200);}
+            while(r.seconds!=0 && r.e==null) synchronized (this) {this.wait(200);}
             if(r.e!=null) throw new BluetoothStateException(r.e.getMessage());
 
           }

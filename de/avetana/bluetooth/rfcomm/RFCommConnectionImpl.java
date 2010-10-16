@@ -70,10 +70,10 @@ public class RFCommConnectionImpl extends BTConnection implements StreamConnecti
    * @return An instance of RFCommConnection with manages the Output and InputStream connections streams
    * @throws Exception
    */
-  public static RFCommConnectionImpl createRFCommConnection (JSR82URL url) throws Exception{
+  public static RFCommConnectionImpl createRFCommConnection (JSR82URL url, int timeout) throws Exception{
     int fid = -1;
 
-    fid=BlueZ.openRFComm (url);
+    fid=BlueZ.openRFComm (url, timeout);
     if(fid < 0) throw new Exception("Connection could not be created with remote device!");
 
     RFCommConnectionImpl conn =  null;
@@ -123,19 +123,28 @@ public class RFCommConnectionImpl extends BTConnection implements StreamConnecti
    */
   protected class MInputStream extends InputStream {
 
+	  private boolean closed = false;
+	  
     public synchronized int available () throws IOException {
+       	if (closed) throw new IOException ("InputStream closed");
       return RFCommConnectionImpl.this.available();
     }
 
     public synchronized int read() throws IOException {
-    		byte b[] = RFCommConnectionImpl.this.read(1);
-    		return (int)(b[0] & 0xff);
+       	if (closed) throw new IOException ("InputStream closed");
+    	byte b[] = RFCommConnectionImpl.this.read(1);
+    	return (int)(b[0] & 0xff);
     }
 
     public synchronized int read (byte[] b, int off, int len) throws IOException {
-  	  byte b2[] = RFCommConnectionImpl.this.read(len);
+      if (closed) throw new IOException ("InputStream closed");
+      byte b2[] = RFCommConnectionImpl.this.read(len);
   	  System.arraycopy(b2, 0, b, off, b2.length);
       return b2.length;
+    }
+   
+    public void close() {
+    	closed = true;
     }
 
   }
@@ -145,20 +154,31 @@ public class RFCommConnectionImpl extends BTConnection implements StreamConnecti
    * @author Moritz Gmelin
    */
   protected class MOutputStream extends OutputStream {
+	  
+	  private boolean closed = false;
+	  
     public void write (int data) throws IOException {
+    	if (closed) throw new IOException ("OutputStream closed");
       BlueZ.writeBytesS (fid, new byte[] { (byte)data }, 0, 1);
     }
 
     public void write (byte[] b) throws IOException {
+    	if (closed) throw new IOException ("OutputStream closed");
       BlueZ.writeBytesS (fid, b, 0, b.length);
     }
 
     public void write (byte[] b, int off, int len) throws IOException {
+    	if (closed) throw new IOException ("OutputStream closed");
       BlueZ.writeBytesS (fid, b, off, len);
     }
 
     public void flush() throws IOException {
+    	if (closed) throw new IOException ("OutputStream closed");
     		BlueZ.flush (fid);
+    }
+    
+    public void close() {
+    	closed = true;
     }
   }
 

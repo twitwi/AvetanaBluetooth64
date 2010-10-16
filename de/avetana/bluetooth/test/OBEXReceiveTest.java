@@ -20,11 +20,13 @@ import de.avetana.bluetooth.sdp.SDPConstants;
 
 public class OBEXReceiveTest extends ServerRequestHandler {
 
+	private static boolean diconnected = false;
+
 	public OBEXReceiveTest() throws IOException {
 				
 	}
 	
-	public static void main (String args[]) throws IOException{
+	public static void main (String args[]) throws IOException, InterruptedException{
 		SessionNotifier notify = (SessionNotifier) Connector.open("btgoep://localhost:" + new UUID (SDPConstants.UUID_OBEX_OBJECT_PUSH) + ";name=OBEXTest;authenticate=false;master=false;encrypt=false");
          int secSet = ServiceRecord.NOAUTHENTICATE_NOENCRYPT;
 
@@ -33,7 +35,12 @@ public class OBEXReceiveTest extends ServerRequestHandler {
          while (true) {
         	 	System.out.println ("Waiting for connection");
         	 	notify.acceptAndOpen(new OBEXReceiveTest());
+        	 	System.out.println ("Accept and open returned");
          }
+        	 	
+//        	while (!diconnected) {
+//        		Thread.currentThread().sleep(100);
+//        	}
 	}
 	
 	public int onConnect (HeaderSet request, HeaderSet response) {
@@ -81,6 +88,7 @@ public class OBEXReceiveTest extends ServerRequestHandler {
 	
 	public void onDisconnect (HeaderSet req, HeaderSet resp) {
 		System.out.println("Disconnected");
+		diconnected = true;
 	}
 	
 	public int onGet (Operation op) {

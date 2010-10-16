@@ -11,6 +11,8 @@ import java.io.*;
 import javax.microedition.io.*;
 import javax.obex.*;
 
+import de.avetana.bluetooth.stack.BlueZ;
+
 /**
  * @author gmelin
  *
@@ -39,7 +41,12 @@ public class SessionNotifierImpl implements SessionNotifier {
 		if (locConNot == null) throw new IOException ("ConnectionNotifier is null ! maybe it was closed previousely..");
 		StreamConnection streamCon = locConNot.acceptAndOpen();
 		SessionHandler sh = new SessionHandler (streamCon, auth, handler);
-		sh.start();
+		try {
+			BlueZ.executor.execute(sh);
+		} catch (Exception e) {
+			e.printStackTrace();
+			new Thread (sh).start();
+		}
 		return sh;
 	}
 	
@@ -49,7 +56,7 @@ public class SessionNotifierImpl implements SessionNotifier {
 
 	public void close() throws IOException {
 		if (locConNot != null) locConNot.close();
-		locConNot.close();
+		locConNot = null;
 	}
 
 }

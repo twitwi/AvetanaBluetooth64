@@ -277,6 +277,105 @@
 	 -Finalized Macintosh universal support
 	 -Support for Cached Inquiries on Microsoft stack.
     </build>
+    <build value="9" date="2006-06-14">
+	 -Multiple connections to same PSM/Channel now supported in linux
+	 -RemoteDevice.getRemoteDevice() does now handle OBEXConnections and SessionNotifiers.
+    </build>
+    <build value="10" date="2006-06-22">
+	-Fixed a native bug in OS X that made getRemoteName() crash.
+	-Fixed a bug for some J9 implementation where the dll file cannot be loaded from within the JAR file.
+    </build>
+    <build value="11" date="2006-07-04">
+	-Fixed a bug that prevented concurrent service searches to work.
+	-Added support for single system licenses.
+	-Changed name of license file to license.abt
+	-Fixed a bug for Widcomm where inqListSize was not initialized with 0 which could cause a crash on getRemoteName().
+    </build>
+    <build value="12" date="2007-01-02">
+		-Fixed a memory leak in native code in the getClass method.
+		-Fixed memory leaks when sending data.
+		-Fixed a bug in native widcomm code that would not close a server connection when you offer a service and close it without it being connected.
+		-Added a method for Widcomm to send native HCI commands (Vendor specific HCI commands).
+    </build>
+    <build value="12a" date="2007-01-02">
+	-Fixed annoying messages in OS X about Memory leaks.
+    </build>
+    <build value="13" date="2007-02-01">
+	 Added a static function in BlueZ to change the local device name (works only for Widcomm)
+	 Detaching threads in Widcomm after being attached (Not on CE since this breaks CrEme).
+	 Fixed a bug where the ServiceClass was shifted 13 bits to the right where it musten't be.
+    </build>
+    <build value="14" date="2007-03-01">
+		Many fixes for creme. Need to add -Dcreme.noblock=true on startup.
+		Added debug output. add -Dde.avetana.bluetooth.debug=true on startup
+	    Detaching Thread every time after Attaching (Widcomm). Not using GetEnv anymore.
+	    Fixed a bug that could cause a "Signature of license file invalid" error on start.
+	    Autodetection of Widcomm/Microsoft Stack on WinCE.
+	    Fixed a bug that could cause crashes in MacOS X when two L2CAP connections were open and sending data while the connections were not
+	    yet ready in Java.
+    </build>
+    <build value="14a" date="2007-03-03">
+    	more Memory leaks stuffed
+    	fixed a possible crash (Widcomm) when a notifier was opened and closed without acceptAndOpen
+    	removed unnecessary getMethod calls in newData callback methods. replaced them with static methods.
+    </build>
+    <build value="14b" date="2007-03-04">
+ 		Changed the getEnv/AttachCurrentThread scheme for Widcomm.
+    </build>
+    <build value="14c" date="2007-03-06">
+		Put reading data in Widcomm in a Java Thread to support CrEme and save ressources. No Java callbacks from non-java threads anymore.
+    </build>
+    <build value="14d" date="2007-03-07">
+		Put inquiry in Widcomm in a Java Thread to support CrEme and save ressources. No Java callbacks from non-java threads anymore.
+    </build>
+    <build value="15" date="2007-03-17">
+     -Put all new Java threads in a Thread Pool. Thread pool KeepAlive time can be set via Parameter de.avetana.bluetooth.ThreadPool.keepAliveTime in milliseconds. 0 is default and thus behaviour as before.
+     For J9 you should set this quite high to never discard any threads created because J9 does not properly clean up created threads.
+     -finer Mutex locking for WIdcomm stack.
+     -Removed all Thread Attach occurrences in Widcomm and put Waiting for ServerConnection established in Main Thread.
+    </build>   
+    <build value="15b" date="2007-03-19">
+     -fixed a double free memory leak in widcomm.
+    </build>   
+    <build value="15c" date="2007-03-20">
+     -set the default MTU size fo incoming and outgoing connection in Widcomm to 1000 (will be shrinked to 666). Makes transfers MUCH faster.
+    </build>   
+    <build value="15d" date="2007-03-21">
+	 -correctly closing HANDLES in Widcomm threads when the connection is closed
+    </build>   
+   <build value="15e" date="2007-03-23">
+	 Moved the deletion of Handles in a cleanup method to avoid crashes with CrEme.
+	 Added wait() after registerService() to avoid crashes when a notifier is closed before it is actually finished
+    </build>   
+   <build value="15f" date="2007-03-27">
+    -fixed a small leak in authenticate.
+   </build>
+   <build value="16a" date="2007-04-20">
+	-fixed native encoding problem on all plattforms
+	-fixed a bug in Widcomm that caused a crash with widomm 5.1. The connection is now closed from within the EventReceived method when a connection_error event is received.
+   </build>
+   <build value="16b" date="2007-04-27">
+	-fixed a bug in Widcomm that caused stale server connections due to duplicate CONNECTION_EVENTs (Widcomm 5.1 only ?).
+   </build>
+   <build value="16c" date="2007-05-01">
+    -finally fixed the "Signature of license file invalid" bug.
+   </build>
+   <build value="16d" date="2007-05-07">
+    -Fixed a SDP Record handling bug in widcomm for HDI scanning
+    -Added a MacOS X function to remove the SyncPDA-Service in BlueZ.
+   </build>
+   <build value="16e" date="2007-05-08">
+	 -Fixed pairing in MacOS X
+   </build>
+     <build value="16f" date="2007-05-10">
+	 -Changed data sending to be asynchronous in OS X for faster transfers with external dongles.
+   </build>
+     <build value="17" date="2007-06-19">
+	 -Added a timeout for connection openings in Windows (Widcomm / MS) With de.avetana.bluetooth.connection.Connector.openWithTimeout(String, int);
+  	 -Fixed a bug ind SDPRecord handling not handeling INT_8 data.
+  	 -added compatibility exceptions in OBEX part
+   </build>
+ 
    </revision>
   </version>
 </avetanaBluetooth>

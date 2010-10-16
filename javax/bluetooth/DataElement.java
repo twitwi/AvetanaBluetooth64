@@ -369,6 +369,9 @@ public class DataElement {
             case INT_4: 
 					blen = 4;
             			break;
+            case INT_8: 
+				blen = 8;
+        			break;
              default:
                 throw new IllegalArgumentException();
         }

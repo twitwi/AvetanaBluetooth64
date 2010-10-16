@@ -83,7 +83,7 @@ public class MultiReceiveTest extends JFrame implements ActionListener {
 	Connection conNot = null;
 	private String protocol;
 	
-	public MultiReceiveTest(String protocol) {
+	public MultiReceiveTest(String protocol) throws IllegalArgumentException, IOException {
 		Container cont = getContentPane();
 		cont.setLayout(new BorderLayout());
 		cont.add(acceptBut, BorderLayout.NORTH);
@@ -91,13 +91,16 @@ public class MultiReceiveTest extends JFrame implements ActionListener {
 		acceptBut.addActionListener(this);
 		pack();
 		this.protocol = protocol;
+		
 	}
 	
 	/**
 	 * @param args
+	 * @throws IOException 
+	 * @throws IllegalArgumentException 
 	 */
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IllegalArgumentException, IOException {
 		new MultiReceiveTest(args.length == 1 ? args[0] : "btspp").setVisible(true);
 		new MultiReceiveTest(args.length == 1 ? args[0] : "btspp").setVisible(true);
 		new MultiReceiveTest(args.length == 1 ? args[0] : "btspp").setVisible(true);
@@ -109,7 +112,7 @@ public class MultiReceiveTest extends JFrame implements ActionListener {
 
 					public void run() {
 					try {
-							conNot = (Connection)Connector.open(protocol + "://localhost:" + new UUID (de.avetana.bluetooth.sdp.SDPConstants.UUID_DIALUP_NETWORKING) + ";name=MultiTest;authenticate=false;encrypt=false");
+						conNot = (Connection)Connector.open(protocol + "://localhost:" + new UUID (de.avetana.bluetooth.sdp.SDPConstants.UUID_DIALUP_NETWORKING) + ";name=MultiTest;authenticate=false;encrypt=false");
 							System.out.println ("Accepting at " + LocalDevice.getLocalDevice().getRecord(conNot).getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false));
 							
 							while (true) {

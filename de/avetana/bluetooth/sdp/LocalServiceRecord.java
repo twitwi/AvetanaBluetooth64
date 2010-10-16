@@ -98,6 +98,14 @@ public class LocalServiceRecord extends SDPServiceRecord {
     if (scidProt != null) serviceClassIDList.addElement(scidProt);
     rec.m_attributes.put(new Integer(SDPConstants.ATTR_SERVICE_CLASS_ID_LIST), serviceClassIDList);
     
+	/*DataElement de = new DataElement (DataElement.DATSEQ);
+	de.addElement(new DataElement (DataElement.UUID, new UUID(SDPConstants.UUID_SERIAL_PORT)));				
+	de.addElement(new DataElement (DataElement.UUID, new UUID(SDPConstants.UUID_DIALUP_NETWORKING)));
+	de.addElement(new DataElement (DataElement.UUID, new UUID(0x1234)));
+	rec.m_attributes.put(new Integer(SDPConstants.ATTR_SERVICE_CLASS_ID_LIST), de);
+	System.out.println ("--> Setting special IEM Service record <--");
+*/
+    
     DataElement protocolDescriptorList = new DataElement(DataElement.DATSEQ);
     DataElement l2capDescriptor = new DataElement(DataElement.DATSEQ);
     l2capDescriptor.addElement(new DataElement(DataElement.UUID, new UUID(SDPConstants.UUID_L2CAP)));

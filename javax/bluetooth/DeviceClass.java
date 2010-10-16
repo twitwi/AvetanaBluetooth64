@@ -62,7 +62,7 @@ public class DeviceClass {
      * service classes.  When this occurs, the major service classes are bitwise OR'ed together.
      * @return the major service classes
      */
-    public int getServiceClasses() { return (int)((record & 0xffe000) >> 13); }
+    public int getServiceClasses() { return (int)((record & 0xffe000)); }
 
     /**
      * Retrieves the major device class.  A device may have only a single major device class.

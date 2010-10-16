@@ -44,17 +44,22 @@ public class AvetanaBTStack extends BluetoothStack {
   private int m_bd; // bluetooth descriptor
   private int devID=-1; // bluetooth adapter
   private static RemoteServiceRecord myRecord;
-  private static boolean fini=false;
+  private static boolean fini = false;
   private static boolean initialized = false;
+  private static final Object mutex = new Object();
 
   public AvetanaBTStack() throws Exception{
 	  this(0);
   }
 
   public AvetanaBTStack(int devID) throws Exception{
- 	 LibLoader.loadBTLib();
-	 m_bd = BlueZ.hciOpenDevice(devID, new BlueZ());
-     this.devID = devID;
+	  synchronized (mutex) {
+		 if (initialized) return;
+		 LibLoader.loadBTLib();
+		 m_bd = BlueZ.hciOpenDevice(devID, new BlueZ());
+	     this.devID = devID;
+	     initialized = true;
+	  }
   }
 
   public void setDeviceID(int dev) throws Exception{
@@ -150,12 +155,12 @@ public class AvetanaBTStack extends BluetoothStack {
     return BlueZ.setAccessMode(m_bd, mode);
   }
 
-  public Connection openRFCommConnection(JSR82URL url) throws Exception {
-    return de.avetana.bluetooth.rfcomm.RFCommConnectionImpl.createRFCommConnection(url);
+  public Connection openRFCommConnection(JSR82URL url, int timeout) throws Exception {
+    return de.avetana.bluetooth.rfcomm.RFCommConnectionImpl.createRFCommConnection(url, timeout);
   }
 
-  public Connection openL2CAPConnection(JSR82URL url) throws Exception {
-    return de.avetana.bluetooth.l2cap.L2CAPConnectionImpl.createL2CAPConnection(url);
+  public Connection openL2CAPConnection(JSR82URL url, int timeout) throws Exception {
+    return de.avetana.bluetooth.l2cap.L2CAPConnectionImpl.createL2CAPConnection(url, timeout);
   }
 
   public boolean cancelServiceSearch(int transID) {

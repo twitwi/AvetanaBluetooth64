@@ -93,11 +93,23 @@ int HCI_DEVICE_ID = 0;
 
 #define DEBUG 0
 
+
+typedef struct {
+       uint8_t length;
+       unsigned char data[16];
+} __attribute__ ((packed)) sdp_cstate_t;
+
 struct search_context {
 	char            *svc;           // Service
 	uuid_t          group;          // Browse group
 	int             tree;           // Display full attribute tree
 	uint32_t        handle;         // Service record handle
+};
+
+struct ServiceHandle {
+	int type;
+	int fd;
+	int srHandle;
 };
 
 /**
@@ -126,8 +138,8 @@ int find_conn(int s, int dev_id, long arg);
  * Listen for an incomming connection on the given channel.
  * @return
  */
-int listenRFCOMM(JNIEnv *env, int channel, int master, int auth, int encrypt);
-int listenL2CAP(JNIEnv *env, int psm, int master, int auth, int encrypt, int omtu, int imtu);
+int listenRFCOMM(JNIEnv *env, int channel, int master, int auth, int encrypt, int psm);
+int listenL2CAP(JNIEnv *env, int psm, int master, int auth, int encrypt, int omtu, int imtu, int channel);
 
 int list_contains_attr(sdp_list_t *attr_list, uint16_t comp);
 
@@ -723,7 +735,7 @@ JNIEXPORT jboolean JNICALL Java_de_avetana_bluetooth_stack_BlueZ_isMasterSwitchA
 JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_getMaxConnectedDevices
 (JNIEnv *env, jclass obj) {
 	//printf("Function called: %s, %i\n"__FILE__, __LINE__);
-	return 1;
+	return 7;
 }
 
 /**
@@ -824,7 +836,7 @@ JNIEXPORT jstring JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciRemoteName
  *
  */
 JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_openRFCommNative
-(JNIEnv *env, jclass obj, jstring bdaddr_jstr, jint channel, jboolean master, jboolean auth, jboolean encrypt) {
+(JNIEnv *env, jclass obj, jstring bdaddr_jstr, jint channel, jboolean master, jboolean auth, jboolean encrypt, jint timeout) {
 	jboolean fbol = 1;
 	//printf("Function called: %s, %i\n"__FILE__, __LINE__);
 	const char *name = env->GetStringUTFChars(bdaddr_jstr, &fbol);
@@ -846,7 +858,7 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_openRFCommNative
 JNIEXPORT jobject JNICALL Java_de_avetana_bluetooth_stack_BlueZ_openL2CAPNative
 (JNIEnv *env, jclass obj, jstring bdaddr_jstr, jint psm,
  jboolean master, jboolean auth, jboolean encrypt,
- jint receiveMTU, jint transmitMTU) {
+ jint receiveMTU, jint transmitMTU, jint timeout) {
 
 	jboolean fbol = 1;
 	struct sockaddr_l2 rem_addr, loc_addr;
@@ -1066,8 +1078,11 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_readBytes
 
 
 	while (true) {
-
 		sel = poll(&pfd, 1, 20);
+		
+		// ignore if the poll was interrupted
+		if (sel == -1 && errno == EINTR)  continue;
+
 			//printf("poll returned %d %X\n", sel, pfd.revents);
 		if (sel == -1 || (sel == 1 && ((pfd.revents & 0x30) != 0))) { // Error case
 			break;
@@ -1156,7 +1171,7 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_updateService
 
 	char *data = (char *)env->GetByteArrayElements (array, NULL);
 
-	handle = (uint32_t)ser_handle;
+	handle = (uint32_t)((ServiceHandle *)ser_handle)->srHandle;
 
 	if (handle == SDP_SERVER_RECORD_HANDLE) {
 		printf ("Service handle is %d\n", (int)handle);
@@ -1206,6 +1221,7 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_updateService
 		status = sdp_get_unaligned((uint16_t *)p);
 	}
 	sdp_close(session);
+	
 	return status;
 }
 
@@ -1250,6 +1266,86 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_createService
 	jint cn = env->CallIntMethod (srecord, mid_gcn);
 	jshort prot = env->CallShortMethod (srecord, mid_gpr);
 	if (cn == 0) cn = prot == 0 ? 11 : 1;
+
+	ServiceHandle *srh = (ServiceHandle *)malloc (sizeof (ServiceHandle));
+	srh->type = prot;
+	srh->fd = 0;
+
+	//Prepare the sockets
+	int fd;
+	
+	if (prot == 1 || prot == 2) {
+		struct sockaddr_rc local_addr;
+
+		memset(&local_addr, 0, sizeof(local_addr));
+		local_addr.rc_family = AF_BLUETOOTH;
+#ifdef __HCI_DEVICE_HACK__
+		hci_devba(HCI_DEVICE_ID, &local_addr.rc_bdaddr);
+#else
+		bacpy(&local_addr.rc_bdaddr, BDADDR_ANY);
+#endif
+		local_addr.rc_channel = (unsigned char)cn;
+
+		//printf("Function called: %s, %i\n"__FILE__, __LINE__);
+
+		if ((fd = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM)) < 0)
+			return fd;
+
+
+		int err = -1;
+		while (err == -1 && local_addr.rc_channel < 32) {
+			err=bind(fd, (struct sockaddr *)&local_addr, sizeof(local_addr));
+			if (err == -1) local_addr.rc_channel++;
+			
+		} 
+		if (err == -1)	{
+				throwException (env, "Unable to bind socket");
+				close(fd);
+				return err;
+		}
+		cn = (int)local_addr.rc_channel;
+		printf ("Channel opened at %d\n", cn);
+	} else {
+		sockaddr_l2 local_addr;
+		memset(&local_addr, 0, sizeof(local_addr));
+		local_addr.l2_family = AF_BLUETOOTH;
+#ifdef __HCI_DEVICE_HACK__
+		hci_devba(HCI_DEVICE_ID, &local_addr.l2_bdaddr);
+#else
+		bacpy(&local_addr.l2_bdaddr, BDADDR_ANY);
+#endif
+		local_addr.l2_psm    = htobs(cn);
+		
+		if ((fd = socket(PF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP)) < 0) {
+			printf("Can't create socket. %s(%d)\n", strerror(errno), errno);
+			return fd;
+		}
+
+		int err = -1;
+		while (err == -1 && local_addr.l2_psm < 65535) {
+			err=bind(fd, (struct sockaddr *)&local_addr, sizeof(local_addr));
+			if (err == -1) local_addr.l2_psm += 2;
+			
+		} 
+		if (err == -1)	{
+				throwException (env, "Unable to bind socket");
+				close(fd);
+				return err;
+		}
+
+		cn = (int)local_addr.l2_psm;
+	}
+
+	int l = listen(fd, 10);
+	if (l != 0) {
+		free (srh);
+		throwException (env, "Failed to set socket to listen mode\n");
+		close (fd);
+		return -1;
+	}
+	srh->fd = fd;
+
+	//Now update the service record to the real channel
 	env->CallVoidMethod (srecord, mid_ucn, cn);
 
 	if(mid == 0) {
@@ -1309,7 +1405,11 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_createService
 		if(req) free(req);
 		if(rsp) free(rsp);
 		sdp_close(session);
-		return handle;
+		
+		srh->srHandle = handle;
+		
+		
+	return (jint)srh;
 	}
 	else return -1;
 }
@@ -1320,7 +1420,7 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_createService
 JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_registerService
 	(JNIEnv *env, jclass obj, jint serviceHandle, jint channel, jboolean master, jboolean auth, jboolean encrypt) {
 	//printf("Function called: %s, %i\n"__FILE__, __LINE__);
-	return listenRFCOMM(env, channel, master, auth, encrypt);
+	return listenRFCOMM(env, ((ServiceHandle *)serviceHandle)->fd, master, auth, encrypt, channel);
 }
 
 /**
@@ -1606,7 +1706,7 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_registerL2CAPServic
 	(JNIEnv *env, jclass obj, jint serviceHandle, jint channel, jboolean master, jboolean auth, jboolean encrypt,
 	 jint omtu, jint imtu) {
 	//printf("Function called: %s, %i\n"__FILE__, __LINE__);
-	return listenL2CAP(env, channel, master, auth, encrypt, omtu, imtu);
+	return listenL2CAP(env, ((ServiceHandle *)serviceHandle)->fd, master, auth, encrypt, omtu, imtu, channel);
 }
 
 /**
@@ -1615,63 +1715,61 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_registerL2CAPServic
  * is a bug in the setsockopt for L2CAP sockets.
  * @return
  */
-int listenL2CAP(JNIEnv *env, int psm, int master, int auth, int encrypt, int omtu, int imtu) {
+int listenL2CAP(JNIEnv *env, int fd, int master, int auth, int encrypt, int omtu, int imtu, int psm) {
 	struct sockaddr_l2 loc_addr, rem_addr;
 	struct l2cap_options opts;
 	socklen_t  opt;
-	int fd, nfd;
+	int nfd;
 	bdaddr_t ba;
 
 	//printf("Function called: %s, %i\n"__FILE__, __LINE__);
 
-	if ((fd = socket(PF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP)) < 0) {
-		printf("Can't create socket. %s(%d)\n", strerror(errno), errno);
-		return fd;
+	struct pollfd pfd;
+	pfd.fd = fd;
+	pfd.events = POLLIN | POLLERR | POLLHUP | POLLNVAL;
+
+	while (true) {
+		int sel = poll(&pfd, 1, 20);
+		
+		// ignore if the poll was interrupted
+		if (sel == -1 && errno == EINTR)  continue;
+
+			//printf("poll returned %d %X\n", sel, pfd.revents);
+		if (sel == -1 || (sel == 1 && ((pfd.revents & 0x30) != 0))) { // Error case
+			throwException (env, "Notifier closed");
+			return -1;
+		} else if(sel > 0) { //Data is available (inc. 0-length packets)
+			break;
+		} 
 	}
 
-	loc_addr.l2_family = AF_BLUETOOTH;
-#ifdef __HCI_DEVICE_HACK__
-	hci_devba(HCI_DEVICE_ID, &loc_addr.l2_bdaddr);
-#else
-	bacpy(&loc_addr.l2_bdaddr, BDADDR_ANY);
-#endif
-	loc_addr.l2_psm    = htobs(psm);
-	if (bind(fd, (struct sockaddr *) &loc_addr, sizeof(loc_addr)) < 0) {
-		printf("Can't bind socket. %s(%d)\n", strerror(errno), errno);
-		return -1;
-	}
+
+	socklen_t alen = sizeof(rem_addr);
+	nfd = accept(fd, (struct sockaddr *) &rem_addr, &alen);
+
 	/* Set link mode */
 	opt = 0;
 	if (master) opt |= L2CAP_LM_MASTER;
 	if (auth) opt |= L2CAP_LM_AUTH;
 	if (encrypt) opt |= L2CAP_LM_ENCRYPT;
 
-	if (setsockopt(fd, SOL_L2CAP, L2CAP_LM, &opt, sizeof(opt)) < 0) {
+	if (setsockopt(nfd, SOL_L2CAP, L2CAP_LM, &opt, sizeof(opt)) < 0) {
 		printf("WARNING - Can't set L2CAP link mode. %s(%d)\n", strerror(errno), errno);
 	}
 
 	opt = sizeof(opts);
-	if (getsockopt(fd, SOL_L2CAP, L2CAP_OPTIONS, &opts, &opt) < 0) {
+	if (getsockopt(nfd, SOL_L2CAP, L2CAP_OPTIONS, &opts, &opt) < 0) {
 		printf("WARNING - Can't get default L2CAP options. %s(%d)\n", strerror(errno), errno);
 	}
 	/* Set new options */
 	opts.imtu = (imtu==-1?672:imtu);
 	opts.omtu = (omtu==-1?672:omtu);
 	if(imtu!=-1 && omtu!=-1) {
-		if (setsockopt(fd, SOL_L2CAP, L2CAP_OPTIONS, &opts, opt) < 0) {
+		if (setsockopt(nfd, SOL_L2CAP, L2CAP_OPTIONS, &opts, opt) < 0) {
 			printf("WARNING - Can't set L2CAP options. %s(%d)\n", strerror(errno), errno);
 		}
 	}
 
-
-	if (listen(fd, 10)) {
-		printf("WARNING - Can't not listen on the socket. %s(%d)\n", strerror(errno), errno);
-		return -1;
-	}
-
-	socklen_t alen = sizeof(rem_addr);
-	nfd = accept(fd, (struct sockaddr *) &rem_addr, &alen);
-	close(fd);
 	opt = sizeof(opts);
 	if (getsockopt(nfd, SOL_L2CAP, L2CAP_OPTIONS, &opts, &opt) < 0) {
 		printf("Can't get L2CAP options. %s(%d)", strerror(errno), errno);
@@ -1706,41 +1804,35 @@ int listenL2CAP(JNIEnv *env, int psm, int master, int auth, int encrypt, int omt
  * at this moment, because BlueZ does not implement secured RFCOMM sockets
  * @return
  */
-int listenRFCOMM(JNIEnv *env, int channel, int master, int auth, int encrypt) {
+int listenRFCOMM(JNIEnv *env, int fd, int master, int auth, int encrypt, int channel) {
 
-	struct sockaddr_rc remote_addr, local_addr;
-	unsigned char ch = (unsigned char)channel;
-	int fd, err, nfd;
+	struct sockaddr_rc remote_addr;
+	int err, nfd;
 
-	//stupid C++ compiler: socklen_t is an int but the use
-	//of an int as third argument of the accept method
-	//causes an error during the compilation!
-	socklen_t alen;
+	socklen_t alen = sizeof(remote_addr);
+	
+	struct pollfd pfd;
+	pfd.fd = fd;
+	pfd.events = POLLIN | POLLERR | POLLHUP | POLLNVAL;
 
-	//printf("Function called: %s, %i\n"__FILE__, __LINE__);
+	while (true) {
+		int sel = poll(&pfd, 1, 20);
+		
+		// ignore if the poll was interrupted
+		if (sel == -1 && errno == EINTR)  continue;
 
-	if ((fd = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM)) < 0)
-		return fd;
-
-	memset(&local_addr, 0, sizeof(local_addr));
-	local_addr.rc_family = AF_BLUETOOTH;
-#ifdef __HCI_DEVICE_HACK__
-	hci_devba(HCI_DEVICE_ID, &local_addr.rc_bdaddr);
-#else
-	bacpy(&local_addr.rc_bdaddr, BDADDR_ANY);
-#endif
-	local_addr.rc_channel = (unsigned char)channel;
-
-	if ((err=bind(fd, (struct sockaddr *)&local_addr, sizeof(local_addr))) < 0) {
-		close(fd);
-		return err;
+			//printf("poll returned %d %X\n", sel, pfd.revents);
+		if (sel == -1 || (sel == 1 && ((pfd.revents & 0x30) != 0))) { // Error case
+			throwException (env, "Notifier closed");
+			return -1;
+		} else if(sel > 0) { //Data is available (inc. 0-length packets)
+			break;
+		} 
 	}
 
-	listen(fd, 10);
 
-	alen = sizeof(remote_addr);
 	nfd = accept(fd, (struct sockaddr *) &remote_addr, &alen);
-
+	
 	char *ba_str=(char *)malloc(18);
 	ba2str(&remote_addr.rc_bdaddr, ba_str); // Convert from bdaddr_t to char*
 
@@ -1751,7 +1843,6 @@ int listenRFCOMM(JNIEnv *env, int channel, int master, int auth, int encrypt) {
 			"connectionEstablished",
 			"(IIILjava/lang/String;)Z");
 	jboolean jb = env->CallStaticBooleanMethod(cls, mid, (int)nfd, channel,1, jBTAddr);
-	close(fd);
 	if (jb != 0) {
 		jclass blueZ = env->FindClass("de/avetana/bluetooth/stack/BlueZ");
 		jmethodID ssmeth = env->GetStaticMethodID(blueZ, "startReaderThread", "(II)V");
@@ -1817,7 +1908,7 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_disposeLocalRecord
 		printf("No local SDP server!\n");
 		return;
 	}
-	handle = (uint32_t)serviceHandle;
+	handle = (uint32_t)((ServiceHandle *)serviceHandle)->srHandle;
 	attr = sdp_list_append(0, &range);
 	rec = sdp_service_attr_req(sess, handle, SDP_ATTR_REQ_RANGE, attr);
 	sdp_list_free(attr, 0);
@@ -1832,6 +1923,9 @@ JNIEXPORT void JNICALL Java_de_avetana_bluetooth_stack_BlueZ_disposeLocalRecord
 		return;
 	}
 	sdp_close(sess);
+	
+	close (((ServiceHandle *)serviceHandle)->fd);
+	free ((void *)serviceHandle);
 	return;
 }
 

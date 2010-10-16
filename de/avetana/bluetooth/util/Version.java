@@ -16,7 +16,8 @@ public class Version {
 
 		String line = "";
 		try {
-			InputStream is = "".getClass().getResourceAsStream("/version.xml");
+			InputStream is = LibLoader.getResourceAsStream("/version.xml");
+			if (is == null) is = LibLoader.getResourceAsStream("version.xml");
 			BufferedReader br = new BufferedReader (new InputStreamReader (is));
 			
 		while ((line = br.readLine()) != null) {
@@ -42,8 +43,8 @@ public class Version {
 			}
 		}
 		} catch (Throwable e) {
-			version = "not";
-			revision = "available";
+			version = "not available";
+			revision = "";
 			build ="";
 		}
 		System.out.println ("avetanaBluetooth version " + version + "." + revision + "." + build);

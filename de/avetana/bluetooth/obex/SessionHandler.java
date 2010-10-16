@@ -12,7 +12,7 @@ import javax.obex.HeaderSet;
 import javax.obex.Operation;
 import javax.obex.ServerRequestHandler;
 
-public class SessionHandler extends Thread implements Connection, CommandHandler {
+public class SessionHandler implements Connection, CommandHandler, Runnable {
 
 
 	private ServerRequestHandler myHandler;
@@ -37,7 +37,7 @@ public class SessionHandler extends Thread implements Connection, CommandHandler
 		else return new HeaderSetImpl();
 	}
 	
-	public void run () {
+	public synchronized void run () {
 					try {
 					is = streamCon.openInputStream();
 					os = streamCon.openOutputStream();
@@ -50,7 +50,12 @@ public class SessionHandler extends Thread implements Connection, CommandHandler
 							continue;
 						}
 						//System.out.println ("Received command ! " + Integer.toHexString((int)(data[0] & 0xff)));
-
+						
+						if (is == null || os == null || streamCon == null) {
+							closeStreamCon();
+							continue;
+						}
+						
 						switch ((int)(data[0] & 0xff)) {
 							case 0x80: {
 								mtu = 0xffff & ((0xff & data[5]) << 8 | (0xff & data[6]));
@@ -187,8 +192,10 @@ public class SessionHandler extends Thread implements Connection, CommandHandler
 	/**
 	 * @param request
 	 * @param response
+	 * @throws IOException 
+	 * @throws IllegalArgumentException 
 	 */
-	protected void handleAuthChallenge(HeaderSet request, HeaderSet response) {
+	protected void handleAuthChallenge(HeaderSet request, HeaderSet response) throws IOException {
 		byte authChallenge[] = (byte[])request.getHeader(HeaderSetImpl.AUTH_CHALLENGE);
 		if (authChallenge != null && auth != null) {
 			byte[] resp = HeaderSetImpl.createAuthResponse(authChallenge, auth);
@@ -199,8 +206,10 @@ public class SessionHandler extends Thread implements Connection, CommandHandler
 	/**
 	 * @param request
 	 * @return
+	 * @throws IOException 
+	 * @throws IllegalArgumentException 
 	 */
-	protected boolean handleAuthResponse(HeaderSet request) {
+	protected boolean handleAuthResponse(HeaderSet request) throws IOException {
 		byte authResp[] = (byte[])request.getHeader(HeaderSetImpl.AUTH_RESPONSE);
 		
 		if (auth == null) return true;
@@ -247,7 +256,8 @@ public class SessionHandler extends Thread implements Connection, CommandHandler
 	 *
 	 */
 	
-	private void closeStreamCon() {
+	private synchronized void closeStreamCon() {
+//		new Throwable().printStackTrace();
 		if (is != null) {
 			try {
 				is.close();
@@ -293,7 +303,10 @@ public class SessionHandler extends Thread implements Connection, CommandHandler
 		return data;
 	}
 
-	public void sendCommand (int commId, byte[] data) throws IOException {
+	public synchronized void sendCommand (int commId, byte[] data) throws IOException {
+		if (os == null)
+			throw new IOException ("Connection closed");
+		
 		int len = 3 + data.length;
 		
 		os.write (new byte[] { (byte)commId, (byte)((len >> 8) & 0xff), (byte)(len & 0xff) });
@@ -311,9 +324,9 @@ public class SessionHandler extends Thread implements Connection, CommandHandler
 		return mtu;
 	}
 
-	/*public RemoteDevice getRemoteDevice() {
-		return locConNot.getRemoteDevice();
-	}*/
+	public StreamConnection getStreamConnection() {
+		return streamCon;
+	}
 
 	public Authenticator getAuthenticator() {
 		return auth;

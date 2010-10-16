@@ -18,7 +18,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Vector;
 
+import javax.bluetooth.DataElement;
 import javax.bluetooth.DeviceClass;
 import javax.bluetooth.DiscoveryAgent;
 import javax.bluetooth.DiscoveryListener;
@@ -55,6 +57,7 @@ import de.avetana.bluetooth.hci.Rssi;
 import de.avetana.bluetooth.hci.LinkQuality;
 import de.avetana.bluetooth.l2cap.L2CAPConnectionNotifierImpl;
 import de.avetana.bluetooth.obex.HeaderSetImpl;
+import de.avetana.bluetooth.sdp.LocalServiceRecord;
 import de.avetana.bluetooth.sdp.SDPConstants;
 import de.avetana.bluetooth.stack.AvetanaBTStack;
 import de.avetana.bluetooth.stack.BlueZ;
@@ -227,6 +230,7 @@ public class JSRTest extends JFrame implements ActionListener {
        pack();
        setLocationRelativeTo(null);
        setVisible (true);
+//       BlueZ.removeServiceByID(0x00010004l);
      }catch(Exception ex) {
        showError((ex.getMessage()!=null && !ex.getMessage().trim().equals(""))?
                  ex.getMessage():
@@ -771,8 +775,10 @@ public class JSRTest extends JFrame implements ActionListener {
        }
 
        else if (e.getSource() == connectTo && connectTo.isSelected() == true) {
+         System.out.println ("Trying to connect to " + connectionURL.getText() + " " + streamCon);
          streamCon = Connector.open(connectionURL.getText());
          System.out.println ("Connected to " + connectionURL.getText() + " " + streamCon);
+         
          if(streamCon instanceof StreamConnection) {
            is = ((StreamConnection)streamCon).openInputStream();
            os = ((StreamConnection)streamCon).openOutputStream();
@@ -810,11 +816,15 @@ public class JSRTest extends JFrame implements ActionListener {
 			}
 			System.out.println ("Checksum of burst " + (csum % 1024));
             int count = 0;
-            //while (true) {
+            boolean sendForever = System.getProperty("de.avetana.bluetooth.test.sendForever", "false").equals("true");
+            int sendTimes = Integer.parseInt(System.getProperty("de.avetana.bluetooth.test.sendPackets", "1"));
+			int countTimes = 0;
+            do {
+            	countTimes++;
             		os.write(b);
             		count += b.length;
             		System.out.println ("Sent " + count + " bytes");
-            //}
+            } while (sendForever || countTimes < sendTimes);
          	//System.out.println ("Wrote " + (int)(b[0] & 0xff) + " " + (int)(b[1] & 0xff));
             /*
             if (sendData.isSelected() && sendThread == null) {
@@ -850,7 +860,7 @@ public class JSRTest extends JFrame implements ActionListener {
          	//((L2CAPConnection)streamCon).close(); 
          }
          else if(m_protocols.getSelectedIndex() == JSR82URL.PROTOCOL_OBEX) {
-            ClientSession cs = (ClientSession)streamCon;
+            final ClientSession cs = (ClientSession)streamCon;
             HeaderSet hs = cs.createHeaderSet();
             /*cs.setAuthenticator(new Authenticator() {
 
@@ -880,7 +890,28 @@ public class JSRTest extends JFrame implements ActionListener {
             //hs.setHeader (HeaderSet.TYPE, "text/x-vcard");
             hs.setHeader (HeaderSet.LENGTH, new Long(b.length));
             hs.setHeader (0x48, b); // if everything fits inside a packet, the data can be packed in the PUT command
+            
+            final Vector status = new Vector();
+            Runnable r = new Runnable() {
+
+				public void run() {
+					try {
+						Thread.currentThread().sleep (15000);
+						if (status.size() == 0) { 
+							System.out.println ("Closing connection for timeout");
+							cs.close();
+						}
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
+				}
+            	
+            };
+            new Thread (r).start();
             Operation po = cs.put(hs);
+            status.add ("foo");
             //po.openOutputStream().write (b);
             po.close();
 
@@ -966,9 +997,12 @@ public class JSRTest extends JFrame implements ActionListener {
          public void run () {
            try {
              //JSR82URL url=new JSR82URL("btspp://localhost:0dad43655df111d69f6e00039353e858;name=JSRTest");
-             JSR82URL url=new JSR82URL("btspp://localhost:27012f0c68af4fbf8dbe6bbaf7ab651b;name=JSRTest");
              //JSR82URL url=new JSR82URL("btspp://localhost:00112233445566778899aabbccddeeff;name=JSRTest");
-             url.setParameter("encrypt", new Boolean(m_encrypt.isSelected()));
+//        	 JSR82URL url=new JSR82URL("btspp://localhost:27012f0c68af4fbf8dbe6bbaf7ab651b:11;name=JSRTest");
+             
+       	 JSR82URL url=new JSR82URL("btspp://localhost:" + new UUID(SDPConstants.UUID_DIALUP_NETWORKING) + ";name=JSRTest");
+        	 
+        	 url.setParameter("encrypt", new Boolean(m_encrypt.isSelected()));
              url.setParameter("authenticate", new Boolean(m_authentication.isSelected()));
              url.setParameter("master", new Boolean(m_master.isSelected()));
              System.out.println(url.toString());
@@ -989,6 +1023,7 @@ public class JSRTest extends JFrame implements ActionListener {
              enableConnAttributes(true);
              JSRTest.this.l2CAPBut.setEnabled(false);
              } catch (Exception e) { e.printStackTrace(); }
+             
          }
        };
      } else if(m_protocols.getSelectedIndex()==JSR82URL.PROTOCOL_L2CAP) {
@@ -1040,7 +1075,14 @@ public class JSRTest extends JFrame implements ActionListener {
 					}
 	            	
 	            };*/
-
+/*
+				ServiceRecord sr = LocalDevice.getLocalDevice().getRecord(notify);
+				DataElement testEl = new DataElement (DataElement.DATSEQ);
+				testEl.addElement(new DataElement (DataElement.U_INT_1, 0xff));
+				sr.setAttributeValue(0x303, testEl);
+				sr.setAttributeValue(0x100, new DataElement (DataElement.STRING, "OBEX Object Push"));
+				LocalDevice.getLocalDevice().updateRecord(sr);
+*/
 	            authenticationFailed = false;
 				((SessionNotifier)notify).acceptAndOpen(new ServerRequestHandler() {
 					
@@ -1084,6 +1126,8 @@ public class JSRTest extends JFrame implements ActionListener {
 						fos.close();
 						System.out.println ("Wrote data to " + f.getAbsolutePath());
 						op.sendHeaders(null);
+//						is.close();
+//						System.out.println("InputStream closed");
 						} catch (Exception e) { e.printStackTrace(); }
 						return 0xa0;
 					}
@@ -1103,9 +1147,10 @@ public class JSRTest extends JFrame implements ActionListener {
 							for (int i = 0;i < hl.length;i++) {
 								System.out.println ("Received header " + hl[i] + " : " + hs.getHeader(hl[i]));
 							}
-						op.openOutputStream().write ("Test Message from avetanaBluetooth".getBytes());
-						/*InputStream is = new FileInputStream ("/Users/gmelin/eclipse-workspace/avetanaBluetooth/avetanabt/de/avetana/bluetooth/JSRTest.java");
-						byte b[] = new byte[1000];
+						
+							op.openOutputStream().write ("Test Message from avetanaBluetooth".getBytes());
+						/*InputStream is = new FileInputStream ("/Users/gmelin/eclipse-workspace/avetanabt/de/avetana/bluetooth/JSRTest.java");
+						byte b[] = new byte[10000];
 						int len = 0;
 						while ((len = is.read (b)) > 0) {
 							op.openOutputStream().write(b, 0, len);
@@ -1127,7 +1172,7 @@ public class JSRTest extends JFrame implements ActionListener {
 						authenticationFailed = true;
 					}
 				}, authHandler);
-				
+								
 				} catch (Exception e) { e.printStackTrace(); }
 			}
 		};
@@ -1177,7 +1222,10 @@ public class JSRTest extends JFrame implements ActionListener {
            dataReceived.setText("Received " + received);
            if (is.available() > 0)
             a = is.read(b);
-           else a = 0;
+           else {
+               a = 0;
+        	   try { synchronized (this) { wait(100); }} catch (Exception e) {}
+           }
 		   /*for (int i = 0;i < a;i++) {
 			   System.out.print (" " + Integer.toHexString((int)(b[i] & 0xff)));
 			   csum += (int)(b[i] & 0xff);
@@ -1200,6 +1248,8 @@ public class JSRTest extends JFrame implements ActionListener {
    }
 
    public static void main(String[] args) throws Exception {
-     JSRTest JSRTest1 = new JSRTest();
+	   LocalDevice.getLocalDevice();
+//     JSRTest JSRTest1 = new JSRTest();
+     JSRTest JSRTest2 = new JSRTest();
   }
 }

@@ -45,6 +45,8 @@ import de.avetana.bluetooth.l2cap.L2CAPConnParam;
 import de.avetana.bluetooth.l2cap.L2CAPConnectionNotifierImpl;
 import de.avetana.bluetooth.sdp.LocalServiceRecord;
 import de.avetana.bluetooth.util.BTAddress;
+import de.avetana.bluetooth.util.LibLoader;
+import edu.oswego.cs.dl.util.concurrent.PooledExecutor;
 
 /**
  * This class provides the methods to access the underlying BlueZ functions.
@@ -68,6 +70,7 @@ public class BlueZ
     public static ConnectionFactory myFactory=new ConnectionFactory();
 
     public static int m_transactionId = 0;
+    public static final PooledExecutor executor = new PooledExecutor();
     private static Vector mutexes = new Vector();
     
     private static class Mutex {
@@ -80,7 +83,8 @@ public class BlueZ
 		public boolean equals (Object m2) {
 			return (m2 instanceof Mutex && ((Mutex)m2).fid == fid);
 		}
-}
+				
+    }
 
 	/**
 	 * 
@@ -91,6 +95,13 @@ public class BlueZ
 	 */
     
 	static {
+		try  { 
+			String ka = System.getProperty("de.avetana.bluetooth.ThreadPool.keepAliveTime");
+			long keepalive = 0;
+			if (ka != null) 
+				keepalive = Long.parseLong (ka);
+			executor.setKeepAliveTime(keepalive); 
+			} catch (Exception e) {}
 		de.avetana.bluetooth.util.Version.readVersion();
 	}
 
@@ -131,6 +142,8 @@ public class BlueZ
 	 */
 	protected synchronized static native void hciCloseDevice(int dd);
 
+	public static native void cancelInquiry();
+	
 	/* HCI Inquiry */
 	/**
 	 * Performs an HCI inquiry to discover remote Bluetooth devices.
@@ -165,8 +178,8 @@ public class BlueZ
 	 */
 	public static boolean hciInquiry(int hciDevID, DiscoveryAgent agent) throws BlueZException
 	{
-            return hciInquiry(hciDevID, 8, 10, 0, agent);
-        }
+		return	hciInquiry(hciDevID, 8, 10, 0, agent);
+    }
 
 	/* HCI Device Bluetooth Address */
 	/**
@@ -251,7 +264,9 @@ public class BlueZ
 	 * @return A String containing the name of the specified remote device.
 	 */
 	public static String hciRemoteName(int dd, String bdaddr) throws BlueZException
-	{	return hciRemoteName(dd, bdaddr, 10000);	}
+	{
+		return hciRemoteName(dd, bdaddr, 10000);
+	}
 	/**
 	 * Gets the name of a remote device, as specified by its Bluetooth device
 	 * address. The local device must be opened using <code>hciOpenDevice</code>
@@ -281,10 +296,10 @@ public class BlueZ
 	{	return hciRemoteName(dd, bdaddr.toString(), 25000);	}
 
         // Call of the native method openRFCommNative
-        private static native int openRFCommNative (String addr, int channel,  boolean master, boolean auth, boolean encrypt);
+        private static native int openRFCommNative (String addr, int channel,  boolean master, boolean auth, boolean encrypt, int timeout);
 
         // Call of the native method openL2CAPNative
-        private static native L2CAPConnParam openL2CAPNative (String addr, int psm, boolean master, boolean auth, boolean encrypt,            int receiveMTU, int transmitMTU);
+        private static native L2CAPConnParam openL2CAPNative (String addr, int psm, boolean master, boolean auth, boolean encrypt,            int receiveMTU, int transmitMTU, int timeout);
 
         /**
          * Opens an L2CAP connection with a remote BT device.
@@ -294,7 +309,7 @@ public class BlueZ
          * @throws BlueZException If an error occured in the C part of the Code
          * @throws Exception If the URL is not a valid L2CAP URL.
          */
-        public static L2CAPConnParam openL2CAP (JSR82URL url) throws BlueZException, Exception{
+        public static L2CAPConnParam openL2CAP (JSR82URL url, int timeout) throws BlueZException, Exception{
           if(url.getBTAddress()==null) throw new Exception("This is not a valid remote L2CAP connection url!");
           int psm=url.getAttrNumber();
           int receiveMTU=672, transmitMTU=672;
@@ -306,7 +321,7 @@ public class BlueZ
                                    url.isAuthenticated(),
                                    url.isEncrypted(),
                                    receiveMTU,
-                                   transmitMTU);
+                                   transmitMTU, timeout);
         }
 
         /**
@@ -317,14 +332,14 @@ public class BlueZ
          * @throws BlueZException If an error occured in the C part of the Code
          * @throws Exception If the URL is not a valid L2CAP URL.
          */
-        public static int openRFComm (JSR82URL url) throws BlueZException, Exception{
+        public static int openRFComm (JSR82URL url, int timeout) throws BlueZException, Exception{
           if(url.getBTAddress()==null) throw new Exception("This is not a valid remote RFComm connection url!");
           int channel=url.getAttrNumber();
           return openRFCommNative (url.getBTAddress().toString(),
                                    channel,
                                    url.isLocalMaster(),
                                    url.isAuthenticated(),
-                                   url.isEncrypted());
+                                   url.isEncrypted(), timeout);
         }
 
         /**
@@ -333,7 +348,8 @@ public class BlueZ
          */
         
         public static void closeConnectionS (int fid) {
-      	  synchronized (getMutex (fid)) {
+			LibLoader.DebugT ("BlueZ::CloseConnection from java side " + fid);
+     	  synchronized (getMutex (fid)) {
       	  	closeConnection (fid);
       	  	mutexes.removeElement(new Mutex (fid));
       	  }
@@ -341,6 +357,17 @@ public class BlueZ
         
         private static native void closeConnection (int fid) ;
 
+        /**
+         * Sends a native HCI command to the BT-Dongle. THis works with the Widcomm Stack right now.
+         * 
+         * @param command
+         * @param params
+         * @return
+         * @throws BlueZException
+         */
+        
+        public static native int[] sendHCI (int command, int[] params) throws BlueZException;
+        
         /**
          * Writes byte to an existing connection
          * @param fid The integer, which uniquely identifies the connection.
@@ -386,7 +413,7 @@ public class BlueZ
          * @return a positive integer is the process succeeds.
          * @throws BlueZException
          */
-        public static native int createService(LocalServiceRecord service) throws BlueZException;
+        public static synchronized native int createService(LocalServiceRecord service) throws BlueZException;
 
         /**
          * Updates an existing service record (the old <service record must be already stored in the BCC.)
@@ -524,6 +551,12 @@ public class BlueZ
         public static native boolean pageAndConnAllowed() throws BlueZException;
 
         /**
+         * Change the local device name
+         * @param name
+         * @return true if successful
+         */
+        public static native boolean setDeviceName (String name);
+        /**
          * Authenticates the remote device
          * @param hci number (0)
          * @param deviceAddr The BT address of the remote device (00-0d-93-05-17-0e)
@@ -579,8 +612,7 @@ public class BlueZ
 
         // Debug method
         public synchronized static void debugPrintStr(String str)  {
-          System.out.println("Function debugPrintStr called!!!!");
-          System.out.println("\nJAVA: print string="+str);
+        	LibLoader.Debug("Native::"+str);
         }
 
         /**
@@ -591,8 +623,9 @@ public class BlueZ
          * @param listener The discovery listener, which handles the callback methods.
          * @throws BlueZException
          */
-        public static int searchServices(final String bdaddr_jstr, final byte[][] uuid, final int[] attrIds, final DiscoveryListener flistener) {
+        public synchronized static int searchServices(final String bdaddr_jstr, final byte[][] uuid, final int[] attrIds, final DiscoveryListener flistener) {
            m_transactionId++;
+           final int myIntTransactionID = m_transactionId;
            
            DiscoveryListener listener = new DiscoveryListener () {
 
@@ -620,19 +653,28 @@ public class BlueZ
         	   
            };
            
-           myFactory.addListener(m_transactionId, listener);
+           myFactory.addListener(myIntTransactionID, listener);
            Runnable r=new Runnable() {
             public void run() {
+            	LibLoader.cremeInit(this);
               try {
-                listService(bdaddr_jstr, uuid, attrIds, m_transactionId);
+                listService(bdaddr_jstr, uuid, attrIds, myIntTransactionID);
               }catch(Exception ex) {
-            	  	serviceSearchComplete (m_transactionId, DiscoveryListener.SERVICE_SEARCH_ERROR);
+            	  	serviceSearchComplete (myIntTransactionID, DiscoveryListener.SERVICE_SEARCH_ERROR);
               }
-            }
+				LibLoader.cremeOut(this);
+           }
           };
-          new Thread(r).start();
+          try {
+			executor.execute(r);
+		} catch (Exception e) {
+    	  	serviceSearchComplete (myIntTransactionID, DiscoveryListener.SERVICE_SEARCH_ERROR);
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return -1;
+		}
 
-          return m_transactionId;
+          return myIntTransactionID;
         }
 
         /**
@@ -645,9 +687,10 @@ public class BlueZ
           myFactory.addNotifier(a_notifier);
           final short proto=(a_notifier.getConnectionURL()==null?JSR82URL.PROTOCOL_RFCOMM:a_notifier.getConnectionURL().getProtocol());
           final int channel=a_notifier.getConnectionURL().getAttrNumber();
-          //System.out.println ("Registered notifier at channel " + channel)
+          LibLoader.Debug ("BlueZ::Registered notifier for channel " + channel);
           Runnable r = new Runnable() {
           	public void run() {
+          		LibLoader.cremeInit(this);
           		int fid = 0;
                 try {
                 if(proto==JSR82URL.PROTOCOL_L2CAP) {
@@ -657,19 +700,24 @@ public class BlueZ
 						                a_notifier.getConnectionURL().isAuthenticated(),
 						                a_notifier.getConnectionURL().isEncrypted(), -1,-1);
                   } else {
+                	  LibLoader.Debug ("BlueZ::Registering service");
                     fid = registerService((int)a_notifier.getServiceHandle(),
                                     channel,
                                     a_notifier.getConnectionURL().isLocalMaster(),
                                     a_notifier.getConnectionURL().isAuthenticated(),
                                     a_notifier.getConnectionURL().isEncrypted());
+                    LibLoader.Debug ("BlueZ::Registered service " + fid );
                   }
 				} catch (BlueZException e) {
 					a_notifier.setFailure(new IOException (e.getMessage()));
 					a_notifier.setConnectionID(-1);
 				}
+				LibLoader.cremeOut(this);
           	}
           };
-          new Thread (r).start();
+          executor.execute(r);
+          Thread.currentThread().sleep (50); //This is done so we can be sure that the registering of the service on the native side has actually started before we continue
+          //If I don't do this, then the Notifier could be closed before the registering starts which causes a crash in Widcomm.
         }
 
         /**
@@ -695,7 +743,8 @@ public class BlueZ
         }
         
         public static boolean connectionEstablished(int fid, int channel, int protocol,String jaddr, int recMTU, int transMTU) {
-          for(int i=0;i<myFactory.getNotifiers().size();i++) {
+        	LibLoader.Debug ("BlueZ::Connection established " + channel + " fid " + fid);
+            for(int i=0;i<myFactory.getNotifiers().size();i++) {
             try {
               ConnectionNotifier not=(ConnectionNotifier)myFactory.getNotifiers().elementAt(i);
               // Nur eine Verbindung pro Kanal!
@@ -708,11 +757,12 @@ public class BlueZ
                   if (not instanceof L2CAPConnectionNotifierImpl) ((L2CAPConnectionNotifierImpl)not).setMTUs(transMTU, recMTU);
                   not.setConnectionID(fid);
                   //myFactory.removeNotifier(not);
+                  LibLoader.Debug ("BlueZ::Listener notified");
                 return true;
               }
             }catch(Exception ex) {ex.printStackTrace();}
           }
-          System.err.println ("Notifier not found for " + fid + " " + channel + " in " + myFactory.getNotifiers().size());
+            LibLoader.Debug ("BlueZ::Notifier not found for " + fid + " " + channel + " in " + myFactory.getNotifiers().size());
           return false;
         }
 
@@ -784,7 +834,7 @@ public class BlueZ
           }
           return null;
         }
-
+        
         /**
          * Method called from the Windows native library to reserve storage space.
          * This is used because of some JNI troubles.
@@ -804,7 +854,7 @@ public class BlueZ
             			return new byte[size];
             		} catch (Throwable e2) {
             			e2.printStackTrace();
-            			return null;
+            			return null;	
             		}
         			
         		}
@@ -816,7 +866,7 @@ public class BlueZ
          *
          */
         
-        public static void stackDown() {
+        public synchronized static void stackDown() {
         		Vector v = myFactory.getNotifiers();
         		for (int i = 0;i < v.size();i++) {
         			ConnectionNotifier conNot = (ConnectionNotifier)v.elementAt(i);
@@ -828,7 +878,6 @@ public class BlueZ
         			BTConnection conNot = (BTConnection)v.elementAt(i);
         			conNot.close();
         		}
-        	
         }
 
         /**
@@ -855,6 +904,7 @@ public class BlueZ
 		 */
 		
 		public static int newData (byte[] data, int fid) {
+			LibLoader.Debug ("BlueZ::new Data " + data.length);
 			BTConnection con = myFactory.getConnectionForFID(fid);
 			if (con == null) return 0;
 			
@@ -878,6 +928,8 @@ public class BlueZ
 		 */
 		
 		public static void connectionClosed (int fid) {
+			LibLoader.DebugT ("BlueZ::ConnectionClosed from native side " + fid);
+
 			try {
 				BTConnection con = myFactory.getConnectionForFID(fid);
 				if (con != null && !con.isClosed())
@@ -889,18 +941,61 @@ public class BlueZ
 		
 		/**
 		 * 
+		 * For Windows and PocketPC, where reading should be started from the JavaVM. Also interrupts the timeout thread
 		 * @param fid
 		 * @param mtu
 		 */
-		
+				
 		public static void startReaderThread(final int fid, final int mtu) {
+			if (fid == timeoutfid)
+				timeoutfid = -1;
+			
 			Runnable r = new Runnable() {
 				public void run() {
+					LibLoader.Debug ("BlueZ::Starting Reader Thread");
+	            	LibLoader.cremeInit(this);
 					readBytes(fid, mtu);
+					LibLoader.cremeOut(this);
 				}
 			};
-			new Thread(r).start();
+			try {
+				executor.execute(r);
+			} catch (Exception e) {
+				e.printStackTrace();
+				new Thread (r).start();
+			}
 		}
+		
+		private static int timeoutfid = -1;
+
+		public static void startTimeoutThread(final int fid, final int timeout) {
+			timeoutfid = fid;
+			Runnable r = new Runnable() {
+				public void run() {
+					long startt = System.currentTimeMillis();
+					while (fid == timeoutfid && System.currentTimeMillis() - startt < (long)timeout) {
+						try {
+							Thread.currentThread().sleep(100);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+					if (fid == timeoutfid)
+						closeSocket (fid);
+					timeoutfid = -1;
+				}
+			};
+			try {
+				executor.execute(r);
+			} catch (Exception e) {
+				e.printStackTrace();
+				new Thread (r).start();
+			}
+		}
+
+		private static native void closeSocket (int fid);
+		
 		/**
 		 * This function is used in Linux to endlessly read new Data from an opened connection
 		 * @param fid
@@ -929,15 +1024,30 @@ public class BlueZ
 	    
 	    public static byte[] loadLicenseFile() {
 			try {
-				InputStream is = mutexes.getClass().getResourceAsStream("/license.txt");
-	    			if (is == null) return null;
-	    			byte[] b;
-					b = new byte[is.available()];
-		    		is.read (b);
-		    		return b;
+				InputStream is = LibLoader.getResourceAsStream ("/license.abt");
+				if (is == null) is = LibLoader.getResourceAsStream ("license.abt");
+				if (is == null) {
+					System.err.println ("License file not found");
+					return null;
+				}
+				ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    			byte[] b = new byte[100];
+    			int r;
+    			while ((r = is.read (b)) >= 0) {
+    				bos.write(b, 0, r);
+    			}
+	    		return bos.toByteArray();
 			} catch (Throwable e) {
 					e.printStackTrace();
 			}
 			return null;
 	    }
+	    	    
+	    /**
+	     * MacOS X only function to remove a service record by its ID.
+	     * @param id 0x00010004 for PDA-SyncService
+	     * @return 0 upon success
+	     */
+	    public static native void removeServiceByID(long id);
+	    
 }

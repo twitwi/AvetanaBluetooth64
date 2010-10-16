@@ -9,6 +9,7 @@ import java.util.Vector;
 
 import de.avetana.bluetooth.stack.BlueZ;
 import de.avetana.bluetooth.util.BTAddress;
+import de.avetana.bluetooth.util.LibLoader;
 
 /**
  * The class used to manage remote service records.
@@ -128,6 +129,7 @@ public class RemoteServiceRecord extends SDPServiceRecord {
     m_internListener=new InternListener();
     Runnable r=new Runnable() {
       public void run() {
+    	  LibLoader.cremeInit(this);
         String addr=m_remote.getBluetoothAddress();
         try {addr=BTAddress.transform(addr);}catch(Exception ex) {}
         try {
@@ -135,12 +137,19 @@ public class RemoteServiceRecord extends SDPServiceRecord {
         }catch(Exception ex) {
            m_internListener.setResponse(0);
         }
+        LibLoader.cremeOut(this);
       }
     };
-    new Thread(r).start();
+    try {
+		BlueZ.executor.execute(r);
+	} catch (Exception e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+		return false;
+	}
     while(m_internListener.resp==-1) {
       try {
-        Thread.sleep(100);
+        Thread.currentThread().sleep(100);
       }catch(Exception ex) {return false;}
     }
     return (m_internListener.resp==1);
@@ -393,7 +402,7 @@ public class RemoteServiceRecord extends SDPServiceRecord {
               }
 
 
-              return new DataElement(DataElement.STRING, new String(readBytes(rSource, length)));
+              return new DataElement(DataElement.STRING, new String(readBytes(rSource, length), "UTF-8"));
           }
 
       case 5:			// BOOL

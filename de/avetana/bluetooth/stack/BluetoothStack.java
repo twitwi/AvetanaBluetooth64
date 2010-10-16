@@ -133,7 +133,7 @@ public abstract class BluetoothStack {
    * @return A StreamConnection object.
    * @throws Exception
    */
-  public abstract Connection openRFCommConnection(JSR82URL url) throws Exception;
+  public abstract Connection openRFCommConnection(JSR82URL url, int timeout) throws Exception;
 
   /**
    * Opens a new L2CAP client connection.
@@ -141,7 +141,7 @@ public abstract class BluetoothStack {
    * @return A L2CAPConnection object
    * @throws Exception
    */
-  public abstract Connection openL2CAPConnection(JSR82URL url) throws Exception;
+  public abstract Connection openL2CAPConnection(JSR82URL url, int timeout) throws Exception;
 
   /**
    * Searches for desired services.

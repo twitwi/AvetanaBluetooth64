@@ -41,10 +41,10 @@ JAVADOC_FLAGS   = -sourcepath . -author -version -bottom $(JAVADOC_FOOTER)
 
 # Location of source files (and class files, once compiled).
 PACKAGE_DE     = de.avetana.bluetooth.connection de.avetana.bluetooth.hci de.avetana.bluetooth.l2cap de.avetana.bluetooth.obex de.avetana.bluetooth.rfcomm de.avetana.bluetooth.sdp de.avetana.bluetooth.stack de.avetana.bluetooth.test de.avetana.bluetooth.util
-
 PACKAGE_JAVAX = javax.bluetooth javax.microedition.io javax.obex
 PACKAGE_CDC= com.sun.cdc.io com.sun.cdc.io.j2me.btgoep com.sun.cdc.io.j2me.btl2cap com.sun.cdc.io.j2me.btspp
 PACKAGE_SRC	= .
+PACKAGE_EDU=edu.oswego.cs.dl.util.concurrent
 ############
 # Call the make all directives in both the C and Java Makefiles.
 all: jar javadoc csource 
@@ -54,7 +54,10 @@ csource:
 	(cd $(BIN_DIR); jar uvf avetanaBT.jar libavetanaBT.so)
 
 javaSourceFiles:
-	@find {de,com,javax} -iname *.java > javaSourceFiles
+	@find de -iname *.java > javaSourceFiles
+	@find com/sun -iname *.java >> javaSourceFiles
+	@find edu -iname *.java >> javaSourceFiles
+	@find javax -iname *.java >> javaSourceFiles
 
 # Compile the source code into Java classes.
 classes: javaSourceFiles
@@ -62,11 +65,11 @@ classes: javaSourceFiles
 	
 # Create the Java archive of the avetanaBT package.
 jar:  classes
-	(cd build ; jar cvf $(BIN_DIR)/avetanaBT.jar de javax com)
+	(cd build ; cp ../avetana.vcf ../version.xml .; jar cvf $(BIN_DIR)/avetanaBT.jar de javax com edu avetana.vcf version.xml)
 
 # Create Javadoc documentation for the avetanaBT package.
 javadoc:
-	javadoc -d $(JAVADOC_DIR) $(JAVADOC_FLAGS) $(PACKAGE_DE) $(PACKAGE_JAVAX) $(PACKAGE_CDC)
+	javadoc -d $(JAVADOC_DIR) $(JAVADOC_FLAGS) $(PACKAGE_DE) $(PACKAGE_JAVAX) $(PACKAGE_CDC) ${PACKAGE_EDU}
 
 # Call the make clean directives in both the C and Java Makefiles.
 clean:

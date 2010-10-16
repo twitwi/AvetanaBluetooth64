@@ -14,6 +14,8 @@ import java.io.OutputStream;
 import javax.bluetooth.*;
 import javax.microedition.io.*;
 
+import de.avetana.bluetooth.util.LibLoader;
+
 import java.io.*;
 
 /**
@@ -106,23 +108,28 @@ public class PocketTest extends Frame {
 		
 		List dataList = new List();
 		List serviceList = new List();
-		Button startInq, startSS;
+		Button startInq, startInqLoop, startSS;
+		private boolean inquiring = false;
+		private int inqCount = 0;
 		
 		public DiscoveryPanel() {
 			setLayout (new GridBagLayout());
 			GridBagConstraints gbc = new GridBagConstraints();
 			gbc.gridx = gbc.gridy = 0;
-			gbc.fill = GridBagConstraints.NONE;
+			gbc.fill = GridBagConstraints.HORIZONTAL;
 			startInq = new Button ("Start Inquiry");
+			startInqLoop = new Button ("Start Inq loop");
 			startSS = new Button ("Start ServiceSearch");
 			add (startInq, gbc);
 			gbc.gridx++; add (startSS, gbc);
-			gbc.gridx = 0; gbc. gridy = 1; gbc.gridwidth = 2;
+			gbc.gridx++; add (startInqLoop, gbc);
+			gbc.gridx = 0; gbc. gridy = 1; gbc.gridwidth = 3;
 			gbc.fill = GridBagConstraints.BOTH;
 			gbc.weightx = gbc.weighty = 1;
 			add (dataList, gbc);
 			gbc.gridy++; add (serviceList, gbc);
 			startInq.addActionListener(this);
+			startInqLoop.addActionListener(this);
 			startSS.addActionListener(this);
 		}
 		
@@ -132,11 +139,47 @@ public class PocketTest extends Frame {
 			if (e.getSource() == startInq) {
 				dataList.removeAll();
 				try {
+					inquiring = true;
 					LocalDevice.getLocalDevice().getDiscoveryAgent().startInquiry (DiscoveryAgent.GIAC, this);
 				} catch (BluetoothStateException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 					dataList.add (e1.getMessage());
+				}
+			} else if (e.getSource() == startInqLoop && startInqLoop.getLabel().startsWith("Start")) {
+				startInqLoop.setLabel("Stop Loop");
+				inqCount = 0;
+				Runnable r = new Runnable() {
+					public void run() {
+						while (startInqLoop.getLabel().startsWith("Stop")) {
+							dataList.removeAll();
+							inqCount++;
+							dataList.add("Starting inquiry " + inqCount);
+							try {
+								inquiring = true;
+								LocalDevice.getLocalDevice().getDiscoveryAgent().startInquiry (DiscoveryAgent.GIAC, PocketTest.DiscoveryPanel.this);
+								while (inquiring) {
+									synchronized (PocketTest.DiscoveryPanel.this) { PocketTest.DiscoveryPanel.this.wait (1000); }
+								}
+							} catch (BluetoothStateException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+								dataList.add (e1.getMessage());
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+					}
+				};
+				new Thread (r).start();
+			} else if (e.getSource() == startInqLoop && startInqLoop.getLabel().startsWith("Stop")) {
+				startInqLoop.setLabel("Start Loop");
+				try {
+					LocalDevice.getLocalDevice().getDiscoveryAgent().cancelInquiry(PocketTest.DiscoveryPanel.this);
+				} catch (BluetoothStateException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
 				}
 			} else if (e.getSource() == startSS) {
 				serviceList.removeAll();
@@ -183,7 +226,7 @@ public class PocketTest extends Frame {
 		 * @see javax.bluetooth.DiscoveryListener#serviceSearchCompleted(int, int)
 		 */
 		public void serviceSearchCompleted(int transID, int respCode) {
-			serviceList.add ("ServiceSearch completed");
+			serviceList.add ("ServiceSearch completed " + respCode);
 			startInq.setEnabled(true);
 			startSS.setEnabled(true);
 		}
@@ -191,10 +234,12 @@ public class PocketTest extends Frame {
 		/* (non-Javadoc)
 		 * @see javax.bluetooth.DiscoveryListener#inquiryCompleted(int)
 		 */
-		public void inquiryCompleted(int discType) {
-			dataList.add ("Inquiry completed");
+		public synchronized void inquiryCompleted(int discType) {
+			dataList.add ("Inquiry completed " + discType);
 			startInq.setEnabled(true);
 			startSS.setEnabled(true);
+			inquiring = false;
+			notifyAll();
 		}
 	
 	}
@@ -232,86 +277,107 @@ public class PocketTest extends Frame {
 			sendBut.addActionListener (this);
 		}
 
-		public void actionPerformed(ActionEvent e) {
-		
-			if (e.getSource() == offerBut) {
-				offerBut.setEnabled(false);
-				closeBut.setEnabled(true);
-				Runnable r = new Runnable() {
-					
+		public void actionPerformed(final ActionEvent e) {
+			new Thread() {
 				public void run() {
-					try {
-						dataList.add ("Offering connection through Connector2 " + Connector.class.getName());
-						scnot = (StreamConnectionNotifier)Connector.open ("btspp://localhost:00112233445566778899aabbccddeeff;name=ceTestRFCOMM");
-						scon = (StreamConnection)scnot.acceptAndOpen();
-			
-						inStream = scon.openInputStream();
-						outStream = scon.openOutputStream();
-			
-						dataList.add ("Connection connected");
-						sendBut.setEnabled(true);
-						} catch (Exception e2) { 
-							e2.printStackTrace();
-							dataList.add (e2.getMessage());
-						}
-
+					if (e.getSource() == offerBut) {
+						offerBut.setEnabled(false);
+						closeBut.setEnabled(true);
 						Runnable r = new Runnable() {
 							
 						public void run() {
+
 							try {
-								while (inStream != null) {
-									if (inStream.available() > 0) {
-										byte b[] = new byte[50];
-										int len = inStream.read (b);
-										dataList.add ("Read " + len + " bytes");
-									}
-								}
-							} catch (Exception e2) { 
+								dataList.add ("Offering connection through Connector2 " + Connector.class.getName());
+								scnot = (StreamConnectionNotifier)Connector.open ("btspp://localhost:00112233445566778899aabbccddeeff;name=ceTestRFCOMM");
+								scon = (StreamConnection)scnot.acceptAndOpen();
+					
+								System.out.println ("Connected");
+								
+								inStream = scon.openInputStream();
+								outStream = scon.openOutputStream();
+					
+								dataList.add ("Connection connected");
+								sendBut.setEnabled(true);
+								} catch (Exception e2) { 
 									e2.printStackTrace();
 									dataList.add (e2.getMessage());
 								}
+
+								Runnable r = new Runnable() {
+									
+								public void run() { 
+
+									try {
+										while (inStream != null) {
+											int len = 0;
+											while (inStream.available() > 0) {
+												byte b[] = new byte[1000];
+												len += inStream.read (b);
+											}
+											if (len > 0) {
+												if (dataList.getItemCount() > 0 && dataList.getItem(dataList.getItemCount() - 1).startsWith("Read ")) {
+													String val = dataList.getItem(dataList.getItemCount() - 1);
+													len += Integer.parseInt(val.substring(5, val.indexOf(" bytes")));
+													dataList.remove(dataList.getItemCount() - 1);
+												} 
+												dataList.add ("Read " + len + " bytes");
+											}
+									//System.out.println ("Data received");
+											
+											Thread.currentThread().sleep(10);
+										}
+									} catch (Exception e2) { 
+											e2.printStackTrace();
+											dataList.add (e2.getMessage());
+										}
+								}
+								};
+								new Thread(r).start();
+
 						}
-						};
+					};
 						new Thread(r).start();
 
-				}
-			};
-				new Thread(r).start();
-
-			} else if (e.getSource() == closeBut) {
-				offerBut.setEnabled (true);
-				closeBut.setEnabled (false);
-				sendBut.setEnabled (false);
-					try {
-						if (inStream != null) inStream.close();
-						if (outStream != null) outStream.close();
-					} catch (IOException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-						dataList.add (e1.getMessage());
+					} else if (e.getSource() == closeBut) {
+						offerBut.setEnabled (true);
+						closeBut.setEnabled (false);
+						sendBut.setEnabled (false);
+							try {
+								if (inStream != null) inStream.close();
+								if (outStream != null) outStream.close();
+							} catch (IOException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+								dataList.add (e1.getMessage());
+							}
+							inStream = null;
+							outStream = null;
+						try { if (scon != null) scon.close();  } catch (Exception e2) {}
+						try { if (scnot != null) scnot.close();  } catch (Exception e2) {}
+						scon = null;
+						scnot = null;
+					} else if (e.getSource() == sendBut) {
+						if (outStream != null) {
+							try {
+								outStream.write (new byte[100]);
+								dataList.add ("Sent 100 bytes");
+							} catch (IOException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+								dataList.add (e1.getMessage());
+							}
+							
+						}
 					}
-					inStream = null;
-					outStream = null;
-				try { if (scon != null) scon.close();  } catch (Exception e2) {}
-				try { if (scnot != null) scnot.close();  } catch (Exception e2) {}
-				scon = null;
-				scnot = null;
-			} else if (e.getSource() == sendBut) {
-				if (outStream != null) {
-					try {
-						outStream.write (new byte[100]);
-						dataList.add ("Sent 100 bytes");
-					} catch (IOException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-						dataList.add (e1.getMessage());
-					}
+				} 
 					
-				}
-			}
-		} 
+				
+			}.start();
+	
+		}
 	}
-
+	
 	class L2ServerPanel extends Panel implements ActionListener{
 		
 		Button offerBut;
@@ -356,6 +422,7 @@ public class PocketTest extends Frame {
 				Runnable r = new Runnable() {
 					
 				public void run() {
+
 					try {
 						dataList.add ("Offering connection through de.avetana.bluetooth.Connector");
 						scnot = (L2CAPConnectionNotifier) Connector.open ("btl2cap://localhost:00112233445566778899aabbccddeeff;name=ceTestL2CAP");
@@ -399,7 +466,12 @@ public class PocketTest extends Frame {
 					try {
 						if (scon.ready()) {
 							int len = scon.receive (new byte[500]);
-							dataList.add ("Received " + len + " bytes");
+							if (dataList.getItemCount() > 0 && dataList.getItem(dataList.getItemCount() - 1).startsWith("Read ")) {
+								String val = dataList.getItem(dataList.getItemCount() - 1);
+								len += Integer.parseInt(val.substring(5, val.indexOf(" bytes")));
+								dataList.remove(dataList.getItemCount() - 1);
+							} 
+							dataList.add ("Read " + len + " bytes");
 						} else dataList.add ("No data available");
 					} catch (IOException e1) {
 						// TODO Auto-generated catch block
@@ -451,73 +523,89 @@ public class PocketTest extends Frame {
 			sendBut.addActionListener (this);
 		}
 
-		public void actionPerformed(ActionEvent e) {
-		
-			if (e.getSource() == connectBut) {
-				connectBut.setEnabled(false);
-				closeBut.setEnabled(true);
-
-				try {
-				scon = (StreamConnection)Connector.open (adrField.getText());
-				dataList.add ("Connected");
-				
-				inStream = scon.openInputStream();
-				outStream = scon.openOutputStream();
-				} catch (Exception e2) {
-					e2.printStackTrace();
-					dataList.add (e2.getMessage());
-				}
-				sendBut.setEnabled(true);
-
-				Runnable r = new Runnable() {
-					
+		public void actionPerformed(final ActionEvent e) {
+			new Thread() {
 				public void run() {
-					try {
-						while (inStream != null) {
-							if (inStream.available() > 0) {
-								byte b[] = new byte[50];
-								int len = inStream.read (b);
-								dataList.add ("Read " + len + " bytes");
-							}
-						}
-					} catch (Exception e2) { 
+					if (e.getSource() == connectBut) {
+						connectBut.setEnabled(false);
+						closeBut.setEnabled(true);
+
+						try {
+						scon = (StreamConnection)de.avetana.bluetooth.connection.Connector.open (adrField.getText());
+						dataList.add ("Connected");
+						
+						inStream = scon.openInputStream();
+						outStream = scon.openOutputStream();
+						} catch (Exception e2) {
 							e2.printStackTrace();
 							dataList.add (e2.getMessage());
 						}
-				}
-				};
-				new Thread(r).start();
+						sendBut.setEnabled(true);
 
-			} else if (e.getSource() == closeBut) {
-				connectBut.setEnabled (true);
-				closeBut.setEnabled (false);
-				sendBut.setEnabled (false);
-					try {
-						if (inStream != null) inStream.close();
-						if (outStream != null) outStream.close();
-					} catch (IOException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-						dataList.add (e1.getMessage());
+						Runnable r = new Runnable() {
+							
+						public void run() { 
+
+							try {
+								while (inStream != null) {
+									int len = 0;
+									while (inStream.available() > 0) {
+										byte b[] = new byte[1000];
+										len += inStream.read (b);
+									}
+									if (len > 0) {
+										if (dataList.getItemCount() > 0 && dataList.getItem(dataList.getItemCount() - 1).startsWith("Read ")) {
+											String val = dataList.getItem(dataList.getItemCount() - 1);
+											len += Integer.parseInt(val.substring(5, val.indexOf(" bytes")));
+											dataList.remove(dataList.getItemCount() - 1);
+										} 
+										dataList.add ("Read " + len + " bytes");
+									}
+							//System.out.println ("Data received");
+									
+									Thread.currentThread().sleep(10);
+								}
+							} catch (Exception e2) { 
+									e2.printStackTrace();
+									dataList.add (e2.getMessage());
+								}
+						}
+						};
+						new Thread(r).start();
+
+					} else if (e.getSource() == closeBut) {
+						connectBut.setEnabled (true);
+						closeBut.setEnabled (false);
+						sendBut.setEnabled (false);
+							try {
+								if (inStream != null) inStream.close();
+								if (outStream != null) outStream.close();
+							} catch (IOException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+								dataList.add (e1.getMessage());
+							}
+							inStream = null;
+							outStream = null;
+						if (scon != null) try { scon.close(); } catch (IOException  e2) {}
+						scon = null;
+					} else if (e.getSource() == sendBut) {
+						if (outStream != null) {
+							try {
+								outStream.write (new byte[100]);
+								dataList.add ("Sent 100 bytes");
+							} catch (IOException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+								dataList.add (e1.getMessage());
+							}
+							
+						}
 					}
-					inStream = null;
-					outStream = null;
-				if (scon != null) try { scon.close(); } catch (IOException  e2) {}
-				scon = null;
-			} else if (e.getSource() == sendBut) {
-				if (outStream != null) {
-					try {
-						outStream.write (new byte[100]);
-						dataList.add ("Sent 100 bytes");
-					} catch (IOException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-						dataList.add (e1.getMessage());
-					}
-					
-				}
-			}
-		} 
+				} 
+	
+			}.start();
+		}
 	}
 
 	class L2ClientPanel extends Panel implements ActionListener{
@@ -600,7 +688,12 @@ public class PocketTest extends Frame {
 					try {
 						if (scon.ready()) {
 							int len = scon.receive (new byte[500]);
-							dataList.add ("Received " + len + " bytes");
+							if (dataList.getItemCount() > 0 && dataList.getItem(dataList.getItemCount() - 1).startsWith("Read ")) {
+								String val = dataList.getItem(dataList.getItemCount() - 1);
+								len += Integer.parseInt(val.substring(5, val.indexOf(" bytes")));
+								dataList.remove(dataList.getItemCount() - 1);
+							} 
+							dataList.add ("Read " + len + " bytes");
 						} else dataList.add ("No data available");
 					} catch (IOException e1) {
 						// TODO Auto-generated catch block

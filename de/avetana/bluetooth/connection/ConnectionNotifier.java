@@ -6,6 +6,7 @@ import javax.bluetooth.*;
 
 import de.avetana.bluetooth.sdp.*;
 import de.avetana.bluetooth.stack.*;
+import de.avetana.bluetooth.util.LibLoader;
 
 import javax.microedition.io.Connection;
 
@@ -198,7 +199,7 @@ public abstract class ConnectionNotifier implements Connection, RecordOwner {
   
   protected synchronized int acceptAndOpenI() throws IOException, ServiceRegistrationException {
  
-	  if (isClosed) throw new IOException ("Notifier has been closed.");
+	if (isClosed) throw new IOException ("Notifier has been closed.");
     m_fid = -2;
   	failEx = null;
   	isClosed = false;
@@ -209,12 +210,19 @@ public abstract class ConnectionNotifier implements Connection, RecordOwner {
       throw new IOException("ERROR - Unable to register the local Service Record!");
     }
 
+    LibLoader.Debug ("ConnectionNofifier::Starting to wait");
      while(m_fid==-2) {
-        try {wait(100);}catch(Exception ex) {}
+        try {
+        	wait(1000); 
+        	LibLoader.Debug ("ConnectionNofifier::In Wait loop " + m_fid + " " + (System.currentTimeMillis() % 10000));
+        }catch(Exception ex) { ex.printStackTrace(); }
      }
+     LibLoader.Debug ("ConnectionNofifier::Connection established " + m_fid);
      
 	 BlueZ.removeNotifier(this);
-	    
+
+	 LibLoader.Debug ("ConnectionNofifier::Notifier removed");
+
      if (m_fid <= 0) {
  		close();
  		if (failEx != null) throw failEx;

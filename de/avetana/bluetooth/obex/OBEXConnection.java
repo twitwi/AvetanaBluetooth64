@@ -306,7 +306,7 @@ public class OBEXConnection implements ClientSession, CommandHandler {
 		return v;
 	}
 	
-	static protected byte[] hsToByteArray (HeaderSet hs) {
+	static protected byte[] hsToByteArray (HeaderSet hs) throws IOException {
 		if (hs == null) return new byte[0];
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		int[] hids = new int[0];

@@ -31,6 +31,8 @@ package de.avetana.bluetooth.util;
  */
 
 import java.io.*;
+import java.lang.reflect.Method;
+import java.util.HashSet;
 
 import de.avetana.bluetooth.stack.BlueZ;
 
@@ -46,11 +48,11 @@ public class LibLoader {
 		btname = loadLib ("avetanaBT");
 	}
 	
-	public static String loadLib (String name) throws Exception {
-
+	public synchronized static String loadLib (String name) throws Exception {
 		
-		String confName = System.getProperty ("microedition.profiles");
-		if ((confName != null && confName.indexOf("MIDP") != -1)) {
+		String confName = System.getProperty ("microedition.profiles", "");
+		String forceLoad = System.getProperty ("avetana.forceNativeLibrary", "false");
+		if (confName.indexOf("MIDP") != -1 && !forceLoad.equals("true")) {
 			return "";
 		}
 		
@@ -60,15 +62,25 @@ public class LibLoader {
 		if (name.equals("avetanaBT")) {
 		    
 		    if (sysName.toLowerCase().indexOf("windows") != -1) {
-			    if (sysName.toLowerCase().indexOf("ce") != -1) name = name + "CE";
+			    if (sysName.toLowerCase().indexOf("ce") != -1) {
+			    	boolean cems = false;
+			    	try {
+			    		System.loadLibrary("BtSdkCE30");
+			    	} catch (Throwable t) {
+			    		cems = true;
+			    	}
+			    	
+			    	name = name + "CE" + (cems ? "MS" : "");
+			    }
 			    else {
 			    		String stack = "" + System.getProperty("avetanabt.stack");
-			    	
+			    		stack = System.getProperty("de.avetana.bluetooth.stack", stack);
+			    		
 			    		int checkHCI = BTCheck.checkHCI();
 			    		
 			    		if (checkHCI == 0) throw new Exception ("No supported stack installed or no dongle available");
 			    		
-			    		if ((checkHCI & 1) == 0 || (stack.equalsIgnoreCase("microsoft") && (checkHCI & 2) == 2)) name += "MS";
+			    		if ((checkHCI & 1) == 0 || ((stack.equalsIgnoreCase("microsoft") || stack.equalsIgnoreCase("ms")) && (checkHCI & 2) == 2)) name += "MS";
 			    		
 			    }
 			    libName = name;
@@ -79,20 +91,9 @@ public class LibLoader {
 		    else throw new Exception ("Unsupported operating system" + sysName);
 		} else name = System.mapLibraryName(name);
 		
-	    InputStream is = null;
+	    InputStream is = getResourceAsStream(name);
+	    if (is == null) is = getResourceAsStream("/" + name);
 	    
-	    try {
-	    		Class cl = new LibLoader().getClass();
-	    		ClassLoader clo = cl.getClassLoader();
-	    		if (clo == null) {
-	    			is = ClassLoader.getSystemResourceAsStream(name);
-	    		} else is = clo.getResourceAsStream(name);
-	 
-	    } catch (Exception e) {
-	    		e.printStackTrace();
-	    		throw new Exception ("Native Library " + name + " is not a ressource !");
-	    }
-
 		if (is == null) {
 			try {
 				System.out.println ("Loading library " + libName + " from ld.library.path");
@@ -123,23 +124,29 @@ public class LibLoader {
 	    f.mkdirs();
 	    	
 	    final File f2 = new File (f, name);
-		//System.out.println ("Library stored in " + f2.getAbsolutePath());
+//		System.out.println ("Storing library in " + f2.getAbsolutePath());
 	    FileOutputStream fos = new FileOutputStream (f2);
 
 	    byte[] b = new byte[1000];
-	    int len;
+	    int len, tlen = 0;
 	    while ((len = is.read(b)) >= 0) {
 	      fos.write(b, 0, len);
+	      tlen += len;
 	    }
+//	    System.out.println ("Stored " + tlen + " bytes.");
 	    fos.close();
 	    //if (sysName.toLowerCase().indexOf("windows") != -1 && sysName.toLowerCase().indexOf("ce") != -1) {
 	    //		System.out.println ("System temp path " + System.getProperty("java.io.tmpdir"));
 	    //		System.out.println ("System file.separator " + File.separator);
 	    //}
+	    
+//	    System.out.println ("File exists " + f2.exists() + " length " + f2.length());
+	    
+	    
 	    try {
 	    		System.load(f2.getAbsolutePath());
 	    } catch (UnsatisfiedLinkError e) {
-	    		System.out.println ("Could not find own library " + name + ". Will try from ld.library.path");
+	    		System.out.println ("Could not load own library " + f2.getAbsolutePath() + ". Will try from ld.library.path");
 	    		System.loadLibrary(libName);
 	    }
 	    Runnable r = new Runnable() {
@@ -198,6 +205,70 @@ public class LibLoader {
 
 	public static void main(String args[]) {
 		System.out.println (System.getProperty ("os.name"));
+	}
+
+	public static InputStream getResourceAsStream(String name) {
+		try {
+			InputStream is = LibLoader.class.getResourceAsStream(name);
+			if (is == null) {
+				is = LibLoader.class.getClassLoader().getResourceAsStream(name);
+			}
+			return is;
+		} catch (NullPointerException e) { return null; }
+	}
+
+	public static HashSet cremeThreads = new HashSet();
+	private static boolean cremeError = false;
+	
+	/**
+	 * Call CrEme's Noblock.on() method to better handle native calls
+	 * @param runnable 
+	 *
+	 */
+	public static void cremeInit(Runnable runnable) {
+		if (cremeError || System.getProperty("creme.noblock", "false").equals("false") || cremeThreads.contains(runnable)) return;
+		Debug ("LibLoader::cremeInit " + runnable);
+		try {
+			 Class c = Class.forName("creme.Noblock");
+			 if (c != null) {
+				 Method m = c.getMethod("on", new Class[0]);
+				 m.invoke(c, new Object[0]);
+ 			 	 cremeThreads.add(runnable);
+			 } else cremeError = true;
+		 } catch (Throwable e) {
+			 e.printStackTrace();
+			 cremeError = true;
+		 }
+	}
+
+	private static boolean debug = System.getProperty("de.avetana.bluetooth.debug", "false").equals("true");
+	
+	public static void Debug(String string) {
+		if (debug)
+			System.out.println (((System.currentTimeMillis() % 100000) / 1000) + " - " + string);
+	}
+
+	public static void cremeOut(Runnable runnable) {
+		if (cremeError || System.getProperty("creme.noblock", "false").equals("false") || !cremeThreads.contains(runnable)) return;
+		cremeThreads.remove(runnable);
+		try {
+			 Class c = Class.forName("creme.Noblock");
+			 if (c != null) {
+				 Method m = c.getMethod("off", new Class[0]);
+				 m.invoke(c, new Object[0]);
+			 	 cremeThreads.add(runnable);
+			 } else cremeError = true;
+		 } catch (Throwable e) {
+			 e.printStackTrace();
+			 cremeError = true;
+		 }
+	}
+
+	public static void DebugT(String string) {
+		if (debug) {
+			new Throwable().printStackTrace();
+			System.out.println (((System.currentTimeMillis() % 100000) / 1000) + " - " + string);
+		}
 	}
 	
 }

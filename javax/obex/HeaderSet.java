@@ -208,7 +208,7 @@ public interface HeaderSet {
      * @exception IOException if an error occurred in the transport layer during
      * the operation or if the connection has been closed
      */
-    public Object getHeader(int headerID);
+    public Object getHeader(int headerID) throws IOException;
 
     /**
      * Retrieves the list of headers that may be retrieved via the

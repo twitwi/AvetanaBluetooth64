@@ -244,7 +244,7 @@ public class OperationImpl implements Operation {
 		
 	}
 	
-	protected void newData (HeaderSet header) {
+	protected void newData (HeaderSet header) throws IOException {
 		if (recHeaders == null) recHeaders = con.createHeaderSet();
 		int[] hids = new int[0];
 		try {

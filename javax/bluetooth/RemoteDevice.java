@@ -32,6 +32,7 @@ import javax.microedition.io.*;
 import de.avetana.bluetooth.connection.BTConnection;
 import de.avetana.bluetooth.l2cap.L2CAPConnectionNotifierImpl;
 import de.avetana.bluetooth.obex.OBEXConnection;
+import de.avetana.bluetooth.obex.SessionHandler;
 import de.avetana.bluetooth.obex.SessionNotifierImpl;
 import de.avetana.bluetooth.rfcomm.RFCommConnectionNotifierImpl;
 import de.avetana.bluetooth.stack.BluetoothStack;
@@ -157,7 +158,7 @@ public class RemoteDevice {
         if ((friendlyName == null) || alwaysAsk) {
             try {
                 BluetoothStack bluetoothStack = BluetoothStack.getBluetoothStack();
-                String buffer =bluetoothStack.getRemoteName(bdAddrString);
+                String buffer = bluetoothStack.getRemoteName(bdAddrString);
                 if (buffer != null) friendlyName = buffer;
             }
             catch (Exception e) { throw new IOException("Exception: RemoteDevice.getFriendlyName(): " + e); }
@@ -249,7 +250,7 @@ public class RemoteDevice {
     				if (((BTConnection)conn).isClosed())
     					throw new IOException("Connection Closed");
     				dev = ((BTConnection)conn).getRemoteDevice();
-    			}
+    			} else if (conn instanceof SessionHandler && ((SessionHandler)conn).getStreamConnection() != null && ((SessionHandler)conn).getStreamConnection() instanceof BTConnection) dev = ((BTConnection)((SessionHandler)conn).getStreamConnection()).getRemoteDevice();
     			else if (conn instanceof OBEXConnection) dev = ((OBEXConnection)conn).getRemoteDevice();
     			else if (conn instanceof RFCommConnectionNotifierImpl || conn instanceof L2CAPConnectionNotifierImpl || conn instanceof SessionNotifierImpl) {
     					throw new IllegalArgumentException ();

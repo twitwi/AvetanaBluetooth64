@@ -145,6 +145,8 @@ public class DeviceFinder extends JDialog implements ActionListener {
   		
  		Runnable r = new Runnable() {
   			public void run ()  {
+            	LibLoader.cremeInit(this);
+
   			  try {
 				LocalDevice.getLocalDevice().getDiscoveryAgent().startInquiry(DiscoveryAgent.GIAC, discList);
   			  } catch (BluetoothStateException e) {
@@ -153,8 +155,10 @@ public class DeviceFinder extends JDialog implements ActionListener {
 				  inqBut.setEnabled(true);
 				  okBut.setEnabled(true);
 				  inqBar.setVisible(false);
+			} finally {
+				LibLoader.cremeOut(this);
 			}
- 			}
+			}
   		};
   		
   		new Thread (r).start();

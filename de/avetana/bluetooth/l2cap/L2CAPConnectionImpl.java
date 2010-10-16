@@ -90,11 +90,11 @@ public class L2CAPConnectionImpl extends BTConnection implements L2CAPConnection
    * @return An instance of L2CAPConnection if the establishment of the connection did succeed.
    * @throws Exception
    */
-  public static L2CAPConnection createL2CAPConnection (JSR82URL url) throws Exception{
+  public static L2CAPConnection createL2CAPConnection (JSR82URL url, int timeout) throws Exception{
     String addrB=null;
     L2CAPConnParam param = null;
 
-    param=BlueZ.openL2CAP(url);
+    param=BlueZ.openL2CAP(url, timeout);
     if(param==null || param.m_fid==-1) throw new Exception("Connection could not be established!");
 
     int fid=param.m_fid;

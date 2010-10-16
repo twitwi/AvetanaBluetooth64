@@ -77,7 +77,7 @@ public class ConnectionFactory {
    * Adds a connection to the list of registered connections
    * @param desc The unregistered connection
    */
-  public void addConnection(BTConnection desc) {
+  public synchronized void addConnection(BTConnection desc) {
     m_connections.addElement(desc);
   }
 
@@ -85,7 +85,7 @@ public class ConnectionFactory {
    * Returns the list of all registered connections.
    * @return A vector storing all registered connections
    */
-  public Vector getConnections() {return m_connections;}
+  public synchronized Vector getConnections() {return m_connections;}
 
   /**
    * Returns the connection for a given fid
@@ -93,7 +93,7 @@ public class ConnectionFactory {
    * @param fid
    * @return
    */
-  public BTConnection getConnectionForFID(int fid) {
+  public synchronized BTConnection getConnectionForFID(int fid) {
   	for (int i = 0;i < m_connections.size();i++) {
   		if (((BTConnection)m_connections.elementAt(i)).getConnectionID() == fid) return (BTConnection)m_connections.elementAt(i);
   		
@@ -106,7 +106,7 @@ public class ConnectionFactory {
    * Returns the list of all registered notifiers.
    * @return A vector storing all registered notifiers
    */
-  public Vector getNotifiers() {return m_notifiers;}
+  public synchronized Vector getNotifiers() {return m_notifiers;}
 
   /**
    * Unregisters a Connection
@@ -114,7 +114,7 @@ public class ConnectionFactory {
    * @return <code>true</code> - if the connection was successfully unregistered<br>
    *         <code>false</code> - Otherwise.
    */
-  public boolean removeConnection(BTConnection desc) {
+  public synchronized boolean removeConnection(BTConnection desc) {
     return m_connections.removeElement(desc);
   }
 
@@ -122,7 +122,7 @@ public class ConnectionFactory {
    * Registers a new connection notifier
    * @param desc A new and unregistered connection notifier
    */
-  public void addNotifier(ConnectionNotifier desc) {
+  public synchronized void addNotifier(ConnectionNotifier desc) {
     m_notifiers.addElement(desc);
   }
 
@@ -132,7 +132,7 @@ public class ConnectionFactory {
    * @return <code>true</code> - if the connection notifier was successfully unregistered<br>
    *         <code>false</code> - Otherwise.
    */
-  public boolean removeNotifier(ConnectionNotifier desc) {
+  public synchronized boolean removeNotifier(ConnectionNotifier desc) {
 	  return m_notifiers.removeElement(desc);
   }
 
@@ -142,7 +142,7 @@ public class ConnectionFactory {
    * @return <code>true</code> - if the connection was successfully unregistered<br>
    *         <code>false</code> - Otherwise.
    */
-  public boolean removeConnection(int fid) {
+  public synchronized boolean removeConnection(int fid) {
     for(int i = 0 ; i < m_connections.size() ; i++) {
       BTConnection desc=(BTConnection)m_connections.elementAt(i);
       if(fid==desc.getConnectionID()) return removeConnection(desc);
@@ -156,15 +156,15 @@ public class ConnectionFactory {
    * @param list The Discoverylistener associated with this remote device
    */
 
-  public void addListener(int transactionID, DiscoveryListener list) {
+  public synchronized void addListener(int transactionID, DiscoveryListener list) {
     m_sdpListeners.put(new Integer(transactionID), list);
   }
 
-  public boolean isListener(int transID) {
+  public synchronized boolean isListener(int transID) {
     return m_sdpListeners.contains(new Integer(transID));
   }
 
-  public void removeListener(int transID) {
+  public synchronized void removeListener(int transID) {
     m_sdpListeners.remove(new Integer(transID));
   }
 
@@ -173,7 +173,7 @@ public class ConnectionFactory {
    * @param jbdAddr The string representation of the BT address of the remote device
    * @return The DiscoveryListener associated with a remote device
    */
-  public DiscoveryListener getListener(int id) {
+  public synchronized DiscoveryListener getListener(int id) {
     return (DiscoveryListener)m_sdpListeners.get(new Integer (id));
   }
 
@@ -183,7 +183,7 @@ public class ConnectionFactory {
    * @return <code>The BTConnection object</code> - If the remote device is currently connected
    *         <code>null</code> - If the remote device is not connected.
    */
-  public BTConnection isConnected(RemoteDevice dev) {
+  public synchronized BTConnection isConnected(RemoteDevice dev) {
     for(int i = 0 ; i < m_connections.size() ; i++) {
       BTConnection desc=(BTConnection)m_connections.elementAt(i);
       if(dev.equals(desc.m_remote)) return desc;

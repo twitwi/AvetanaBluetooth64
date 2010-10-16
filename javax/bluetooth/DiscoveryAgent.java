@@ -36,6 +36,7 @@ import de.avetana.bluetooth.sdp.ServiceFoundException;
 import de.avetana.bluetooth.stack.BlueZ;
 import de.avetana.bluetooth.stack.BluetoothStack;
 import de.avetana.bluetooth.util.BTAddress;
+import de.avetana.bluetooth.util.LibLoader;
 
 /**
  * The <code>DiscoveryAgent</code> class provides methods to perform
@@ -184,7 +185,7 @@ public class DiscoveryAgent {
     public synchronized boolean startInquiry(final int accessCode, DiscoveryListener listener) throws BluetoothStateException {
     		if (!isInquiring) listeners = new Vector();
 
-    		if (listener != null) { if (!listeners.contains(listener)) listeners.addElement(listener); }
+    		if (listener != null) { if (!listeners.contains(listener)) listeners.addElement(listener); } else throw new NullPointerException("Listener must not be null.");
     		
         if (isInquiring) {
             Enumeration remoteDevices = cachedRemoteDevices.elements();
@@ -196,14 +197,16 @@ public class DiscoveryAgent {
             return true;
         }
         else {
+          isInquiring = true;
           Runnable r=new Runnable() {
             public void run() {
-              isInquiring = true;
+            	LibLoader.cremeInit(this);
+
               cachedRemoteDevices = new Vector();
               //bluetoothStack.registerDiscoveryAgent(DiscoveryAgent.this);
               try {
                   boolean ret = BlueZ.hciInquiry(0, 8, 10, accessCode, DiscoveryAgent.this);
-                  isInquiring=false;
+                  isInquiring = false;
                   for(int u=0;u<listeners.size();u++) {
                       try {
 						((DiscoveryListener)listeners.elementAt(u)).inquiryCompleted(ret == true ? DiscoveryListener.INQUIRY_COMPLETED : DiscoveryListener.INQUIRY_ERROR);
@@ -214,7 +217,6 @@ public class DiscoveryAgent {
                   }
               }
               catch (Exception e) {
-              	isInquiring = false;
                 for(int u=0;u<listeners.size();u++) {
                     try {
 						((DiscoveryListener)listeners.elementAt(u)).inquiryCompleted(DiscoveryListener.INQUIRY_ERROR);
@@ -224,9 +226,19 @@ public class DiscoveryAgent {
 					}
                 }
                }
+              finally {
+              isInquiring = false;
+				LibLoader.cremeOut(this);
+             }
             }
           };
-          new Thread(r).start();
+          try {
+			BlueZ.executor.execute(r);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+	         new Thread(r).start();     
+		}
           
           return true;
         }
@@ -250,6 +262,7 @@ public class DiscoveryAgent {
      */
     public boolean cancelInquiry(DiscoveryListener listener) {
         if (listener == null) throw new NullPointerException("DiscoveryAgent.cancelInquiry: DiscoveryListener is null.");
+        BlueZ.cancelInquiry();
         listeners.removeElement(listener);
         try {
 			listener.inquiryCompleted(DiscoveryListener.INQUIRY_TERMINATED);
@@ -369,7 +382,7 @@ public class DiscoveryAgent {
      *         <code>null</code> if the selected service does not have a valid connection URL.
      * @author Julien Campana
      */
-    public String selectService(final UUID uuid, int security, boolean master) throws BluetoothStateException
+    public synchronized String selectService(final UUID uuid, int security, boolean master) throws BluetoothStateException
                                                                                 {
       if(uuid==null) throw new NullPointerException("UUID given in argument is null!!");
       if(security!=ServiceRecord.AUTHENTICATE_ENCRYPT && security!= ServiceRecord.AUTHENTICATE_NOENCRYPT &&
@@ -379,6 +392,8 @@ public class DiscoveryAgent {
       //16 bits uuid????
       Runnable r=new Runnable() {
         public void run() {
+        	LibLoader.cremeInit(this);
+
           if (cachedRemoteDevices.size()==0)
             m_listener.setResponse(0);
           for(int i=0;i<cachedRemoteDevices.size();i++) {
@@ -395,6 +410,8 @@ public class DiscoveryAgent {
             }
           }
           m_listener.setResponse(1);
+   		  LibLoader.cremeOut(this);
+
         }
       };
       new Thread(r).start();
@@ -408,7 +425,7 @@ public class DiscoveryAgent {
       try {
         RemoteServiceRecord serv=(RemoteServiceRecord)m_remoteServ.elementAt(0);
         back=serv.getConnectionURL(security, master);
-      }catch(Exception ex) {}
+      }catch(Exception ex) { ex.printStackTrace(); }
       return back;
     }
 

@@ -10,10 +10,12 @@ package de.avetana.bluetooth.test;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Vector;
 
 import javax.bluetooth.*;
 
 import de.avetana.bluetooth.sdp.RemoteServiceRecord;
+import de.avetana.bluetooth.stack.BlueZ;
 import de.avetana.bluetooth.util.MSServiceRecord;
 
 /**
@@ -25,15 +27,16 @@ import de.avetana.bluetooth.util.MSServiceRecord;
 public class InqTest implements DiscoveryListener {
 
 	private static final boolean doException = false;
-	
 	private boolean searchCompleted = false;
+	private Vector devices;
+	
 	/* (non-Javadoc)
 	 * @see javax.bluetooth.DiscoveryListener#deviceDiscovered(javax.bluetooth.RemoteDevice, javax.bluetooth.DeviceClass)
 	 */
 	public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
-		
+		devices.add(btDevice);
 		try {
-			System.out.println ("device discovered " + btDevice + " name " + btDevice.getFriendlyName(false) + " majc " + cod.getMajorDeviceClass() + " minc " + cod.getMinorDeviceClass() + " sc " + cod.getServiceClasses());
+			System.out.println ("device discovered " + btDevice + " name " + btDevice.getFriendlyName(true) + " majc 0x" + Integer.toHexString(cod.getMajorDeviceClass()) + " minc 0x" + Integer.toHexString(cod.getMinorDeviceClass()) + " sc 0x" + Integer.toHexString(cod.getServiceClasses()));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -42,7 +45,7 @@ public class InqTest implements DiscoveryListener {
 			byte[] b = new byte[0];
 			b[1] = 0;
 		}
-		
+	      
 	}
 
 	/* (non-Javadoc)
@@ -92,22 +95,30 @@ public class InqTest implements DiscoveryListener {
 	/* (non-Javadoc)
 	 * @see javax.bluetooth.DiscoveryListener#serviceSearchCompleted(int, int)
 	 */
-	public void serviceSearchCompleted(int transID, int respCode) {
+	public synchronized void serviceSearchCompleted(int transID, int respCode) {
 		// TODO Auto-generated method stub
 		System.out.println ("Service search completed " + transID + " / " + respCode);
 		searchCompleted = true;
+		notifyAll();
 	}
 
 	/* (non-Javadoc)
 	 * @see javax.bluetooth.DiscoveryListener#inquiryCompleted(int)
 	 */
-	public void inquiryCompleted(int discType) {
+	public synchronized void inquiryCompleted(int discType) {
 		System.out.println ("Inquiry completed " + discType);
-		searchCompleted = true;
+		searchCompleted = true;	
+		notifyAll();
+		/*try {
+			LocalDevice.getLocalDevice().getDiscoveryAgent().startInquiry(DiscoveryAgent.GIAC, InqTest.this);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}*/
 
 	}
 
 	public InqTest (String addr, String uuid) throws Exception {
+		devices = new Vector();
 		System.out.println ("Getting discoveryAgent");
 		DiscoveryAgent da = LocalDevice.getLocalDevice().getDiscoveryAgent();
 		
@@ -137,16 +148,59 @@ public class InqTest implements DiscoveryListener {
 			transID = da.searchServices(new int[] { 0x05, 0x06, 0x07, 0x08, 0x09, 0x100, 0x303 }, uuids, new RemoteDevice ("000E0799107C"), this);
 			*/
 		}
-		while (!searchCompleted) {
-			synchronized (this) { wait(100); }
-		}
+
+			while (!searchCompleted) {
+				synchronized (this) { wait(100); }
+			}
+//			BlueZ.authenticate (((RemoteDevice)devices.get(0)).getBluetoothAddress(), "6624");
 		
-		
-		
-		System.exit(0);
+			System.exit(0);
+			
 	}
 	
+	public InqTest(String addr) throws BluetoothStateException, InterruptedException {
+		devices = new Vector();
+		int loop = 0;
+		DiscoveryAgent da = LocalDevice.getLocalDevice().getDiscoveryAgent();
+		while (true) {
+			System.out.println ("Performing loop " + loop++);
+			searchCompleted = false;
+			devices.clear();
+			if (addr == null || addr.equals("inq")) {
+				da.startInquiry(DiscoveryAgent.GIAC, this);
+				synchronized (this) { wait(60000); }
+				if (!searchCompleted) {
+					System.out.println ("Cancelling inquiry");
+					da.cancelInquiry(this);
+				}
+				if (("" + addr).equals("inq"))
+					continue;
+			} else
+				devices.add(new RemoteDevice (addr));
+			for (int i = 0;i < devices.size();i++) {
+				RemoteDevice rc = (RemoteDevice) devices.get(i);
+				searchCompleted = false;
+				System.out.println ("Searching services on " + rc.getBluetoothAddress());
+				int transID = da.searchServices(new int[] { 0x05, 0x06, 0x07, 0x08, 0x09, 0x100, 0x303 }, new UUID[0], rc, this);
+				synchronized (this) { wait(60000); }
+				if (!searchCompleted) {
+					System.out.println ("Cancelling service search");
+					da.cancelServiceSearch(transID);
+				}
+			}
+		}
+	}
+
 	public static void main(String[] args) throws Exception {
-		new InqTest(args.length == 0 ? null : args[0], args.length <= 1 ? null : args[1]);
+//		while (true) {
+//			System.out.println ("Starting inquiry");
+			if (args.length == 1 && args[0].equals("loop")) {
+				new InqTest(null);
+			} else if (args.length == 2 && args[0].equals("loop")) {
+				new InqTest(args[1]);
+			}
+			else
+				new InqTest(args.length == 0 ? null : args[0], args.length <= 1 ? null : args[1]);
+//		}
 	}
 }

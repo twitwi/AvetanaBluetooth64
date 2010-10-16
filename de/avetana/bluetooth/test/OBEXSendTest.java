@@ -23,71 +23,79 @@ public class OBEXSendTest implements DiscoveryListener {
 
 	private boolean finishedSearching = false;
 	private ServiceRecord rec = null;
+	private String bta;
 	
-	public OBEXSendTest(String bta, String file, int channel) throws Exception {
+	public OBEXSendTest(String bta, String file[], int channel) throws Exception {
         LocalDevice myLocalDevice = LocalDevice.getLocalDevice();
-        DiscoveryAgent myDiscoveryAgent = myLocalDevice.getDiscoveryAgent();
-        
-        File sendFile = new File (file);
-        
+        this.bta = bta;
+                
         String url = "";
         
         if (channel == 0) {
 	        finishedSearching = false;
 	        
-	        myDiscoveryAgent.searchServices(null, new UUID[] { new UUID (0x1105) }, new RemoteDevice (bta), this);
+	        DiscoveryAgent myDiscoveryAgent = myLocalDevice.getDiscoveryAgent();
+	        int trans = myDiscoveryAgent.searchServices(null, new UUID[] { new UUID (0x1105) }, new RemoteDevice (bta), this);
+	        System.out.println ("Started service search on " + bta + " transaction " + trans);
 	        
 	        while (!finishedSearching) {
 	        		synchronized (this) {
 	        			wait (100);
 	        		}
 	        }
-	        
+	        	        
 	        if (rec == null) throw new Exception ("No OBEX_OBJECT_PUSH Service found on device " + bta);
 	        url = rec.getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
         } else url = "btgoep://" + bta + ":" + channel;
         
+//        while (true) {
+        System.out.println ("Connecting to " + url + " on " + bta);
         ClientSession conn = (ClientSession) Connector 
               .open(url);
         HeaderSet header = conn.createHeaderSet();
         HeaderSet response = conn.connect(header);
         System.out.println("connected");
-        header = conn.createHeaderSet();
-        header.setHeader(HeaderSet.NAME, sendFile.getName());
-        
-        String type = null;
-        
-        if (file.endsWith(".jpg")) type = "image/jpeg";
-        else if (file.endsWith(".gif")) type = "image/gif";
-        else if (file.endsWith(".jar")) type = "application/x-java-archive";
-        else if (file.endsWith(".vcf")) type = "text/x-vcard";
-        else if (file.endsWith(".midi") || file.endsWith(".mid")) type = "audio/x-midi";
-        
-        if (type != null) header.setHeader(HeaderSet.TYPE, type);
-        header.setHeader(HeaderSet.LENGTH, new Long (sendFile.length()));
+        for (int i = 0;i < file.length;i++) {
+        	File sendFile = new File (file[i]);
+            header = conn.createHeaderSet();
+            header.setHeader(HeaderSet.NAME, sendFile.getName());
+            
+            String type = null;
+            
+            if (file[i].endsWith(".jpg")) type = "image/jpeg";
+            else if (file[i].endsWith(".gif")) type = "image/gif";
+            else if (file[i].endsWith(".jar")) type = "application/x-java-archive";
+            else if (file[i].endsWith(".vcf")) type = "text/x-vcard";
+            else if (file[i].endsWith(".midi") || file[i].endsWith(".mid")) type = "audio/x-midi";
+            
+            if (type != null) header.setHeader(HeaderSet.TYPE, type);
+            header.setHeader(HeaderSet.LENGTH, new Long (sendFile.length()));
 
-        Operation op = conn.put(header);
+            Operation op = conn.put(header);
 
-        OutputStream os = op.openOutputStream();
-        InputStream is = new FileInputStream (sendFile);
-        
-        byte[] b = new byte[400];
-        int r;
-        while ((r = is.read(b)) > 0) {
-        		os.write(b, 0, r);
+            OutputStream os = op.openOutputStream();
+            InputStream is = new FileInputStream (sendFile);
+            
+            byte[] b = new byte[400];
+            int r;
+            long ts = System.currentTimeMillis();
+            long tot = 0;
+            while ((r = is.read(b)) > 0) {
+            		os.write(b, 0, r);
+            		tot += r;
+            		System.out.println("Transmission speed " + ((double)tot / (double)(System.currentTimeMillis() - ts)) + "kb/sec");
+            }
+            is.close();
+            os.close();
+            op.close();
+        	
         }
-        is.close();
-        os.close();
-        op.close();
         
         conn.disconnect(conn.createHeaderSet());
         conn.close();
-        
+        System.out.println ("Connection terminated " + url);
+//        }        
 	}
-	
-	/*public static void main(String[] args) throws Exception {
-		new OBEXSendTest (args[0], args[1], args.length > 2 ? Integer.parseInt(args[2]) : 0);
-	}*/
 	
 	/**
 	 * start this program with two parameters
@@ -97,40 +105,14 @@ public class OBEXSendTest implements DiscoveryListener {
 	 
 	public static void main (final String[] args) throws Exception {
 		
-		/*
+		
 		//THIS IS ONLY USED TO INITIALIZE THE STACK WHEN THREADS ARE STARTED
 		LocalDevice.getLocalDevice();
 		
-		Runnable r1 = new Runnable () {
-
-			public void run() {
-				try {//"000E6D7057F9" 9
-					new OBEXSendTest ("000E6D7057F9", "avetana.vcf", 9);
-					//new OBEXSendTest (args[0], "avetana.vcf", Integer.parseInt (args[1]));
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-			
-		};
-		Runnable r2 = new Runnable () {
-
-			public void run() {
-				try {
-					new OBEXSendTest ("006057e3f442", "avetana.vcf", 1);
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-			
-		};
+		String files[] = new String[args.length - 1];
+		System.arraycopy(args, 1, files, 0, files.length);
 		
-		if (args.length == 0 || args[0].equals("1")) new Thread (r1).start();
-		if (args.length == 0 || args[0].equals("2")) new Thread (r2).start();
-		*/
-		new OBEXSendTest (args[0], args[1], 0);
+		new OBEXSendTest (args[0], files, 0);
 	}
 
 	/* (non-Javadoc)
@@ -146,7 +128,8 @@ public class OBEXSendTest implements DiscoveryListener {
 	 */
 	public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
 		rec = servRecord[0];
-		System.out.println ("Service discovered " + rec);
+		System.out.println ("Service discovered on " + bta + " trans " + transID);
+		//System.out.println (rec);
 	}
 
 	/* (non-Javadoc)
@@ -154,7 +137,7 @@ public class OBEXSendTest implements DiscoveryListener {
 	 */
 	public void serviceSearchCompleted(int transID, int respCode) {
 		finishedSearching = true;
-		System.out.println ("Service search completed");
+		System.out.println ("Service search completed " + bta + " trans " + transID + " respCode " + respCode);
 		
 	}
 
