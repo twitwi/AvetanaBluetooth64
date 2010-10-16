@@ -1,0 +1,14 @@
+Makefile
+autom4te.cache/
+binaries/
+build/
+c/Makefile
+c/de_avetana_bluetooth_stack_BlueZ.h
+c/de_avetana_bluetooth_stack_BlueZ_Mutex.h
+config.h
+config.h.in
+config.log
+config.status
+configure
+javaSourceFiles
+javadoc/
