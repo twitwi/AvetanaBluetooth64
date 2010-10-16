@@ -42,7 +42,7 @@ JDK_HOME=@JDK_HOME@
 JDK_PLATFORM   = @JDK_PLATFORM@
 
 # Flags for the C compiler. These add the JDK header files to the include path.
-CFLAGS         = -I $(JDK_HOME)/include -I $(JDK_HOME)/include/$(JDK_PLATFORM)
+CFLAGS         = -I $(JDK_HOME)/include -I $(JDK_HOME)/include/$(JDK_PLATFORM) -fPIC
 
 # Linker flags. Ensure you have installed the BlueZ libraries (bluez-libs).
 #LDFLAGS        = -shared @LIB_BLUETOOTH@
