@@ -1,3 +1,15 @@
+
+This project is a fork from the (inactive?) GPL project AvetanaBluetooth available on sourceforge at:
+    http://sourceforge.net/projects/avetanabt/
+
+The git repository has been created from a cvs import of the sourceforge project followed by an overriding of the files by the latest version available for download:
+    http://sourceforge.net/projects/avetanabt/files/avetanabt/20070719/avetanabt-20070719.tgz/download
+
+I then tried to fix thing as I could for the new BlueZ API and for 64 bits.
+
+(follows the original README file)
+=======================================================
+
 AvetanaBluetooth - Implementation of the JSR82 specification
 from the Sun Microsystems Company using BlueZ
 
