@@ -694,14 +694,14 @@ public class BlueZ
           		int fid = 0;
                 try {
                 if(proto==JSR82URL.PROTOCOL_L2CAP) {
-						fid = registerL2CAPService((int)a_notifier.getServiceHandle(),
+						fid = registerL2CAPService(a_notifier.getServiceHandle(),
 						                channel,
 						                a_notifier.getConnectionURL().isLocalMaster(),
 						                a_notifier.getConnectionURL().isAuthenticated(),
 						                a_notifier.getConnectionURL().isEncrypted(), -1,-1);
                   } else {
                 	  LibLoader.Debug ("BlueZ::Registering service");
-                    fid = registerService((int)a_notifier.getServiceHandle(),
+                    fid = registerService(a_notifier.getServiceHandle(),
                                     channel,
                                     a_notifier.getConnectionURL().isLocalMaster(),
                                     a_notifier.getConnectionURL().isAuthenticated(),
