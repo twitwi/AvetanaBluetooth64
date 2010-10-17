@@ -413,7 +413,7 @@ public class BlueZ
          * @return a positive integer is the process succeeds.
          * @throws BlueZException
          */
-        public static synchronized native int createService(LocalServiceRecord service) throws BlueZException;
+        public static synchronized native long createService(LocalServiceRecord service) throws BlueZException;
 
         /**
          * Updates an existing service record (the old <service record must be already stored in the BCC.)
@@ -435,7 +435,7 @@ public class BlueZ
          * @return a positive integer is the process succeeds.
          * @throws BlueZException
          */
-        public static native int registerService(int serviceHandle, int channel, boolean master, boolean auth, boolean encrypt) throws BlueZException;
+        public static native int registerService(long serviceHandle, int channel, boolean master, boolean auth, boolean encrypt) throws BlueZException;
 
         /**
          * Registers the service record identified by the variable "serviceHandle" and listens for an incoming L2CAP Connection
@@ -449,7 +449,7 @@ public class BlueZ
          * @return a positive integer is the process succeeds.
          * @throws BlueZException
          */
-        public static native int registerL2CAPService(int serviceHandle,
+        public static native int registerL2CAPService(long serviceHandle,
                                                       int channel,
                                                       boolean master,
                                                       boolean auth,

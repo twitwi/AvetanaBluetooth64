@@ -1230,7 +1230,7 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_updateService
  * This jobject (a LocalServiceRecord if you are using the Avetana implementation) MUST implement a method
  * toByteArray().
  */
-JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_createService
+JNIEXPORT jlong JNICALL Java_de_avetana_bluetooth_stack_BlueZ_createService
 	(JNIEnv *env, jclass obj, jobject srecord) {
 
 	bdaddr_t interface;
@@ -1409,7 +1409,7 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_createService
 		srh->srHandle = handle;
 		
 		
-	return (jint)srh;
+	return (jlong)srh;
 	}
 	else return -1;
 }
@@ -1418,7 +1418,7 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_createService
  * Register a service and listen for an incoming RFCOMM connection.
  */
 JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_registerService
-	(JNIEnv *env, jclass obj, jint serviceHandle, jint channel, jboolean master, jboolean auth, jboolean encrypt) {
+	(JNIEnv *env, jclass obj, jlong serviceHandle, jint channel, jboolean master, jboolean auth, jboolean encrypt) {
 	//printf("Function called: %s, %i\n"__FILE__, __LINE__);
 	return listenRFCOMM(env, ((ServiceHandle *)serviceHandle)->fd, master, auth, encrypt, channel);
 }
@@ -1703,7 +1703,7 @@ JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_setAccessMode
  * Register an L2CAP service and wait for an incoming connection
  */
 JNIEXPORT jint JNICALL Java_de_avetana_bluetooth_stack_BlueZ_registerL2CAPService
-	(JNIEnv *env, jclass obj, jint serviceHandle, jint channel, jboolean master, jboolean auth, jboolean encrypt,
+	(JNIEnv *env, jclass obj, jlong serviceHandle, jint channel, jboolean master, jboolean auth, jboolean encrypt,
 	 jint omtu, jint imtu) {
 	//printf("Function called: %s, %i\n"__FILE__, __LINE__);
 	return listenL2CAP(env, ((ServiceHandle *)serviceHandle)->fd, master, auth, encrypt, omtu, imtu, channel);
@@ -2355,7 +2355,7 @@ int my_sdp_service_search_attr_req(JNIEnv* env, jclass jobj, sdp_session_t *sess
 				jmethodID mid=env->GetStaticMethodID(cls,
 						"addService",
 						"(ILjavax/bluetooth/ServiceRecord;)V");
-				if(DEBUG==1)  printf("mid=%d",mid);
+				if(DEBUG==1)  printf("mid=%ld",(jlong)mid);
 				if (mid == 0) {
 					if(DEBUG==1)  printf("Unable to get method addService!!!!");
 				}
