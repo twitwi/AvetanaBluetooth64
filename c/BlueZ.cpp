@@ -332,7 +332,7 @@ JNIEXPORT jboolean JNICALL Java_de_avetana_bluetooth_stack_BlueZ_hciInquiry
 	jclass ii_cls, iid_cls, ba_cls;
 	jmethodID ii_con_id, ii_add_id, iid_con_id, ba_con_id;
 	jobject info_dev, bdaddr;
-	jvalue iid_args[5];
+	jvalue iid_args[6];
 
 	int num_rsp, i;
 	inquiry_info *inq_info = NULL;
